@@ -1,0 +1,35 @@
+{
+  "sceneId": "1-2-c",
+  "background": "school_hallway",
+  "bgm": "peaceful_morning",
+  "nextScene": "1-3",
+  "dialogues": [
+    {
+      "id": 0,
+      "speaker": "char_b",
+      "text": "……什麼？",
+      "sprite": "char_b_flustered"
+    },
+    {
+      "id": 1,
+      "speaker": "narrator",
+      "text": "他明顯愣了一下。"
+    },
+    {
+      "id": 2,
+      "speaker": "char_b",
+      "text": "那又怎樣。學生會長本來就要關注每個同學的學習狀況。",
+      "sprite": "char_b_looking_away"
+    },
+    {
+      "id": 3,
+      "speaker": "heroine",
+      "text": "（忍住笑）……是喔。"
+    },
+    {
+      "id": 4,
+      "speaker": "narrator",
+      "text": "妳看見他耳根有一點淡淡的紅。妳把這個細節記了下來。"
+    }
+  ]
+}

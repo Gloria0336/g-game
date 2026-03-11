@@ -1,0 +1,73 @@
+{
+  "sceneId": "1-3",
+  "background": "dorm_common_room",
+  "bgm": "quiet_night",
+  "nextScene": null,
+  "dialogues": [
+    {
+      "id": 0,
+      "speaker": "narrator",
+      "text": "夜深了。宿舍交誼廳只剩妳一個人，燈光昏黃，窗外是滿月。"
+    },
+    {
+      "id": 1,
+      "speaker": "narrator",
+      "text": "角落裡，有個人靜靜坐著，書攤在腿上，卻沒有在看。"
+    },
+    {
+      "id": 2,
+      "speaker": "narrator",
+      "text": "夜科玄。轉學生，和妳同一天轉來，卻像是從來沒有存在過一樣靜默。"
+    },
+    {
+      "id": 3,
+      "speaker": "narrator",
+      "text": "妳不確定自己是否應該打招呼，猶豫了一下——"
+    },
+    {
+      "id": 4,
+      "speaker": "char_c",
+      "text": "……你也睡不著嗎。",
+      "sprite": "char_c_quiet"
+    },
+    {
+      "id": 5,
+      "speaker": "narrator",
+      "text": "不是問句，是陳述。他的聲音很低，像是說給自己聽的。"
+    },
+    {
+      "id": 6,
+      "type": "choice",
+      "prompt": "深夜，交誼廳，一個幾乎陌生的人。妳要怎麼回應？",
+      "choices": [
+        {
+          "text": "「……嗯。」（在離他稍遠的地方坐下）",
+          "type": "waver",
+          "effects": {
+            "char_c": { "affection": 5, "trust": 5 },
+            "heroine": { "flutter": 3 }
+          },
+          "next": "1-3-a"
+        },
+        {
+          "text": "「你怎麼知道我睡不著？」",
+          "type": "evade",
+          "effects": {
+            "char_c": { "affection": 3, "trust": 3 },
+            "heroine": { "insight": 5 }
+          },
+          "next": "1-3-b"
+        },
+        {
+          "text": "（不說話，在他旁邊坐下）",
+          "type": "accept",
+          "effects": {
+            "char_c": { "affection": 8, "trust": 5, "progress": 3 },
+            "heroine": { "flutter": 5, "guard": -3 }
+          },
+          "next": "1-3-c"
+        }
+      ]
+    }
+  ]
+}

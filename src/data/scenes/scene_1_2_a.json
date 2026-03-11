@@ -1,0 +1,35 @@
+{
+  "sceneId": "1-2-a",
+  "background": "school_hallway",
+  "bgm": "peaceful_morning",
+  "nextScene": "1-3",
+  "dialogues": [
+    {
+      "id": 0,
+      "speaker": "narrator",
+      "text": "妳輕鬆繞過他，腳步沒有絲毫猶豫。"
+    },
+    {
+      "id": 1,
+      "speaker": "char_b",
+      "text": "……",
+      "sprite": "char_b_surprised"
+    },
+    {
+      "id": 2,
+      "speaker": "narrator",
+      "text": "他沉默了。妳沒有回頭，但耳朵豎著。"
+    },
+    {
+      "id": 3,
+      "speaker": "char_b",
+      "text": "（背後傳來他的聲音）……有意思。",
+      "sprite": "char_b_smirk"
+    },
+    {
+      "id": 4,
+      "speaker": "narrator",
+      "text": "妳聽出了他語氣裡某種意外的成分。也許，他沒料到妳會這樣回應。"
+    }
+  ]
+}

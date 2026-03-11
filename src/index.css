@@ -1,0 +1,40 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-game-dark text-white overflow-hidden;
+    font-family: 'Noto Sans TC', sans-serif;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+}
+
+@layer components {
+  .game-panel {
+    @apply bg-game-panel border border-game-border rounded-lg backdrop-blur-sm;
+  }
+
+  .choice-btn {
+    @apply w-full text-left px-4 py-3 rounded-md border border-game-border
+           bg-black/40 hover:bg-purple-900/40 hover:border-game-accent
+           transition-all duration-200 text-sm leading-relaxed;
+  }
+
+  .choice-btn:disabled {
+    @apply opacity-40 cursor-not-allowed hover:bg-black/40 hover:border-game-border;
+  }
+
+  .stat-bar {
+    @apply h-2 rounded-full bg-purple-900/60 overflow-hidden;
+  }
+
+  .stat-bar-fill {
+    @apply h-full rounded-full transition-all duration-500;
+  }
+}

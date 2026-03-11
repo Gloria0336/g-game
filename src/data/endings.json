@@ -1,0 +1,98 @@
+{
+  "endings": [
+    {
+      "id": "heartbreak",
+      "name": "心碎結局",
+      "icon": "🥀",
+      "priority": 6,
+      "description": "你以為自己看清了一切，卻在最後一刻被現實擊碎。",
+      "conditions": {
+        "flags": { "betrayal_event": true }
+      }
+    },
+    {
+      "id": "dangerous_fall",
+      "name": "危險沉淪",
+      "icon": "🔗",
+      "priority": 5,
+      "description": "深淵向你敞開，而你選擇了墜落。",
+      "conditions": {
+        "character": {
+          "progress": { "min": 70 },
+          "trust": { "max": 30 }
+        },
+        "heroine": {
+          "flutter": { "min": 60 }
+        }
+      }
+    },
+    {
+      "id": "indulgence",
+      "name": "肉體狂歡",
+      "icon": "🍷",
+      "priority": 4,
+      "description": "理性在慾望中燃盡，剩下的只有此刻的肌膚之親。",
+      "conditions": {
+        "character": {
+          "affection": { "min": 50 }
+        },
+        "heroine": {
+          "desire": { "min": 80 }
+        }
+      }
+    },
+    {
+      "id": "true_love",
+      "name": "真心相許",
+      "icon": "🌸",
+      "priority": 3,
+      "description": "穿越所有試探與猶豫，你們終於找到了彼此。",
+      "conditions": {
+        "character": {
+          "affection": { "min": 75 },
+          "trust": { "min": 70 }
+        },
+        "heroine": {
+          "flutter": { "min": 50 }
+        }
+      }
+    },
+    {
+      "id": "see_through",
+      "name": "看穿離開",
+      "icon": "🗡️",
+      "priority": 2,
+      "description": "你看穿了他的把戲，選擇了自己。這是你的勝利。",
+      "conditions": {
+        "character": {
+          "affection": { "max": 39 }
+        },
+        "heroine": {
+          "insight": { "min": 70 },
+          "guard": { "min": 60 }
+        }
+      }
+    },
+    {
+      "id": "awakening",
+      "name": "覺醒",
+      "icon": "⚡",
+      "priority": 1,
+      "description": "你終於明白，這一切不過是一場精心設計的遊戲。而你，掌握了規則。",
+      "conditions": {
+        "flags": { "all_routes_seen": true },
+        "heroine": {
+          "insight": { "min": 80 }
+        }
+      }
+    },
+    {
+      "id": "unfinished",
+      "name": "未完待續",
+      "icon": "🌙",
+      "priority": 0,
+      "description": "故事尚未結束。也許，在另一個時空中，你們的相遇會走向不同的方向。",
+      "conditions": {}
+    }
+  ]
+}

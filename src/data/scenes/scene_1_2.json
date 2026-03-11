@@ -1,0 +1,80 @@
+{
+  "sceneId": "1-2",
+  "background": "school_hallway",
+  "bgm": "peaceful_morning",
+  "nextScene": "1-3",
+  "dialogues": [
+    {
+      "id": 0,
+      "speaker": "narrator",
+      "text": "放學後的走廊。斜陽把地板染成琥珀色，大部分同學已經離開。"
+    },
+    {
+      "id": 1,
+      "speaker": "narrator",
+      "text": "走廊另一端，一個熟悉而陌生的身影擋住了妳的去路。"
+    },
+    {
+      "id": 2,
+      "speaker": "char_b",
+      "text": "喂，轉學生。",
+      "sprite": "char_b_smirk"
+    },
+    {
+      "id": 3,
+      "speaker": "narrator",
+      "text": "御堂颯。學生會長，全校女生的夢中情人——除了妳以外。他處處與妳針鋒相對，妳至今搞不清楚原因。"
+    },
+    {
+      "id": 4,
+      "speaker": "char_b",
+      "text": "昨天的班級報告，你寫的那個論點根本就是廢話。",
+      "sprite": "char_b_arrogant"
+    },
+    {
+      "id": 5,
+      "speaker": "heroine",
+      "text": "（停下腳步）……有問題嗎。"
+    },
+    {
+      "id": 6,
+      "speaker": "char_b",
+      "text": "問題大了。你的邏輯漏洞像篩子一樣，我都不知道怎麼開口。",
+      "sprite": "char_b_smirk"
+    },
+    {
+      "id": 7,
+      "type": "choice",
+      "prompt": "他的態度讓人想翻白眼。但妳也感覺到，他在等妳的反應。",
+      "choices": [
+        {
+          "text": "「那就別開口。」（直接繞過他）",
+          "type": "resist",
+          "effects": {
+            "char_b": { "affection": 2, "progress": -1 },
+            "heroine": { "guard": 3, "charm": 2 }
+          },
+          "next": "1-2-a"
+        },
+        {
+          "text": "「哪裡有漏洞？具體說。」",
+          "type": "evade",
+          "effects": {
+            "char_b": { "affection": 5, "trust": 3 },
+            "heroine": { "insight": 4 }
+          },
+          "next": "1-2-b"
+        },
+        {
+          "text": "「……你花時間讀了我的報告？」",
+          "type": "waver",
+          "effects": {
+            "char_b": { "affection": 3, "progress": 2 },
+            "heroine": { "flutter": 3, "insight": 2 }
+          },
+          "next": "1-2-c"
+        }
+      ]
+    }
+  ]
+}

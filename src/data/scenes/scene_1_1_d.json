@@ -1,0 +1,41 @@
+{
+  "sceneId": "1-1-d",
+  "background": "school_rooftop",
+  "bgm": "spring_wind",
+  "nextScene": "1-2",
+  "dialogues": [
+    {
+      "id": 0,
+      "speaker": "narrator",
+      "text": "妳湊近的瞬間，他的呼吸明顯停了一下。"
+    },
+    {
+      "id": 1,
+      "speaker": "char_a",
+      "text": "……",
+      "sprite": "char_a_tense"
+    },
+    {
+      "id": 2,
+      "speaker": "char_a",
+      "text": "（低聲，語氣忽然沉了）別這樣。",
+      "sprite": "char_a_serious"
+    },
+    {
+      "id": 3,
+      "speaker": "heroine",
+      "text": "怎麼了？你不喜歡嗎？"
+    },
+    {
+      "id": 4,
+      "speaker": "char_a",
+      "text": "（轉過臉，目光直視妳）喜歡……才是問題所在。",
+      "sprite": "char_a_intense"
+    },
+    {
+      "id": 5,
+      "speaker": "narrator",
+      "text": "妳看見他眼底閃過某種妳叫不出名字的東西。那不是妳熟悉的律。"
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "sceneId": "1-3-b",
+  "background": "dorm_common_room",
+  "bgm": "quiet_night",
+  "nextScene": null,
+  "isChapterEnd": true,
+  "dialogues": [
+    {
+      "id": 0,
+      "speaker": "char_c",
+      "text": "……腳步聲。",
+      "sprite": "char_c_quiet"
+    },
+    {
+      "id": 1,
+      "speaker": "narrator",
+      "text": "妳怔了一下。"
+    },
+    {
+      "id": 2,
+      "speaker": "char_c",
+      "text": "睡著的人走路不一樣。",
+      "sprite": "char_c_quiet"
+    },
+    {
+      "id": 3,
+      "speaker": "narrator",
+      "text": "他說得如此簡單，像是理所當然。妳不知道他怎麼會注意到這種事情。"
+    },
+    {
+      "id": 4,
+      "speaker": "heroine",
+      "text": "……你觀察人的嗎？"
+    },
+    {
+      "id": 5,
+      "speaker": "char_c",
+      "text": "（長時間的沉默）有時候。",
+      "sprite": "char_c_distant"
+    },
+    {
+      "id": 6,
+      "speaker": "narrator",
+      "text": "第一章·終——"
+    }
+  ]
+}

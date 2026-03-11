@@ -1,0 +1,41 @@
+{
+  "sceneId": "1-1-a",
+  "background": "school_rooftop",
+  "bgm": "spring_wind",
+  "nextScene": "1-2",
+  "dialogues": [
+    {
+      "id": 0,
+      "speaker": "char_a",
+      "text": "一個人……",
+      "sprite": "char_a_thoughtful"
+    },
+    {
+      "id": 1,
+      "speaker": "narrator",
+      "text": "他沉默了一秒，然後在妳身旁靠著欄杆坐下，不遠不近。"
+    },
+    {
+      "id": 2,
+      "speaker": "char_a",
+      "text": "好，那我陪妳一個人待著。",
+      "sprite": "char_a_smile"
+    },
+    {
+      "id": 3,
+      "speaker": "heroine",
+      "text": "……那不叫一個人待著。"
+    },
+    {
+      "id": 4,
+      "speaker": "char_a",
+      "text": "（輕笑）對不起，我不在你視線裡就好了嗎？",
+      "sprite": "char_a_laugh"
+    },
+    {
+      "id": 5,
+      "speaker": "narrator",
+      "text": "他說著，真的把臉轉向另一邊。微風吹過，妳盯著他的側臉，心裡說不清是煩躁還是別的什麼。"
+    }
+  ]
+}

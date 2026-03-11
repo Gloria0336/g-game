@@ -1,0 +1,46 @@
+{
+  "sceneId": "1-3-c",
+  "background": "dorm_common_room",
+  "bgm": "quiet_night",
+  "nextScene": null,
+  "isChapterEnd": true,
+  "dialogues": [
+    {
+      "id": 0,
+      "speaker": "narrator",
+      "text": "妳什麼都沒說，就坐在了他旁邊。"
+    },
+    {
+      "id": 1,
+      "speaker": "narrator",
+      "text": "他的書頁被微風翻動了一下，然後靜止。"
+    },
+    {
+      "id": 2,
+      "speaker": "char_c",
+      "text": "……",
+      "sprite": "char_c_surprised"
+    },
+    {
+      "id": 3,
+      "speaker": "narrator",
+      "text": "他沒有離開，也沒有說話。只是輕輕把書闔上，放到一邊。"
+    },
+    {
+      "id": 4,
+      "speaker": "narrator",
+      "text": "不知道過了多久，妳聽見他的聲音，比月光還要輕。"
+    },
+    {
+      "id": 5,
+      "speaker": "char_c",
+      "text": "……謝謝。",
+      "sprite": "char_c_quiet"
+    },
+    {
+      "id": 6,
+      "speaker": "narrator",
+      "text": "第一章·終——"
+    }
+  ]
+}

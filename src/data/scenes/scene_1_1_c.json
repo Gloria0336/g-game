@@ -1,0 +1,30 @@
+{
+  "sceneId": "1-1-c",
+  "background": "school_rooftop",
+  "bgm": "spring_wind",
+  "nextScene": "1-2",
+  "dialogues": [
+    {
+      "id": 0,
+      "speaker": "char_a",
+      "text": "……",
+      "sprite": "char_a_surprised"
+    },
+    {
+      "id": 1,
+      "speaker": "narrator",
+      "text": "他愣了一瞬。妳很少對他笑，他似乎沒料到。"
+    },
+    {
+      "id": 2,
+      "speaker": "char_a",
+      "text": "（輕聲）那就好。",
+      "sprite": "char_a_gentle"
+    },
+    {
+      "id": 3,
+      "speaker": "narrator",
+      "text": "他靠近了半步。不多，剛好在妳能感受到溫度的距離。妳的心跳不受控制地快了一下。"
+    }
+  ]
+}
