@@ -1,0 +1,9 @@
+{
+  "sceneId": "0-3",
+  "type": "combat",
+  "background": "burning_town_battle",
+  "enemyId": "rift_hound",
+  "nextScene": "0-3-post",
+  "chapter": 0,
+  "isPrologueCombat": true
+}

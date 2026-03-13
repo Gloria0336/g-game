@@ -1,0 +1,37 @@
+{
+  "sceneId": "0-2-b",
+  "type": "narrative",
+  "background": "burning_town_alley",
+  "nextScene": "0-3",
+  "chapter": 0,
+  "dialogues": [
+    {
+      "speaker": "narrator",
+      "text": "妳衝進小鎮，腳步沒有停頓，朝慘叫聲的方向直奔。"
+    },
+    {
+      "speaker": "narrator",
+      "text": "卻沒注意到廢墟側面潛伏的黑影。"
+    },
+    {
+      "speaker": "narrator",
+      "text": "一股強大的衝擊力從側面撞上妳——幾乎讓妳飛出去。妳撞上了一堵殘牆，磚石碎裂的聲音和自己的喘息聲同時響起。"
+    },
+    {
+      "speaker": "heroine",
+      "text": "——！"
+    },
+    {
+      "speaker": "narrator",
+      "text": "疼痛從肋骨蔓延到全身。但疼痛也讓妳清醒了。"
+    },
+    {
+      "speaker": "narrator",
+      "text": "牠在等妳。從妳衝進來的那一刻，牠就在等妳。"
+    },
+    {
+      "speaker": "narrator",
+      "text": "某種憤怒在妳胸口燃起，比疼痛更熾烈。"
+    }
+  ]
+}

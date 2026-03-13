@@ -1,8 +1,14 @@
 /**
  * EndingResolver — 根據最終數值與 flag 判定結局
  */
-import endingsData from '../data/endings.json'
 import { checkCondition } from './StatsManager.js'
+
+// TODO Phase D: replace with full endings data
+const endingsData = {
+  endings: [
+    { id: 'unfinished', name: '未完待續', icon: '...', priority: 0, conditions: null }
+  ]
+}
 
 /**
  * 判定當前狀態對應的結局

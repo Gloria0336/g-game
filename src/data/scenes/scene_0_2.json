@@ -1,0 +1,46 @@
+{
+  "sceneId": "0-2",
+  "type": "narrative",
+  "background": "burning_town_edge",
+  "chapter": 0,
+  "dialogues": [
+    {
+      "speaker": "narrator",
+      "text": "前方是正在燃燒的小鎮。人影在煙霧中奔逃，慘叫聲此起彼落。"
+    },
+    {
+      "speaker": "heroine",
+      "text": "（有人在裡面——我得進去。）"
+    },
+    {
+      "type": "choice",
+      "prompt": "進入小鎮的方式——",
+      "choices": [
+        {
+          "text": "「伏低身體，沿著建築殘骸的陰影潛入。」",
+          "effects": {
+            "flags": { "entry_path": "tactical" },
+            "prologue_bonus": { "AGI": 4 }
+          },
+          "next": "0-2-a"
+        },
+        {
+          "text": "「拔出鐵劍，直接奔向慘叫聲傳來的方向。」",
+          "effects": {
+            "heroine": { "HP": -20 },
+            "flags": { "entry_path": "instinct" },
+            "prologue_bonus": { "ATK": 3, "WIL": 3 }
+          },
+          "next": "0-2-b"
+        },
+        {
+          "text": "「爬上高處的鐘樓廢墟，俯瞰整個小鎮的戰況。」",
+          "effects": {
+            "flags": { "entry_path": "insight" }
+          },
+          "next": "0-2-c"
+        }
+      ]
+    }
+  ]
+}

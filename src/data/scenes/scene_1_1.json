@@ -1,90 +1,37 @@
 {
   "sceneId": "1-1",
-  "background": "school_rooftop",
-  "bgm": "spring_wind",
+  "type": "narrative",
+  "background": "ruined_town_dawn",
   "nextScene": "1-2",
+  "chapter": 1,
   "dialogues": [
     {
-      "id": 0,
       "speaker": "narrator",
-      "text": "春末的午後，校舍頂樓。微風帶著淡淡的花香，卻也夾帶了一種令人坐立難安的熱意。"
+      "text": "黎明前的廢墟，烽火已熄。妳握著三張契約書，感受著它們微弱的熱度——彷彿有什麼正在等待被喚醒。"
     },
     {
-      "id": 1,
       "speaker": "narrator",
-      "text": "新學期開始不過兩週，這所寄宿學校已經讓妳感到窒息。不是因為課業——而是因為他們。"
+      "text": "三份契約書上的印記在薄暮中隱隱發光，輪番閃爍，像在低語，像在呼吸。"
     },
     {
-      "id": 2,
       "speaker": "heroine",
-      "text": "（站在欄杆邊，望著遠處）……只是安靜地待一會兒，有那麼難嗎。"
+      "text": "（三個……三個存在，被封印在這些契約書裡。）"
     },
     {
-      "id": 3,
       "speaker": "narrator",
-      "text": "背後傳來腳步聲。妳不需要回頭，就知道是誰。"
+      "text": "妳不知道它們是誰，也不知道激活契約書意味著什麼。但有一件事妳確定——留在這裡只會死。"
     },
     {
-      "id": 4,
-      "speaker": "char_a",
-      "text": "找到妳了。",
-      "sprite": "char_a_smile"
+      "speaker": "heroine",
+      "text": "「好。不管你們是什麼——先幫我活下去再說。」"
     },
     {
-      "id": 5,
       "speaker": "narrator",
-      "text": "明澤律。青梅竹馬。從小學就認識的他，總是帶著那個溫柔到令人窒息的笑。"
+      "text": "契約書上的印記同時大放光芒。"
     },
     {
-      "id": 6,
-      "speaker": "char_a",
-      "text": "午休了還一個人跑到這裡，是想躲我嗎？",
-      "sprite": "char_a_smile"
-    },
-    {
-      "id": 7,
-      "type": "choice",
-      "prompt": "他的聲音溫柔，眼神卻有些說不清道不明的東西。妳要怎麼回應？",
-      "choices": [
-        {
-          "text": "「不是，只是想一個人待著。」",
-          "type": "resist",
-          "effects": {
-            "char_a": { "progress": -2 },
-            "heroine": { "guard": 5, "insight": 2 }
-          },
-          "next": "1-1-a"
-        },
-        {
-          "text": "「……沒想到你會追上來。」",
-          "type": "evade",
-          "condition": { "heroine": { "insight": { "min": 15 } } },
-          "effects": {
-            "char_a": { "affection": 3 },
-            "heroine": { "insight": 5, "guard": 2 }
-          },
-          "next": "1-1-b"
-        },
-        {
-          "text": "「有點吵，但還好。」（對他微微一笑）",
-          "type": "waver",
-          "effects": {
-            "char_a": { "affection": 5, "progress": 3 },
-            "heroine": { "flutter": 3, "guard": -3 }
-          },
-          "next": "1-1-c"
-        },
-        {
-          "text": "（靠近他，湊近耳邊）「律，你是在擔心我嗎？」",
-          "type": "seduce",
-          "condition": { "heroine": { "desire": { "min": 10 } } },
-          "effects": {
-            "char_a": { "lust": 5, "affection": 3 },
-            "heroine": { "desire": 5, "charm": 3, "guard": -5 }
-          },
-          "next": "1-1-d"
-        }
-      ]
+      "speaker": "narrator",
+      "text": "第一章：三個名字。"
     }
   ]
 }

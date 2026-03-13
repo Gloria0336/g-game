@@ -1,0 +1,45 @@
+{
+  "sceneId": "0-3-post",
+  "type": "narrative",
+  "background": "burning_town_aftermath",
+  "nextScene": "1-1",
+  "chapter": 0,
+  "dialogues": [
+    {
+      "speaker": "narrator",
+      "text": "魔物的身體在妳眼前開始崩解，化作漆黑的靈力粒子，消散在烽火的夜空中。"
+    },
+    {
+      "speaker": "narrator",
+      "text": "妳喘著氣，感覺到力量正在全身流動，比剛才更清晰，更真實。"
+    },
+    {
+      "speaker": "narrator",
+      "text": "魔物的血液滲入了焦黑的地面，緩緩聚合——化作了三張充滿不祥氣息的契約書，靜靜地漂浮在空中。"
+    },
+    {
+      "speaker": "heroine",
+      "text": "……這些是什麼？"
+    },
+    {
+      "speaker": "narrator",
+      "text": "某種無法言說的感覺告訴妳：它們在呼喚妳。從一開始，就在呼喚妳。"
+    },
+    {
+      "speaker": "narrator",
+      "text": "妳伸出手，三張契約書同時落入掌心，上面的空白印記閃爍著微弱而持續的光。"
+    },
+    {
+      "speaker": "heroine",
+      "text": "（契約書……我是契約者了？）"
+    },
+    {
+      "speaker": "narrator",
+      "text": "不是問句。妳已經知道答案了。"
+    },
+    {
+      "speaker": "narrator",
+      "text": "前方，烽火仍在燃燒。但妳握緊了手中的契約書，踏出了第一步。"
+    }
+  ]
+}

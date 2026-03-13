@@ -1,0 +1,51 @@
+{
+  "sceneId": "0-2-c",
+  "type": "narrative",
+  "background": "burning_town_tower",
+  "chapter": 0,
+  "dialogues": [
+    {
+      "speaker": "narrator",
+      "text": "妳攀上鐘樓廢墟的殘骸，居高臨下。"
+    },
+    {
+      "speaker": "narrator",
+      "text": "整個小鎮的全貌在妳眼前展開。"
+    },
+    {
+      "speaker": "narrator",
+      "text": "至少四名鎮民已經倒下，那隻漆黑的魔物仍在肆虐。牠的動作軌跡、習慣的攻擊方向、暫時的盲區——妳的眼睛在不知不覺中已將它們全部記下。"
+    },
+    {
+      "speaker": "heroine",
+      "text": "（我能打敗牠。但……）"
+    },
+    {
+      "speaker": "narrator",
+      "text": "但下去，就是硬碰硬。不下去，還有更多人會死。"
+    },
+    {
+      "type": "choice",
+      "prompt": "——妳的決定？",
+      "choices": [
+        {
+          "text": "「現在就下去。還有人能救。」",
+          "effects": {
+            "flags": { "entry_fight": true },
+            "prologue_bonus": { "WIL": 6 }
+          },
+          "next": "0-2-c-fight"
+        },
+        {
+          "text": "「先找退路，不能硬拼。」",
+          "effects": {
+            "heroine": { "HP": -40 },
+            "flags": { "entry_flee": true },
+            "prologue_bonus": { "AGI": -5 }
+          },
+          "next": "0-2-c-flee"
+        }
+      ]
+    }
+  ]
+}

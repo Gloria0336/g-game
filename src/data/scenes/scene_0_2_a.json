@@ -1,0 +1,33 @@
+{
+  "sceneId": "0-2-a",
+  "type": "narrative",
+  "background": "burning_town_shadows",
+  "nextScene": "0-3",
+  "chapter": 0,
+  "dialogues": [
+    {
+      "speaker": "narrator",
+      "text": "妳伏低身體，沿著倒塌建築的陰影，一步步潛入小鎮。"
+    },
+    {
+      "speaker": "narrator",
+      "text": "煙霧成了掩護。妳的視線在廢墟間移動，計算每一個死角，找尋安全的路線。"
+    },
+    {
+      "speaker": "narrator",
+      "text": "然後妳看見了——前方，一隻漆黑的魔物正站在一名已經倒下的鎮民身旁，頭顱緩緩抬起，嗅著空氣。"
+    },
+    {
+      "speaker": "heroine",
+      "text": "（牠還沒發現我的位置……）"
+    },
+    {
+      "speaker": "narrator",
+      "text": "但那對渾濁的眼睛在下一刻直接鎖定了妳的方向。"
+    },
+    {
+      "speaker": "narrator",
+      "text": "先手的優勢，就在這個瞬間決定。"
+    }
+  ]
+}

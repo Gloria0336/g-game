@@ -1,70 +1,128 @@
 /**
- * GameEngine — 遊戲狀態機（useReducer 的 reducer 與 action creators）
+ * GameEngine — 遊戲狀態機（V3.0）
  *
- * GameState 結構：
- * {
- *   phase: 'title' | 'dialogue' | 'choice' | 'dice' | 'ending' | 'save_load',
- *   currentChapter: number,
- *   currentScene: string,
- *   currentDialogue: number,
- *   mainRoute: string | null,     // 分歧後的攻略角色 ID
- *   sceneData: object | null,     // 當前載入的場景 JSON
- *   heroine: { guard, flutter, insight, charm, desire },
- *   characters: {
- *     char_a: { affection, progress, trust, lust },
- *     char_b: { affection, progress, trust, lust },
- *     char_c: { affection, progress, trust, lust },
- *   },
- *   flags: {},
- *   choiceHistory: [],
- *   pendingChoices: [] | null,    // 當前可選選項（已過濾條件）
- *   diceResult: object | null,    // 最近一次骰點結果
- *   ending: object | null,        // 最終結局物件
- * }
+ * Phases: title / awakening / dialogue / choice / dice /
+ *         combat / demon_summon / combat_end / demon_dialogue /
+ *         skill_reward / ending / save_load
  */
 
-import { INITIAL_HEROINE, INITIAL_CHARACTER, applyEffects } from './StatsManager.js'
+import { INITIAL_HEROINE, INITIAL_DEMONS, applyEffects, applyAwakening } from './StatsManager.js'
 import { resolveChoices, executeChoice } from './ChoiceResolver.js'
 import { resolveEnding } from './EndingResolver.js'
 
-// ─── 初始狀態 ──────────────────────────────────────────────────
+// ─── Phase 常數 ────────────────────────────────────────────────
+
+export const PHASES = {
+  TITLE:          'title',
+  AWAKENING:      'awakening',
+  DIALOGUE:       'dialogue',
+  CHOICE:         'choice',
+  DICE:           'dice',
+  COMBAT:         'combat',
+  DEMON_SUMMON:   'demon_summon',
+  COMBAT_END:     'combat_end',
+  DEMON_DIALOGUE: 'demon_dialogue',
+  SKILL_REWARD:   'skill_reward',
+  ENDING:         'ending',
+  SAVE_LOAD:      'save_load',
+}
+
+// ─── 初始戰鬥狀態 ──────────────────────────────────────────────
+
+const INITIAL_COMBAT = {
+  enemyId: null,
+  enemyHP: 0,
+  enemyMaxHP: 0,
+  enemyATK: 0,
+  enemyAGI: 0,
+  enemyStatuses: [],
+  heroineStatuses: [],
+  turn: 0,
+  turnOrder: [],
+  log: [],
+  summonedThisBattle: [],
+  pendingNarrative: null,   // AI 戰鬥敘事（戰後顯示）
+}
+
+// ─── 初始 GameState ────────────────────────────────────────────
 
 export const INITIAL_STATE = {
   phase: 'title',
-  currentChapter: 1,
-  currentScene: '1-1',
+  currentChapter: 0,
+  currentScene: '0-1',
   currentDialogue: 0,
   mainRoute: null,
   sceneData: null,
-  heroine: { ...INITIAL_HEROINE },
-  characters: {
-    char_a: { ...INITIAL_CHARACTER },
-    char_b: { ...INITIAL_CHARACTER },
-    char_c: { ...INITIAL_CHARACTER },
-  },
   flags: {},
   choiceHistory: [],
   pendingChoices: null,
   diceResult: null,
   ending: null,
+  _pendingNextScene: null,
+  _prevPhase: null,
+
+  // 序章臨時戰鬥加成（入場路線決定，AWAKENING_FINISH 後清除）
+  prologueBonus: { ATK: 0, AGI: 0, WIL: 0 },
+
+  // 女主角
+  heroine: { ...INITIAL_HEROINE },
+
+  // 技能欄位
+  skills: {
+    active: [],            // 最多 4 個 ID
+    inventory: [],         // 最多 12 個 ID
+  },
+
+  // 各惡魔關係
+  demons: { ...INITIAL_DEMONS },
+
+  // 當前戰鬥
+  combat: { ...INITIAL_COMBAT },
 }
 
 // ─── Action Types ──────────────────────────────────────────────
 
 export const ACTION = {
-  START_GAME: 'START_GAME',
-  LOAD_SCENE: 'LOAD_SCENE',
-  ADVANCE: 'ADVANCE',         // 推進對話
-  SHOW_CHOICES: 'SHOW_CHOICES',
-  SELECT_CHOICE: 'SELECT_CHOICE',
-  ACKNOWLEDGE_DICE: 'ACKNOWLEDGE_DICE',  // 看完骰點動畫後繼續
-  SET_FLAG: 'SET_FLAG',
-  SET_ROUTE: 'SET_ROUTE',
-  TRIGGER_ENDING: 'TRIGGER_ENDING',
-  OPEN_SAVE_LOAD: 'OPEN_SAVE_LOAD',
-  CLOSE_SAVE_LOAD: 'CLOSE_SAVE_LOAD',
-  LOAD_SAVE: 'LOAD_SAVE',
-  RETURN_TO_TITLE: 'RETURN_TO_TITLE',
+  // 一般流程
+  START_GAME:         'START_GAME',
+  LOAD_SCENE:         'LOAD_SCENE',
+  ADVANCE:            'ADVANCE',
+  SHOW_CHOICES:       'SHOW_CHOICES',
+  SELECT_CHOICE:      'SELECT_CHOICE',
+  ACKNOWLEDGE_DICE:   'ACKNOWLEDGE_DICE',
+  SET_FLAG:           'SET_FLAG',
+  SET_ROUTE:          'SET_ROUTE',
+  TRIGGER_ENDING:     'TRIGGER_ENDING',
+  RETURN_TO_TITLE:    'RETURN_TO_TITLE',
+
+  // 覺醒系統
+  AWAKENING_FINISH:   'AWAKENING_FINISH',   // 戰鬥後套用覺醒數值（由 App 判定類型後觸發）
+
+  // 戰鬥系統
+  START_COMBAT:       'START_COMBAT',        // 進入戰鬥（帶 enemyId）
+  COMBAT_ACTION:      'COMBAT_ACTION',       // 玩家行動（普通攻擊 / 使用技能）
+  COMBAT_ENEMY_TURN:  'COMBAT_ENEMY_TURN',   // 敵人回合結算
+  COMBAT_APPLY_LOG:   'COMBAT_APPLY_LOG',    // 補充戰鬥訊息
+  OPEN_DEMON_SUMMON:  'OPEN_DEMON_SUMMON',   // 打開召喚面板
+  SUMMON_DEMON:       'SUMMON_DEMON',        // 召喚指定惡魔
+  SKIP_SUMMON:        'SKIP_SUMMON',         // 選擇不召喚
+  END_COMBAT:         'END_COMBAT',          // 戰鬥結束（victory / defeat / escape）
+  SET_COMBAT_NARRATIVE: 'SET_COMBAT_NARRATIVE', // 儲存 AI 戰鬥敘事
+
+  // 惡魔對話
+  START_DEMON_DIALOGUE: 'START_DEMON_DIALOGUE',
+  END_DEMON_DIALOGUE:   'END_DEMON_DIALOGUE',
+
+  // 技能獎勵
+  SHOW_SKILL_REWARD:  'SHOW_SKILL_REWARD',   // 顯示技能選擇畫面
+  PICK_SKILL:         'PICK_SKILL',          // 選擇技能
+  SKIP_SKILL_REWARD:  'SKIP_SKILL_REWARD',   // 略過技能選擇
+  SET_SKILL_SLOTS:    'SET_SKILL_SLOTS',     // 整體替換技能槽（管理畫面用）
+
+  // 存讀檔
+  OPEN_SAVE_LOAD:     'OPEN_SAVE_LOAD',
+  CLOSE_SAVE_LOAD:    'CLOSE_SAVE_LOAD',
+  LOAD_SAVE:          'LOAD_SAVE',
 }
 
 // ─── Reducer ──────────────────────────────────────────────────
@@ -72,36 +130,42 @@ export const ACTION = {
 export function gameReducer(state, action) {
   switch (action.type) {
 
+    // ── 遊戲開始（從主選單） ────────────────────────────────────
     case ACTION.START_GAME:
-      return { ...INITIAL_STATE, phase: 'dialogue' }
+      return { ...INITIAL_STATE, phase: 'dialogue', currentChapter: 0 }
 
+    // ── 載入場景資料 ────────────────────────────────────────────
     case ACTION.LOAD_SCENE: {
-      return {
+      const { sceneData } = action
+      const baseState = {
         ...state,
-        sceneData: action.sceneData,
-        currentScene: action.sceneData.sceneId,
+        sceneData,
+        currentScene: sceneData.sceneId,
         currentDialogue: 0,
-        phase: 'dialogue',
         pendingChoices: null,
         diceResult: null,
+        _pendingNextScene: null,
       }
+      // 若為戰鬥場景，直接進入 combat phase（由 App 決策）
+      if (sceneData.type === 'combat') {
+        return { ...baseState, phase: 'combat' }
+      }
+      return { ...baseState, phase: 'dialogue' }
     }
 
+    // ── 對話推進 ─────────────────────────────────────────────────
     case ACTION.ADVANCE: {
       const { sceneData, currentDialogue } = state
       if (!sceneData) return state
 
       const nextIdx = currentDialogue + 1
 
-      // 到達場景末尾 → 觸發結局判定或等待下一場景
       if (nextIdx >= sceneData.dialogues.length) {
-        // 若有設定 nextScene，由外部 useEffect 載入
         return { ...state, currentDialogue: nextIdx }
       }
 
       const nextDialogue = sceneData.dialogues[nextIdx]
 
-      // 下一行是選項
       if (nextDialogue.type === 'choice') {
         const choices = resolveChoices(nextDialogue.choices, state)
         return {
@@ -112,75 +176,233 @@ export function gameReducer(state, action) {
         }
       }
 
-      // 下一行是骰點選項
       if (nextDialogue.type === 'dice_choice') {
         return {
           ...state,
           currentDialogue: nextIdx,
           phase: 'choice',
-          pendingChoices: [nextDialogue], // 單一骰點選項
+          pendingChoices: [nextDialogue],
+        }
+      }
+
+      // 覺醒試煉選項
+      if (nextDialogue.type === 'awakening_choice') {
+        return {
+          ...state,
+          currentDialogue: nextIdx,
+          phase: 'awakening',
         }
       }
 
       return { ...state, currentDialogue: nextIdx, phase: 'dialogue' }
     }
 
+    // ── 選項選擇 ─────────────────────────────────────────────────
     case ACTION.SELECT_CHOICE: {
       const { choice } = action
       const result = executeChoice(choice, state, state.mainRoute)
 
-      const newState = {
+      return {
         ...result.newState,
         choiceHistory: [...state.choiceHistory, { choiceId: choice.id ?? choice.text, scene: state.currentScene }],
         pendingChoices: null,
         phase: result.diceResult ? 'dice' : 'dialogue',
         diceResult: result.diceResult ?? null,
+        _pendingNextScene: result.nextScene ?? null,
       }
-
-      // 如果骰點直接導向下一場景，記錄 nextScene
-      if (result.nextScene) {
-        newState._pendingNextScene = result.nextScene
-      }
-
-      return newState
     }
 
-    case ACTION.ACKNOWLEDGE_DICE: {
-      // 骰點動畫確認後，清除 diceResult，繼續推進
+    // ── 骰點確認 ─────────────────────────────────────────────────
+    case ACTION.ACKNOWLEDGE_DICE:
       return { ...state, phase: 'dialogue', diceResult: null }
+
+    // ── 旗標設定 ─────────────────────────────────────────────────
+    case ACTION.SET_FLAG:
+      return { ...state, flags: { ...state.flags, [action.flag]: action.value } }
+
+    // ── 路線設定 ─────────────────────────────────────────────────
+    case ACTION.SET_ROUTE:
+      return { ...state, mainRoute: action.demonId }
+
+    // ── 覺醒完成（戰鬥後由 App 判定類型，套用數值加成）────────────
+    case ACTION.AWAKENING_FINISH: {
+      const { awakeningType } = action
+      const newState = applyAwakening(state, awakeningType)
+      return {
+        ...newState,
+        phase: 'dialogue',
+        prologueBonus: { ATK: 0, AGI: 0, WIL: 0 },   // 清除序章臨時加成
+        _pendingNextScene: action.nextScene ?? null,
+      }
     }
 
-    case ACTION.SET_FLAG: {
+    // ── 進入戰鬥 ─────────────────────────────────────────────────
+    case ACTION.START_COMBAT: {
+      const { enemyData } = action
       return {
         ...state,
-        flags: { ...state.flags, [action.flag]: action.value },
+        phase: 'combat',
+        combat: {
+          ...INITIAL_COMBAT,
+          enemyId: enemyData.id,
+          enemyName: enemyData.name,
+          enemyHP: enemyData.HP,
+          enemyMaxHP: enemyData.HP,
+          enemyATK: enemyData.ATK,
+          enemyAGI: enemyData.AGI,
+          enemyDR: enemyData.DR ?? 0,
+          enemySkillDefs: enemyData.skillDefs ?? {},
+          log: [`遭遇 ${enemyData.name}！`],
+          // AGI 決定先後順序（加入序章臨時 AGI 加成）
+          turnOrder: (state.heroine.AGI + (state.prologueBonus?.AGI || 0)) >= enemyData.AGI
+            ? ['heroine', 'enemy']
+            : ['enemy', 'heroine'],
+          turn: 1,
+        },
       }
     }
 
-    case ACTION.SET_ROUTE: {
-      return { ...state, mainRoute: action.charId }
+    // ── 戰鬥行動日誌更新 ─────────────────────────────────────────
+    case ACTION.COMBAT_APPLY_LOG: {
+      return {
+        ...state,
+        // heroineUpdate 用於同步戰鬥中的 HP/SP/DES/裝備變動
+        heroine: action.heroineUpdate
+          ? { ...state.heroine, ...action.heroineUpdate }
+          : state.heroine,
+        combat: {
+          ...state.combat,
+          ...action.combatUpdate,
+          log: [...state.combat.log, ...(action.combatUpdate.log ?? [])],
+        },
+      }
     }
 
+    // ── 打開召喚面板 ─────────────────────────────────────────────
+    case ACTION.OPEN_DEMON_SUMMON:
+      return { ...state, phase: 'demon_summon' }
+
+    // ── 召喚惡魔（行動效果由 App 計算後 dispatch COMBAT_APPLY_LOG） ──
+    case ACTION.SUMMON_DEMON: {
+      const { demonId } = action
+      const demon = state.demons[demonId]
+      return {
+        ...state,
+        phase: 'combat',
+        combat: {
+          ...state.combat,
+          summonedThisBattle: [...state.combat.summonedThisBattle, demonId],
+        },
+        demons: {
+          ...state.demons,
+          [demonId]: {
+            ...demon,
+            summon_count: (demon.summon_count ?? 0) + 1,
+            demon_axis: Math.min(100, (demon.demon_axis ?? 0) + 3),
+          },
+        },
+      }
+    }
+
+    // ── 不召喚 ───────────────────────────────────────────────────
+    case ACTION.SKIP_SUMMON:
+      return {
+        ...state,
+        phase: 'combat',
+        heroine: {
+          ...state.heroine,
+          independence: Math.min(100, (state.heroine.independence ?? 30) + 3),
+        },
+      }
+
+    // ── 戰鬥結束 ─────────────────────────────────────────────────
+    case ACTION.END_COMBAT: {
+      const { result } = action   // 'victory' | 'defeat' | 'escape'
+      let newHeroine = { ...state.heroine }
+
+      if (result === 'defeat') {
+        newHeroine.DES = Math.min(200, newHeroine.DES + 30)
+      }
+
+      return {
+        ...state,
+        phase: 'combat_end',
+        heroine: newHeroine,
+        combat: {
+          ...state.combat,
+          result,
+        },
+      }
+    }
+
+    // ── 儲存 AI 戰鬥敘事 ────────────────────────────────────────
+    case ACTION.SET_COMBAT_NARRATIVE:
+      return {
+        ...state,
+        combat: { ...state.combat, pendingNarrative: action.narrative },
+      }
+
+    // ── 惡魔戰後對話 ─────────────────────────────────────────────
+    case ACTION.START_DEMON_DIALOGUE:
+      return { ...state, phase: 'demon_dialogue' }
+
+    case ACTION.END_DEMON_DIALOGUE:
+      return { ...state, phase: 'dialogue', _pendingNextScene: action.nextScene ?? null }
+
+    // ── 技能獎勵 ─────────────────────────────────────────────────
+    case ACTION.SHOW_SKILL_REWARD:
+      return { ...state, phase: 'skill_reward', _skillCandidates: action.candidates }
+
+    case ACTION.PICK_SKILL: {
+      const { skillId } = action
+      const active = state.skills.active
+      const inventory = state.skills.inventory
+
+      let newActive = [...active]
+      let newInventory = [...inventory]
+
+      // 優先放入 active 槽（未滿 4 個）
+      if (newActive.length < 4) {
+        newActive.push(skillId)
+      } else if (newInventory.length < 12) {
+        newInventory.push(skillId)
+      }
+      // 若都滿了，不取得（由上層 UI 強制要求丟棄後再呼叫）
+
+      return {
+        ...state,
+        phase: state._pendingNextScene ? 'dialogue' : 'dialogue',
+        skills: { active: newActive, inventory: newInventory },
+        _skillCandidates: null,
+      }
+    }
+
+    case ACTION.SKIP_SKILL_REWARD:
+      return { ...state, phase: 'dialogue', _skillCandidates: null }
+
+    // ── 技能槽管理（替換整個 skills 物件）────────────────────────
+    case ACTION.SET_SKILL_SLOTS:
+      return { ...state, skills: action.skills }
+
+    // ── 結局 ─────────────────────────────────────────────────────
     case ACTION.TRIGGER_ENDING: {
       const ending = action.ending ?? resolveEnding(state, state.mainRoute)
       return { ...state, phase: 'ending', ending }
     }
 
-    case ACTION.OPEN_SAVE_LOAD: {
+    // ── 存讀檔 ───────────────────────────────────────────────────
+    case ACTION.OPEN_SAVE_LOAD:
       return { ...state, _prevPhase: state.phase, phase: 'save_load' }
-    }
 
-    case ACTION.CLOSE_SAVE_LOAD: {
-      return { ...state, phase: state._prevPhase ?? 'dialogue', _prevPhase: undefined }
-    }
+    case ACTION.CLOSE_SAVE_LOAD:
+      return { ...state, phase: state._prevPhase ?? 'dialogue', _prevPhase: null }
 
-    case ACTION.LOAD_SAVE: {
+    case ACTION.LOAD_SAVE:
       return { ...action.savedState, phase: 'dialogue' }
-    }
 
-    case ACTION.RETURN_TO_TITLE: {
+    // ── 回主選單 ─────────────────────────────────────────────────
+    case ACTION.RETURN_TO_TITLE:
       return { ...INITIAL_STATE }
-    }
 
     default:
       return state

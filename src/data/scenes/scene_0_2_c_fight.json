@@ -1,0 +1,25 @@
+{
+  "sceneId": "0-2-c-fight",
+  "type": "narrative",
+  "background": "burning_town_drop",
+  "nextScene": "0-3",
+  "chapter": 0,
+  "dialogues": [
+    {
+      "speaker": "narrator",
+      "text": "妳從廢墟高處縱身躍下，直接攔截在魔物與下一個目標之間。"
+    },
+    {
+      "speaker": "narrator",
+      "text": "落地的衝擊震得妳雙膝發麻，但妳站穩了。"
+    },
+    {
+      "speaker": "narrator",
+      "text": "魔物停下了。牠看著妳——這個突然出現、擋在牠面前的人類。"
+    },
+    {
+      "speaker": "heroine",
+      "text": "（我看清楚妳了。）"
+    }
+  ]
+}

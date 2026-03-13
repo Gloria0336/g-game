@@ -1,0 +1,37 @@
+{
+  "sceneId": "0-2-c-flee",
+  "type": "narrative",
+  "background": "burning_town_rubble",
+  "nextScene": "0-3",
+  "chapter": 0,
+  "dialogues": [
+    {
+      "speaker": "narrator",
+      "text": "妳轉身，試圖沿著廢墟的間隙找一條退路。"
+    },
+    {
+      "speaker": "narrator",
+      "text": "腳步踩在碎石上，聲音比妳預期的大得多。"
+    },
+    {
+      "speaker": "narrator",
+      "text": "魔物的頭轉了過來。"
+    },
+    {
+      "speaker": "narrator",
+      "text": "在妳意識到之前，牠已經從後方撞上了妳——不是爪子，是整個身體。衝擊讓妳重重地滾落在地，腳踝扭到了尖銳的磚角。"
+    },
+    {
+      "speaker": "heroine",
+      "text": "（——牠是在追蹤氣味，不是聲音。）"
+    },
+    {
+      "speaker": "narrator",
+      "text": "從一開始，就逃不了。"
+    },
+    {
+      "speaker": "narrator",
+      "text": "妳咬牙撐起身體，握緊鐵劍。已經沒有其他選擇了。"
+    }
+  ]
+}

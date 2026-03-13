@@ -1,0 +1,45 @@
+{
+  "sceneId": "0-1",
+  "type": "narrative",
+  "background": "burning_town",
+  "nextScene": "0-2",
+  "chapter": 0,
+  "dialogues": [
+    {
+      "speaker": "narrator",
+      "text": "烽火。遮天蔽日的烽火。"
+    },
+    {
+      "speaker": "narrator",
+      "text": "妳在濃煙與灰燼中睜開了眼睛。頭痛欲裂，手掌沾滿了焦炭，呼吸每一口都是灼燒的氣息。"
+    },
+    {
+      "speaker": "heroine",
+      "text": "……這裡是哪？我是……誰？"
+    },
+    {
+      "speaker": "narrator",
+      "text": "記憶是空白的。但妳的身體卻在本能地撐起，膝蓋頂著碎裂的磚石，站了起來。"
+    },
+    {
+      "speaker": "narrator",
+      "text": "在妳身旁，插著一把佈滿缺口的鐵劍。刀身上有血跡——不知道是誰的。"
+    },
+    {
+      "speaker": "narrator",
+      "text": "遠處傳來令人毛骨悚然的嘶吼聲。火光在黑煙中搖曳，映出一個巨大而扭曲的影子，正在一棟燃燒的建築旁徘徊。"
+    },
+    {
+      "speaker": "heroine",
+      "text": "（那是……魔物？）"
+    },
+    {
+      "speaker": "narrator",
+      "text": "妳不知道這個詞從何而來。但妳知道——牠聞到了妳的氣息，那對渾濁的眼睛，正緩緩轉向妳的方向。"
+    },
+    {
+      "speaker": "narrator",
+      "text": "妳的手握緊了那把鐵劍的劍柄。"
+    }
+  ]
+}

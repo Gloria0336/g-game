@@ -1,22 +1,7 @@
 {
   "characters": [
-    {
-      "id": "char_a",
-      "name": "明澤律",
-      "archetype": "溫柔陷阱",
-      "flags": ["char_a_jealousy_revealed", "char_a_control_exposed"]
-    },
-    {
-      "id": "char_b",
-      "name": "御堂颯",
-      "archetype": "直球挑釁",
-      "flags": ["char_b_kindness_found", "char_b_confession_triggered"]
-    },
-    {
-      "id": "char_c",
-      "name": "夜科玄",
-      "archetype": "神秘引力",
-      "flags": ["char_c_past_revealed", "char_c_wall_broken"]
-    }
+    { "id": "char_a", "name": "瑠夜" },
+    { "id": "char_b", "name": "颯牙" },
+    { "id": "char_c", "name": "玄冥" }
   ]
 }
