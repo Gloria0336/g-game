@@ -35,6 +35,8 @@ export default function DemonSummonModal({
   summonedThisBattle = [],
   onSummon,
   onSkip,
+  isActiveSummon = false,
+  onActiveSummon,
 }) {
   return (
     <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
@@ -42,9 +44,17 @@ export default function DemonSummonModal({
 
         {/* 標題 */}
         <div className="px-6 py-4 border-b border-game-border text-center">
-          <p className="text-game-accent text-xs tracking-widest mb-1">CONTRACT</p>
-          <h2 className="text-white text-lg font-bold">召喚惡魔</h2>
-          <p className="text-gray-400 text-xs mt-1">危機已至——契約書在颤動</p>
+          <p className={`text-xs tracking-widest mb-1 ${isActiveSummon ? 'text-violet-400' : 'text-game-accent'}`}>
+            {isActiveSummon ? 'ACTIVE SUMMON' : 'CONTRACT'}
+          </p>
+          <h2 className="text-white text-lg font-bold">
+            {isActiveSummon ? '主動召喚' : '召喚惡魔'}
+          </h2>
+          <p className="text-gray-400 text-xs mt-1">
+            {isActiveSummon
+              ? '消耗全部靈力（SP）強行呼喚——契約軸需達 15 以上'
+              : '危機已至——契約書在颤動'}
+          </p>
         </div>
 
         {/* 惡魔選項 */}
@@ -55,13 +65,22 @@ export default function DemonSummonModal({
             const style  = DEMON_STYLE[demonId]
             const demon  = demons[demonId] ?? {}
 
-            const isDisabled = status !== 'available'
-            const isBetray   = status === 'betrayed'
+            const axisInsufficient = isActiveSummon && (demon.demon_axis ?? 0) < 15
+            const isDisabled = isActiveSummon
+              ? status === 'hostile'
+              : status !== 'available'
+            const isBetray = status === 'betrayed'
+
+            const handleClick = () => {
+              if (isDisabled) return
+              if (isActiveSummon) onActiveSummon?.(demonId)
+              else onSummon(demonId)
+            }
 
             return (
               <button
                 key={demonId}
-                onClick={() => !isDisabled && onSummon(demonId)}
+                onClick={handleClick}
                 disabled={isDisabled}
                 className={`
                   relative flex flex-col p-3 rounded-lg border text-left transition-all duration-200 shadow
@@ -88,6 +107,11 @@ export default function DemonSummonModal({
                 <div className="mt-2 pt-2 border-t border-gray-700/50 grid grid-cols-2 gap-x-2 text-xs text-gray-500">
                   <span>信賴 {demon.trust ?? 0}</span>
                   <span>好感 {demon.affection ?? 0}</span>
+                  {isActiveSummon && (
+                    <span className={`col-span-2 mt-0.5 ${axisInsufficient ? 'text-red-500' : 'text-violet-400'}`}>
+                      契約軸 {demon.demon_axis ?? 0}{axisInsufficient ? ' ⚠ 不足' : ' ✓'}
+                    </span>
+                  )}
                 </div>
 
                 {/* 狀態標記 */}

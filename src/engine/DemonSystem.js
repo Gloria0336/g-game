@@ -129,6 +129,36 @@ export function executeDemonSummonEffect(demonId, heroine, combat) {
   return { newHeroine, combatUpdate: { ...combatUpdate, log: logs }, logs }
 }
 
+// ─── 主動召喚效果 ─────────────────────────────────────────────
+
+/**
+ * 主動召喚：消耗全部 SP，demon_axis < 15 時召喚失敗
+ * 成功時套用一般戰鬥效果，heroine_axis +10 由 App 透過 UPDATE_DEMON_AXIS 處理
+ */
+export function executeActiveSummonEffect(demonId, heroine, combat, demons) {
+  const spConsumed = heroine.SP
+  const newHeroine = { ...heroine, SP: 0 }
+  const logs = [`消耗全部靈力（${spConsumed} SP）以嘗試主動召喚……`]
+
+  const demonAxis = demons[demonId]?.demon_axis ?? 0
+  if (demonAxis < 15) {
+    logs.push(
+      `【召喚失敗】${DEMON_DATA[demonId]?.name ?? demonId} 的契約連結尚不足夠（契約軸 ${demonAxis} < 15）`
+    )
+    return { success: false, newHeroine, combatUpdate: { log: logs } }
+  }
+
+  const effect = executeDemonSummonEffect(demonId, newHeroine, combat)
+  return {
+    success: true,
+    newHeroine: effect.newHeroine,
+    combatUpdate: {
+      ...effect.combatUpdate,
+      log: [...logs, ...effect.logs],
+    },
+  }
+}
+
 // ─── 召喚後情感更新 ───────────────────────────────────────────
 
 /**

@@ -103,9 +103,11 @@ export const ACTION = {
   COMBAT_ACTION:      'COMBAT_ACTION',       // 玩家行動（普通攻擊 / 使用技能）
   COMBAT_ENEMY_TURN:  'COMBAT_ENEMY_TURN',   // 敵人回合結算
   COMBAT_APPLY_LOG:   'COMBAT_APPLY_LOG',    // 補充戰鬥訊息
-  OPEN_DEMON_SUMMON:  'OPEN_DEMON_SUMMON',   // 打開召喚面板
-  SUMMON_DEMON:       'SUMMON_DEMON',        // 召喚指定惡魔
-  SKIP_SUMMON:        'SKIP_SUMMON',         // 選擇不召喚
+  OPEN_DEMON_SUMMON:   'OPEN_DEMON_SUMMON',   // 打開危機召喚面板
+  OPEN_ACTIVE_SUMMON:  'OPEN_ACTIVE_SUMMON',  // 打開主動召喚面板（消耗全部 SP）
+  SUMMON_DEMON:        'SUMMON_DEMON',        // 召喚指定惡魔
+  SKIP_SUMMON:         'SKIP_SUMMON',         // 選擇不召喚
+  UPDATE_DEMON_AXIS:   'UPDATE_DEMON_AXIS',   // 更新惡魔 heroine_axis
   END_COMBAT:         'END_COMBAT',          // 戰鬥結束（victory / defeat / escape）
   SET_COMBAT_NARRATIVE: 'SET_COMBAT_NARRATIVE', // 儲存 AI 戰鬥敘事
 
@@ -280,7 +282,18 @@ export function gameReducer(state, action) {
 
     // ── 打開召喚面板 ─────────────────────────────────────────────
     case ACTION.OPEN_DEMON_SUMMON:
-      return { ...state, phase: 'demon_summon' }
+      return {
+        ...state,
+        phase: 'demon_summon',
+        combat: { ...state.combat, isActiveSummon: false },
+      }
+
+    case ACTION.OPEN_ACTIVE_SUMMON:
+      return {
+        ...state,
+        phase: 'demon_summon',
+        combat: { ...state.combat, isActiveSummon: true },
+      }
 
     // ── 召喚惡魔（行動效果由 App 計算後 dispatch COMBAT_APPLY_LOG） ──
     case ACTION.SUMMON_DEMON: {
@@ -299,6 +312,23 @@ export function gameReducer(state, action) {
             ...demon,
             summon_count: (demon.summon_count ?? 0) + 1,
             demon_axis: Math.min(100, (demon.demon_axis ?? 0) + 3),
+          },
+        },
+      }
+    }
+
+    // ── 主動召喚：更新 heroine_axis ──────────────────────────────
+    case ACTION.UPDATE_DEMON_AXIS: {
+      const { demonId, heroineAxisDelta } = action
+      const d = state.demons[demonId]
+      if (!d) return state
+      return {
+        ...state,
+        demons: {
+          ...state.demons,
+          [demonId]: {
+            ...d,
+            heroine_axis: Math.min(100, Math.max(-100, (d.heroine_axis ?? 0) + heroineAxisDelta)),
           },
         },
       }

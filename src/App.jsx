@@ -14,6 +14,7 @@ import {
 } from './engine/CombatEngine.js'
 import {
   executeDemonSummonEffect,
+  executeActiveSummonEffect,
   applyPostSummonAffection,
 } from './engine/DemonSystem.js'
 import { getSkillData } from './engine/SkillDB.js'
@@ -402,6 +403,41 @@ export default function App() {
     dispatch({ type: ACTION.OPEN_DEMON_SUMMON })
   }, [isPlayerTurn, isProcessing])
 
+  const handleOpenActiveSummon = useCallback(() => {
+    if (!isPlayerTurn || isProcessing) return
+    dispatch({ type: ACTION.OPEN_ACTIVE_SUMMON })
+  }, [isPlayerTurn, isProcessing])
+
+  const handleActiveSummon = useCallback((demonId) => {
+    const cur = stateRef.current
+    const { heroine, combat, demons } = cur
+
+    const result = executeActiveSummonEffect(demonId, heroine, combat, demons)
+
+    // 套用 SP 消耗與戰鬥日誌
+    dispatch({
+      type: ACTION.COMBAT_APPLY_LOG,
+      combatUpdate: result.combatUpdate,
+      heroineUpdate: { SP: result.newHeroine.SP },
+    })
+
+    if (result.success) {
+      // 召喚成功：記錄本場、heroine_axis +10、解除亂碼
+      dispatch({ type: ACTION.SUMMON_DEMON, demonId })
+      dispatch({ type: ACTION.UPDATE_DEMON_AXIS, demonId, heroineAxisDelta: 10 })
+      const newDemons = applyPostSummonAffection(demons, demonId)
+      stateRef.current = { ...stateRef.current, demons: newDemons }
+      setRevealedDemons(prev => new Set([...prev, demonId]))
+      setIsPlayerTurn(false)
+      setTimeout(() => handleEnemyTurn(), 800)
+    } else {
+      // 召喚失敗：SP 已消耗，直接換敵人回合
+      dispatch({ type: ACTION.SKIP_SUMMON })
+      setIsPlayerTurn(false)
+      setTimeout(() => handleEnemyTurn(), 800)
+    }
+  }, [handleEnemyTurn])
+
   const handleSummon = useCallback((demonId) => {
     const cur = stateRef.current
     const { heroine, combat, demons } = cur
@@ -650,6 +686,7 @@ export default function App() {
             onUseSkill={handleUseSkill}
             onDefend={handleDefend}
             onOpenSummon={handleOpenSummon}
+            onOpenActiveSummon={handleOpenActiveSummon}
             onFlee={handleFlee}
             isPlayerTurn={isPlayerTurn && state.phase === 'combat'}
             isProcessing={isProcessing}
@@ -660,7 +697,9 @@ export default function App() {
             <DemonSummonModal
               demons={state.demons}
               summonedThisBattle={state.combat.summonedThisBattle}
+              isActiveSummon={state.combat.isActiveSummon ?? false}
               onSummon={handleSummon}
+              onActiveSummon={handleActiveSummon}
               onSkip={handleSkipSummon}
             />
           )}
