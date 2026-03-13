@@ -2,14 +2,12 @@
  * DialogueBox — 對話框 UI（含打字機效果）
  */
 import { useState, useEffect, useRef } from 'react'
-import charactersData from '../data/characters.json'
+import { DEMON_DATA } from '../engine/DemonSystem.js'
 
 const SPEAKER_NAMES = {
   narrator: null,
   heroine: '妳',
-  ...Object.fromEntries(
-    (charactersData?.characters ?? []).map((c) => [c.id, c.name])
-  ),
+  ...Object.fromEntries(Object.values(DEMON_DATA).map((c) => [c.id, c.name])),
 }
 
 export default function DialogueBox({ dialogue, onAdvance, isChoiceNext = false }) {

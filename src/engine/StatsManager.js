@@ -7,44 +7,44 @@
 
 export const INITIAL_HEROINE = {
   // 情感數值
-  heart_guard:   50,
-  heart_flutter: 20,
-  insight:       30,
-  desire:         0,
-  independence:  30,
+  heart_guard: 50,
+  heart_flutter: 0,
+  insight: 30,
+  desire: 0,
+  independence: 30,
 
   // 戰鬥數值
-  HP:    100,
+  HP: 100,
   maxHP: 100,
-  SP:     80,
-  maxSP:  80,
-  ATK:    18,
-  AGI:     8,
-  WIL:     6,
-  DES:     0,
+  SP: 80,
+  maxSP: 80,
+  ATK: 18,
+  AGI: 8,
+  WIL: 6,
+  DES: 0,
 
   // 覺醒類型
   awakening: null,
 
   // 裝備
   equipment: {
-    upper: { id: 'covenant_coat',  durability: 75 },
+    upper: { id: 'covenant_coat', durability: 75 },
     lower: { id: 'covenant_skirt', durability: 75 },
   },
 
   // 遮掩劑狀態（道具機制）
   shroud_active: false,
-  shroud_turns:  0,
+  shroud_turns: 0,
 }
 
 export const INITIAL_DEMON = {
-  affection:       0,
-  trust:           0,
-  lust:            0,
-  heroine_axis:    0,
-  demon_axis:      0,
+  affection: 0,
+  trust: 0,
+  lust: 0,
+  heroine_axis: 0,
+  demon_axis: 0,
   contract_status: 'active',
-  summon_count:    0,
+  summon_count: 0,
 }
 
 export const INITIAL_DEMONS = {
@@ -56,12 +56,12 @@ export const INITIAL_DEMONS = {
 // ─── 覺醒加成規格（V3.0 六種覺醒）────────────────────────────
 
 const AWAKENING_BONUS = {
-  slayer:     { ATK: +8,  AGI: +2,              skill: 'T1_03' }, // 本能突刺
-  guardian:   { maxHP: +30, WIL: +2,            skill: 'T1_06' }, // 護盾展開
-  windwalker: { AGI: +6,  insight: +10,         skill: 'T1_05' }, // 快速連打
-  seeker:     { insight: +25, ATK: +2,          skill: 'T1_01' }, // 弱點標記
-  apothecary: { maxSP: +40, WIL: +4,            skill: 'T1_09' }, // 靈力回充
-  balanced:   { ATK: +2, AGI: +2, WIL: +2,     skill: 'T1_04' }, // 契約脈衝
+  slayer: { ATK: +8, AGI: +2, skill: 'T1_03' }, // 本能突刺
+  guardian: { maxHP: +30, WIL: +2, skill: 'T1_06' }, // 護盾展開
+  windwalker: { AGI: +6, insight: +10, skill: 'T1_05' }, // 快速連打
+  seeker: { insight: +25, ATK: +2, skill: 'T1_01' }, // 弱點標記
+  apothecary: { maxSP: +40, WIL: +4, skill: 'T1_09' }, // 靈力回充
+  balanced: { ATK: +2, AGI: +2, WIL: +2, skill: 'T1_04' }, // 契約脈衝
 }
 
 // ─── 邊界函式 ─────────────────────────────────────────────────
@@ -268,7 +268,7 @@ export function checkCondition(state, condition) {
 
 export function calcStatsBonus(state, bonusStats, demonId = null) {
   const HEROINE_STAT_KEYS = ['heart_guard', 'heart_flutter', 'insight', 'desire', 'independence', 'WIL', 'ATK', 'AGI']
-  const DEMON_STAT_KEYS   = ['affection', 'trust', 'lust', 'heroine_axis', 'demon_axis']
+  const DEMON_STAT_KEYS = ['affection', 'trust', 'lust', 'heroine_axis', 'demon_axis']
 
   let total = 0
   for (const statKey of bonusStats) {
@@ -290,7 +290,7 @@ export function calcStatsBonus(state, bonusStats, demonId = null) {
  */
 export function spHitBonus(heroine) {
   const ratio = heroine.SP / heroine.maxSP
-  if (ratio > 0.6)  return +5
+  if (ratio > 0.6) return +5
   if (ratio >= 0.3) return 0
   if (heroine.SP === 0) return -25
   return -10
