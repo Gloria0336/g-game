@@ -31,6 +31,10 @@ export const INITIAL_HEROINE = {
     upper: { id: 'covenant_coat',  durability: 75 },
     lower: { id: 'covenant_skirt', durability: 75 },
   },
+
+  // 遮掩劑狀態（道具機制）
+  shroud_active: false,
+  shroud_turns:  0,
 }
 
 export const INITIAL_DEMON = {

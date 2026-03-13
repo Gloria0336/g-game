@@ -3,6 +3,7 @@
  */
 import { checkCondition, calcStatsBonus, applyEffects } from './StatsManager.js'
 import { performDiceCheck } from './DiceSystem.js'
+import { getPrimaryDemonId } from './DemonSystem.js'
 
 /**
  * 過濾可用選項（依條件判定）
@@ -41,7 +42,27 @@ export function executeChoice(choice, state, charId = null) {
   }
 
   // 一般選項
-  const newState = applyEffects(state, choice.effects ?? null)
+  let newState = applyEffects(state, choice.effects ?? null)
+
+  // 靈魂香氣：正向選項（殘酷/極端理性）→ 主選惡魔 +4；負向（善良/平庸）→ −3
+  if (choice.soul_aroma) {
+    const primaryId = getPrimaryDemonId(newState.demons)
+    if (primaryId) {
+      const delta = choice.soul_aroma === 'positive' ? 4 : -3
+      const cur   = newState.demons[primaryId].demon_axis ?? 0
+      newState = {
+        ...newState,
+        demons: {
+          ...newState.demons,
+          [primaryId]: {
+            ...newState.demons[primaryId],
+            demon_axis: Math.min(100, Math.max(0, cur + delta)),
+          },
+        },
+      }
+    }
+  }
+
   return {
     nextScene: choice.next,
     newState,

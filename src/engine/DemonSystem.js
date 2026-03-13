@@ -246,3 +246,42 @@ export function judgePathDirection(demonId, demons) {
 
   return 'active'
 }
+
+// ─── 主選惡魔輔助函式 ─────────────────────────────────────────
+
+/**
+ * 回傳 demon_axis 最高的惡魔 ID（平手時取字典序最小者）
+ * @param {object} demons  state.demons
+ * @returns {string|null}
+ */
+export function getPrimaryDemonId(demons) {
+  let bestId   = null
+  let bestAxis = -1
+  for (const id of Object.keys(demons).sort()) {
+    const axis = demons[id]?.demon_axis ?? 0
+    if (axis > bestAxis) {
+      bestAxis = axis
+      bestId   = id
+    }
+  }
+  return bestId
+}
+
+// ─── 道具資料 ──────────────────────────────────────────────────
+
+export const ITEM_DATA = {
+  shroud_balm: {
+    id:          'shroud_balm',
+    name:        '遮掩劑',
+    description: '施加後 3 次場景轉換內，惡魔注意度被動上升無效。',
+    type:        'consumable',
+    effect:      'shroud',
+  },
+  bait_bell: {
+    id:          'bait_bell',
+    name:        '挑釁鈴鐺',
+    description: '刻意散播氣息，主選惡魔注意度大幅上升。',
+    type:        'consumable',
+    effect:      'bait',
+  },
+}

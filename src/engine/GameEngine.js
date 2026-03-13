@@ -9,6 +9,7 @@
 import { INITIAL_HEROINE, INITIAL_DEMONS, applyEffects, applyAwakening } from './StatsManager.js'
 import { resolveChoices, executeChoice } from './ChoiceResolver.js'
 import { resolveEnding } from './EndingResolver.js'
+import { getPrimaryDemonId } from './DemonSystem.js'
 
 // ─── Phase 常數 ────────────────────────────────────────────────
 
@@ -125,6 +126,12 @@ export const ACTION = {
   OPEN_SAVE_LOAD:     'OPEN_SAVE_LOAD',
   CLOSE_SAVE_LOAD:    'CLOSE_SAVE_LOAD',
   LOAD_SAVE:          'LOAD_SAVE',
+
+  // demon_axis 複雜化機制（REC 1/2/4/5）
+  PURIFICATION:   'PURIFICATION',   // 聖域淨化：所有惡魔 demon_axis −10
+  RELIC_INTERACT: 'RELIC_INTERACT', // 遺物調查：指定惡魔 demon_axis +8
+  REST:           'REST',           // 休息：DES −20、HP +10、主選惡魔 demon_axis −5
+  USE_ITEM:       'USE_ITEM',       // 使用道具（shroud_balm / bait_bell）
 }
 
 // ─── Reducer ──────────────────────────────────────────────────
@@ -139,7 +146,7 @@ export function gameReducer(state, action) {
     // ── 載入場景資料 ────────────────────────────────────────────
     case ACTION.LOAD_SCENE: {
       const { sceneData } = action
-      const baseState = {
+      let baseState = {
         ...state,
         sceneData,
         currentScene: sceneData.sceneId,
@@ -148,6 +155,35 @@ export function gameReducer(state, action) {
         diceResult: null,
         _pendingNextScene: null,
       }
+
+      // 遮掩劑計數遞減（每次場景轉換）
+      if (baseState.heroine.shroud_turns > 0) {
+        const newTurns = baseState.heroine.shroud_turns - 1
+        baseState = {
+          ...baseState,
+          heroine: {
+            ...baseState.heroine,
+            shroud_turns:  newTurns,
+            shroud_active: newTurns > 0,
+          },
+        }
+      }
+
+      // DES > 100 被動聯動：非戰鬥轉場且無遮掩效果時，主選惡魔 demon_axis +2
+      if (sceneData.type !== 'combat' && baseState.heroine.DES > 100 && !baseState.heroine.shroud_active) {
+        const primaryId = getPrimaryDemonId(baseState.demons)
+        if (primaryId) {
+          const cur = baseState.demons[primaryId].demon_axis ?? 0
+          baseState = {
+            ...baseState,
+            demons: {
+              ...baseState.demons,
+              [primaryId]: { ...baseState.demons[primaryId], demon_axis: Math.min(100, cur + 2) },
+            },
+          }
+        }
+      }
+
       // 若為戰鬥場景，直接進入 combat phase（由 App 決策）
       if (sceneData.type === 'combat') {
         return { ...baseState, phase: 'combat' }
@@ -429,6 +465,69 @@ export function gameReducer(state, action) {
 
     case ACTION.LOAD_SAVE:
       return { ...action.savedState, phase: 'dialogue' }
+
+    // ── 聖域淨化：所有惡魔 demon_axis −10 ──────────────────────────
+    case ACTION.PURIFICATION: {
+      const demons = {}
+      for (const id of Object.keys(state.demons)) {
+        demons[id] = {
+          ...state.demons[id],
+          demon_axis: Math.max(0, (state.demons[id].demon_axis ?? 0) - 10),
+        }
+      }
+      return { ...state, demons }
+    }
+
+    // ── 遺物調查：指定惡魔 demon_axis +8 ──────────────────────────
+    case ACTION.RELIC_INTERACT: {
+      const { demonId } = action
+      const demon = state.demons[demonId]
+      if (!demon) return state
+      return {
+        ...state,
+        demons: {
+          ...state.demons,
+          [demonId]: { ...demon, demon_axis: Math.min(100, (demon.demon_axis ?? 0) + 8) },
+        },
+      }
+    }
+
+    // ── 休息：DES −20、HP +10、主選惡魔 demon_axis −5 ────────────
+    case ACTION.REST: {
+      const heroine = {
+        ...state.heroine,
+        DES: Math.max(0, state.heroine.DES - 20),
+        HP:  Math.min(state.heroine.maxHP, state.heroine.HP + 10),
+      }
+      const primaryId = getPrimaryDemonId(state.demons)
+      const demons = { ...state.demons }
+      if (primaryId) {
+        const cur = demons[primaryId].demon_axis ?? 0
+        demons[primaryId] = { ...demons[primaryId], demon_axis: Math.max(0, cur - 5) }
+      }
+      return { ...state, heroine, demons }
+    }
+
+    // ── 使用道具（shroud_balm / bait_bell）─────────────────────────
+    case ACTION.USE_ITEM: {
+      const { itemId } = action
+      const inv = state.skills.inventory.filter(i => i !== itemId && i?.id !== itemId)
+      let heroine = { ...state.heroine }
+      let demons  = { ...state.demons }
+
+      if (itemId === 'shroud_balm') {
+        heroine.shroud_active = true
+        heroine.shroud_turns  = 3
+      } else if (itemId === 'bait_bell') {
+        const primaryId = getPrimaryDemonId(demons)
+        if (primaryId) {
+          const cur = demons[primaryId].demon_axis ?? 0
+          demons[primaryId] = { ...demons[primaryId], demon_axis: Math.min(100, cur + 15) }
+        }
+      }
+
+      return { ...state, heroine, demons, skills: { ...state.skills, inventory: inv } }
+    }
 
     // ── 回主選單 ─────────────────────────────────────────────────
     case ACTION.RETURN_TO_TITLE:
