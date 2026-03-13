@@ -549,3 +549,25 @@ export function canTriggerSummon(heroine) {
     heroine.DES >= 80
   )
 }
+
+// ─── 回合佇列建立 ─────────────────────────────────────────────
+
+/**
+ * 為新回合建立行動順序佇列（AGI×10 + randInt(0,19)，整數確保同分可觸發）
+ * 同分時：玩家 > 惡魔 > 敵人
+ * @returns {string[]}  有序的行動者 ID 陣列，例如 ['heroine', 'demon_a', 'enemy']
+ */
+export function buildTurnQueue(heroine, activeDemons, combat) {
+  const roll = () => Math.floor(Math.random() * 20)
+
+  const units = [
+    { id: 'heroine', score: (heroine.AGI ?? 5) * 10 + roll(), priority: 0 },
+    ...Object.entries(activeDemons)
+      .filter(([, unit]) => unit.currentHP > 0)
+      .map(([id, unit]) => ({ id, score: (unit.AGI ?? 5) * 10 + roll(), priority: 1 })),
+    { id: 'enemy', score: (combat.enemyAGI ?? 5) * 10 + roll(), priority: 2 },
+  ]
+
+  units.sort((a, b) => b.score - a.score || a.priority - b.priority)
+  return units.map(u => u.id)
+}

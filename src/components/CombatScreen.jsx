@@ -92,14 +92,14 @@ export default function CombatScreen({
   onUseSkill,
   onDefend,
   onOpenSummon,
-  onOpenActiveSummon,
   onFlee,
   isPlayerTurn,
   isProcessing,
   allowSummon = true,
 }) {
   const { enemyId, enemyName, enemyHP, enemyMaxHP, enemyStatuses = [], heroineStatuses = [], log = [] } = combat
-  const canSummon = allowSummon && canTriggerSummon(heroine) && combat.summonedThisBattle?.length < 3
+  const canSummon = allowSummon && combat.summonedThisBattle?.length === 0
+  const isPassiveSummon = canTriggerSummon(heroine)
 
   const activeSkills = skills?.active ?? []
   const equip = heroine.equipment ?? {}
@@ -226,28 +226,18 @@ export default function CombatScreen({
             <button
               onClick={onOpenSummon}
               disabled={disabled}
-              className={`flex-1 py-2.5 rounded text-sm font-semibold border transition-all ${
+              className={`flex-1 py-2.5 rounded text-sm font-semibold border transition-all leading-tight ${
                 disabled
                   ? 'border-gray-700 text-gray-600 cursor-not-allowed'
-                  : 'border-purple-500 text-purple-300 hover:bg-purple-500/15 active:scale-95 animate-pulse'
+                  : isPassiveSummon
+                    ? 'border-purple-500 text-purple-300 hover:bg-purple-500/15 active:scale-95 animate-pulse'
+                    : 'border-violet-700 text-violet-400 hover:bg-violet-700/15 active:scale-95'
               }`}
             >
-              ✦ 召喚惡魔
-            </button>
-          )}
-
-          {allowSummon && (
-            <button
-              onClick={onOpenActiveSummon}
-              disabled={disabled}
-              className={`flex-1 py-2.5 rounded text-xs font-semibold border transition-all leading-tight ${
-                disabled
-                  ? 'border-gray-700 text-gray-600 cursor-not-allowed'
-                  : 'border-violet-700 text-violet-400 hover:bg-violet-700/15 active:scale-95'
-              }`}
-            >
-              <div>◈ 主動召喚</div>
-              <div className="text-gray-600 font-normal" style={{ fontSize: '0.6rem' }}>耗盡 SP</div>
+              <div>{isPassiveSummon ? '✦ 召喚惡魔' : '◈ 召喚惡魔'}</div>
+              {!isPassiveSummon && (
+                <div className="text-gray-500 font-normal" style={{ fontSize: '0.6rem' }}>耗盡 SP</div>
+              )}
             </button>
           )}
 

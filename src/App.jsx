@@ -11,10 +11,16 @@ import {
   executeSkill,
   executeEnemyAttack,
   executeDefend,
+  canTriggerSummon,
+  buildTurnQueue,
 } from './engine/CombatEngine.js'
 import {
-  executeDemonSummonEffect,
+  DEMON_DATA,
+  createDemonUnit,
   executeActiveSummonEffect,
+  executeDemonTurn,
+  executeDemonSkill,
+  executeEnemyAttackOnDemon,
   applyPostSummonAffection,
 } from './engine/DemonSystem.js'
 import { getSkillData } from './engine/SkillDB.js'
@@ -42,20 +48,20 @@ import SkillManageScreen from './components/SkillManageScreen.jsx'
 // ── 覺醒結果面板 ─────────────────────────────────────────────
 
 const AWAKENING_LABELS = {
-  slayer:     '本能覺醒・屠戮者',
-  guardian:   '防禦覺醒・守護者',
+  slayer: '本能覺醒・屠戮者',
+  guardian: '防禦覺醒・守護者',
   windwalker: '戰術覺醒・逐風者',
-  seeker:     '洞察覺醒・尋求者',
+  seeker: '洞察覺醒・尋求者',
   apothecary: '靈性覺醒・調律者',
-  balanced:   '均衡覺醒・無名之力',
+  balanced: '均衡覺醒・無名之力',
 }
 const AWAKENING_SKILLS = {
-  slayer:     '本能突刺',
-  guardian:   '護盾展開',
+  slayer: '本能突刺',
+  guardian: '護盾展開',
   windwalker: '快速連打',
-  seeker:     '弱點標記',
+  seeker: '弱點標記',
   apothecary: '靈力回充',
-  balanced:   '契約脈衝',
+  balanced: '契約脈衝',
 }
 
 function AwakeningResultPanel({ awakeningType, onConfirm }) {
@@ -87,12 +93,11 @@ function CombatEndPanel({ result, narrative, onContinue }) {
   return (
     <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/80">
       <div className="max-w-md w-full mx-6 game-panel rounded-lg p-6 text-center">
-        <h2 className={`text-xl font-bold mb-4 ${
-          result === 'victory' ? 'text-game-accent' :
+        <h2 className={`text-xl font-bold mb-4 ${result === 'victory' ? 'text-game-accent' :
           result === 'defeat' ? 'text-red-400' : 'text-gray-400'
-        }`}>
+          }`}>
           {result === 'victory' ? '戰鬥勝利' :
-           result === 'defeat'  ? '戰鬥失敗' : '成功撤退'}
+            result === 'defeat' ? '戰鬥失敗' : '成功撤退'}
         </h2>
         {narrative && (
           <p className="text-gray-300 text-sm leading-relaxed mb-6">{narrative}</p>
@@ -118,7 +123,7 @@ export default function App() {
   const { loadScene, loading: sceneLoading } = useSceneLoader()
   const { settings: aiSettings, update: updateAISettings } = useAISettings()
 
-  const [aiStatus, setAIStatus]     = useState('idle')
+  const [aiStatus, setAIStatus] = useState('idle')
   const [aiErrorMsg, setAIErrorMsg] = useState('')
   const aiErrorTimerRef = useRef(null)
 
@@ -131,17 +136,19 @@ export default function App() {
   const [isPlayerTurn, setIsPlayerTurn] = useState(true)
 
   // 面板開關
-  const [showAISettings, setShowAISettings]   = useState(false)
-  const [showSaveLoad, setShowSaveLoad]       = useState(false)
+  const [showAISettings, setShowAISettings] = useState(false)
+  const [showSaveLoad, setShowSaveLoad] = useState(false)
   const [showSkillManage, setShowSkillManage] = useState(false)
-  const [revealedDemons, setRevealedDemons]   = useState(new Set())
+  const [revealedDemons, setRevealedDemons] = useState(new Set())
 
   // stateRef（避免 stale closure）
   const stateRef = useRef(state)
   useEffect(() => { stateRef.current = state }, [state])
 
-  // handleEnemyTurn ref（避免 goToScene TDZ 問題）
+  // 回合推進 ref（避免 goToScene TDZ 問題）
   const handleEnemyTurnRef = useRef(null)
+  const advanceToNextActorRef = useRef(null)
+  const handleDemonTurnRef = useRef(null)
 
   // AI 錯誤自動消失
   useEffect(() => {
@@ -177,13 +184,8 @@ export default function App() {
       const enemyData = getMonsterData(sceneData.enemyId)
       if (enemyData) {
         dispatch({ type: ACTION.START_COMBAT, enemyData })
-        const heroineAGI = stateRef.current.heroine.AGI + (stateRef.current.prologueBonus?.AGI ?? 0)
-        const playerFirst = heroineAGI >= enemyData.AGI
-        setIsPlayerTurn(playerFirst)
-        if (!playerFirst) {
-          setIsProcessing(true)
-          setTimeout(() => handleEnemyTurnRef.current?.(), 1200)
-        }
+        setIsProcessing(true)
+        setTimeout(() => advanceToNextActorRef.current?.(), 1200)
       }
       dispatch({ type: ACTION.LOAD_SCENE, sceneData })
       return
@@ -262,6 +264,255 @@ export default function App() {
     if (pending) await goToScene(pending)
   }, [goToScene])
 
+  // ── 回合推進（佇列式，耗盡後自動重建新回合）───────────────────
+
+  const advanceToNextActor = useCallback(() => {
+    const { heroine, combat } = stateRef.current
+    let queue = [...(combat.turnQueue ?? [])]
+
+    // 佇列耗盡 → 建立新回合
+    if (queue.length === 0) {
+      queue = buildTurnQueue(heroine, combat.activeDemons ?? {}, combat)
+      dispatch({ type: ACTION.COMBAT_APPLY_LOG, combatUpdate: { log: ['── 新回合 ──'] } })
+    }
+
+    const next = queue[0]
+    dispatch({ type: ACTION.SET_TURN_QUEUE, queue: queue.slice(1) })
+
+    if (next === 'heroine') {
+      setIsPlayerTurn(true)
+      setIsProcessing(false)
+    } else if (next === 'enemy') {
+      handleEnemyTurnRef.current?.()
+    } else {
+      handleDemonTurnRef.current?.(next)
+    }
+  }, [])
+
+  // ── 惡魔回合 ─────────────────────────────────────────────
+
+  const handleDemonTurn = useCallback((demonId) => {
+    const { combat, heroine } = stateRef.current
+    const demonUnit = combat.activeDemons?.[demonId]
+    if (!demonUnit) { advanceToNextActorRef.current?.(); return }
+
+    const result = executeDemonTurn(demonId, demonUnit, combat, heroine)
+
+    dispatch({ type: ACTION.UPDATE_ACTIVE_DEMON, demonId, demonUnit: result.newDemonUnit })
+    dispatch({
+      type: ACTION.COMBAT_APPLY_LOG,
+      combatUpdate: result.combatUpdate,
+      ...(result.heroineUpdate ? { heroineUpdate: result.heroineUpdate } : {}),
+    })
+
+    const newEnemyHP = result.combatUpdate.enemyHP ?? combat.enemyHP
+    if (newEnemyHP <= 0) {
+      setTimeout(() => { dispatch({ type: ACTION.END_COMBAT, result: 'victory' }); setIsProcessing(false) }, 600)
+      return
+    }
+    setTimeout(() => advanceToNextActorRef.current?.(), 800)
+  }, [])
+
+  // ── 戰鬥：敵人回合 ───────────────────────────────────────
+
+  const handleEnemyTurn = useCallback(() => {
+    const cur = stateRef.current
+    const { heroine, combat } = cur
+
+    // 封印狀態：跳過敵人行動 → 直接回到下一行動者
+    const sealStatus = combat.enemyStatuses?.find(s => s.type === 'seal')
+    if (sealStatus) {
+      dispatch({
+        type: ACTION.COMBAT_APPLY_LOG,
+        combatUpdate: {
+          log: ['敵人被封印，跳過行動！'],
+          enemyStatuses: combat.enemyStatuses
+            .map(s => s.type === 'seal' ? { ...s, duration: s.duration - 1 } : s)
+            .filter(s => s.duration > 0),
+        },
+      })
+      setTimeout(() => advanceToNextActorRef.current?.(), 400)
+      return
+    }
+
+    // 若惡魔在場，50% 機率改為攻擊惡魔
+    const activeDemonIds = Object.keys(combat.activeDemons ?? {})
+    if (activeDemonIds.length > 0 && Math.random() < 0.5) {
+      const demonId = activeDemonIds[0]
+      const demonUnit = combat.activeDemons[demonId]
+      const dResult = executeEnemyAttackOnDemon(demonUnit, combat)
+
+      dispatch({ type: ACTION.COMBAT_APPLY_LOG, combatUpdate: { log: dResult.logs } })
+
+      if (dResult.newDemonHP <= 0) {
+        dispatch({ type: ACTION.REMOVE_ACTIVE_DEMON, demonId })
+      } else {
+        dispatch({ type: ACTION.UPDATE_ACTIVE_DEMON, demonId, demonUnit: { ...demonUnit, currentHP: dResult.newDemonHP } })
+      }
+      setTimeout(() => advanceToNextActorRef.current?.(), 800)
+      return
+    }
+
+    // 攻擊玩家（原邏輯）
+    const result = executeEnemyAttack(heroine, combat)
+    dispatch({
+      type: ACTION.COMBAT_APPLY_LOG,
+      combatUpdate: result.combatUpdate,
+      heroineUpdate: {
+        HP: result.newHeroine.HP,
+        DES: result.newHeroine.DES,
+        desire: result.newHeroine.desire,
+        equipment: result.newHeroine.equipment,
+      },
+    })
+
+    if (result.newHeroine.HP <= 0) {
+      setTimeout(() => { dispatch({ type: ACTION.END_COMBAT, result: 'defeat' }); setIsProcessing(false) }, 600)
+      return
+    }
+    setTimeout(() => advanceToNextActorRef.current?.(), 800)
+  }, [])
+
+  // 同步 refs
+  useEffect(() => { handleEnemyTurnRef.current = handleEnemyTurn }, [handleEnemyTurn])
+  useEffect(() => { advanceToNextActorRef.current = advanceToNextActor }, [advanceToNextActor])
+  useEffect(() => { handleDemonTurnRef.current = handleDemonTurn }, [handleDemonTurn])
+
+  // ── 第一章教學戰：自動召喚 tutorialDemon ──────────────────
+
+  useEffect(() => {
+    const { phase, sceneData, combat } = state
+    const delay = sceneData?.tutorialDemonDelay ?? 0
+    if (
+      phase === 'combat' &&
+      sceneData?.isTutorialSummon &&
+      sceneData?.tutorialDemon &&
+      !combat.summonedThisBattle.includes(sceneData.tutorialDemon) &&
+      combat.playerActionCount >= delay
+    ) {
+      const demonId = sceneData.tutorialDemon
+      dispatch({ type: ACTION.SUMMON_DEMON, demonId })
+      dispatch({
+        type: ACTION.COMBAT_APPLY_LOG,
+        combatUpdate: { log: [`【${DEMON_DATA[demonId]?.name ?? demonId}】應召而至！`] },
+      })
+      setRevealedDemons(prev => new Set([...prev, demonId]))
+    }
+  }, [state.sceneData?.sceneId, state.phase, state.combat.playerActionCount])
+
+  // ── 戰鬥：召喚惡魔 ───────────────────────────────────────
+
+  const handleOpenSummon = useCallback(() => {
+    if (!isPlayerTurn || isProcessing) return
+    const { heroine } = stateRef.current
+    if (canTriggerSummon(heroine)) {
+      dispatch({ type: ACTION.OPEN_DEMON_SUMMON })
+    } else {
+      dispatch({ type: ACTION.OPEN_ACTIVE_SUMMON })
+    }
+  }, [isPlayerTurn, isProcessing])
+
+  const _applyEntrySkill = (demonId, combat, heroine) => {
+    const freshUnit = createDemonUnit(demonId)
+    if (!freshUnit) return null
+    const skillResult = executeDemonSkill(demonId, freshUnit, combat, heroine)
+    // 入場技能後將 CD 重置為最大值
+    const skills = {}
+    for (const [id, s] of Object.entries(freshUnit.skills)) {
+      skills[id] = { ...s, cooldown: s.maxCooldown }
+    }
+    return { skillResult, updatedUnit: { ...freshUnit, skills } }
+  }
+
+  const handleActiveSummon = useCallback((demonId) => {
+    const cur = stateRef.current
+    const { heroine, combat, demons, sceneData } = cur
+
+    const result = executeActiveSummonEffect(demonId, heroine, combat, demons)
+    dispatch({
+      type: ACTION.COMBAT_APPLY_LOG,
+      combatUpdate: result.combatUpdate,
+      heroineUpdate: { SP: result.newHeroine.SP },
+    })
+
+    if (result.success) {
+      dispatch({ type: ACTION.SUMMON_DEMON, demonId })
+      dispatch({ type: ACTION.UPDATE_DEMON_AXIS, demonId, heroineAxisDelta: 10 })
+      dispatch({ type: ACTION.COMBAT_APPLY_LOG, heroineUpdate: { DES: (cur.heroine.DES ?? 0) + 5 } })
+
+      const newDemons = applyPostSummonAffection(demons, demonId, 8)
+      stateRef.current = { ...stateRef.current, demons: newDemons }
+      setRevealedDemons(prev => new Set([...prev, demonId]))
+
+      // 入場技能（非第一章）
+      if (sceneData?.chapter !== 1) {
+        const entry = _applyEntrySkill(demonId, combat, result.newHeroine)
+        if (entry) {
+          dispatch({ type: ACTION.UPDATE_ACTIVE_DEMON, demonId, demonUnit: entry.updatedUnit })
+          dispatch({
+            type: ACTION.COMBAT_APPLY_LOG,
+            combatUpdate: entry.skillResult.combatUpdate,
+            ...(entry.skillResult.heroineUpdate ? { heroineUpdate: entry.skillResult.heroineUpdate } : {}),
+          })
+          const newEnemyHP = entry.skillResult.combatUpdate.enemyHP ?? combat.enemyHP
+          if (newEnemyHP <= 0) {
+            setTimeout(() => { dispatch({ type: ACTION.END_COMBAT, result: 'victory' }); setIsProcessing(false) }, 600)
+            return
+          }
+        }
+      }
+
+      setIsPlayerTurn(false)
+      setTimeout(() => advanceToNextActorRef.current?.(), 800)
+    } else {
+      dispatch({ type: ACTION.SKIP_SUMMON })
+      setIsPlayerTurn(false)
+      setTimeout(() => advanceToNextActorRef.current?.(), 800)
+    }
+  }, [])
+
+  const handleSummon = useCallback((demonId) => {
+    const cur = stateRef.current
+    const { demons, combat, heroine, sceneData } = cur
+
+    dispatch({ type: ACTION.SUMMON_DEMON, demonId })
+    dispatch({
+      type: ACTION.COMBAT_APPLY_LOG,
+      combatUpdate: { log: [`【${DEMON_DATA[demonId]?.name ?? demonId}】應召而至！`] },
+    })
+
+    const newDemons = applyPostSummonAffection(demons, demonId)
+    stateRef.current = { ...stateRef.current, demons: newDemons }
+    setRevealedDemons(prev => new Set([...prev, demonId]))
+
+    // 入場技能（非第一章）
+    if (sceneData?.chapter !== 1) {
+      const entry = _applyEntrySkill(demonId, combat, heroine)
+      if (entry) {
+        dispatch({ type: ACTION.UPDATE_ACTIVE_DEMON, demonId, demonUnit: entry.updatedUnit })
+        dispatch({
+          type: ACTION.COMBAT_APPLY_LOG,
+          combatUpdate: entry.skillResult.combatUpdate,
+          ...(entry.skillResult.heroineUpdate ? { heroineUpdate: entry.skillResult.heroineUpdate } : {}),
+        })
+        const newEnemyHP = entry.skillResult.combatUpdate.enemyHP ?? combat.enemyHP
+        if (newEnemyHP <= 0) {
+          setTimeout(() => { dispatch({ type: ACTION.END_COMBAT, result: 'victory' }); setIsProcessing(false) }, 600)
+          return
+        }
+      }
+    }
+
+    setIsPlayerTurn(false)
+    setTimeout(() => advanceToNextActorRef.current?.(), 800)
+  }, [])
+
+  const handleSkipSummon = useCallback(() => {
+    dispatch({ type: ACTION.SKIP_SUMMON })
+    setIsPlayerTurn(false)
+    setTimeout(() => advanceToNextActorRef.current?.(), 800)
+  }, [])
+
   // ── 戰鬥：普通攻擊 ───────────────────────────────────────
 
   const handleBasicAttack = useCallback(() => {
@@ -283,19 +534,15 @@ export default function App() {
         enemyHP: result.combatUpdate.enemyHP ?? combat.enemyHP,
       },
     })
+    dispatch({ type: ACTION.INCREMENT_PLAYER_ACTION })
 
-    // 若敵人 HP 歸零 → 勝利
     if ((result.combatUpdate.enemyHP ?? combat.enemyHP) <= 0) {
-      setTimeout(() => {
-        dispatch({ type: ACTION.END_COMBAT, result: 'victory' })
-        setIsProcessing(false)
-      }, 600)
+      setTimeout(() => { dispatch({ type: ACTION.END_COMBAT, result: 'victory' }); setIsProcessing(false) }, 600)
       return
     }
 
-    // 切換到敵人回合
     setIsPlayerTurn(false)
-    setTimeout(() => handleEnemyTurn(), 800)
+    setTimeout(() => advanceToNextActorRef.current?.(), 800)
   }, [isPlayerTurn, isProcessing])
 
   // ── 戰鬥：使用技能 ───────────────────────────────────────
@@ -315,7 +562,6 @@ export default function App() {
       : heroine
     const result = executeSkill(effectiveHeroine, skillData, combat)
 
-    // 一次 dispatch 同時更新戰鬥日誌、敵人狀態與女主角數值（SP/HP 變動）
     dispatch({
       type: ACTION.COMBAT_APPLY_LOG,
       combatUpdate: {
@@ -329,170 +575,17 @@ export default function App() {
         equipment: result.newHeroine.equipment,
       },
     })
+    dispatch({ type: ACTION.INCREMENT_PLAYER_ACTION })
 
     const newEnemyHP = result.combatUpdate.enemyHP ?? combat.enemyHP
     if (newEnemyHP <= 0) {
-      setTimeout(() => {
-        dispatch({ type: ACTION.END_COMBAT, result: 'victory' })
-        setIsProcessing(false)
-      }, 600)
+      setTimeout(() => { dispatch({ type: ACTION.END_COMBAT, result: 'victory' }); setIsProcessing(false) }, 600)
       return
     }
 
     setIsPlayerTurn(false)
-    setTimeout(() => handleEnemyTurn(), 800)
+    setTimeout(() => advanceToNextActorRef.current?.(), 800)
   }, [isPlayerTurn, isProcessing])
-
-  // ── 戰鬥：敵人回合 ───────────────────────────────────────
-
-  const handleEnemyTurn = useCallback(() => {
-    const cur = stateRef.current
-    const { heroine, combat } = cur
-
-    // 封印狀態：跳過敵人行動
-    const sealStatus = combat.enemyStatuses?.find(s => s.type === 'seal')
-    if (sealStatus) {
-      dispatch({
-        type: ACTION.COMBAT_APPLY_LOG,
-        combatUpdate: {
-          log: ['敵人被封印，跳過行動！'],
-          enemyStatuses: combat.enemyStatuses
-            .map(s => s.type === 'seal' ? { ...s, duration: s.duration - 1 } : s)
-            .filter(s => s.duration > 0),
-        },
-      })
-      setIsPlayerTurn(true)
-      setIsProcessing(false)
-      return
-    }
-
-    const result = executeEnemyAttack(heroine, combat)
-
-    // 同步敵人攻擊造成的女主角 HP/DES/裝備變動
-    dispatch({
-      type: ACTION.COMBAT_APPLY_LOG,
-      combatUpdate: result.combatUpdate,
-      heroineUpdate: {
-        HP:        result.newHeroine.HP,
-        DES:       result.newHeroine.DES,
-        desire:    result.newHeroine.desire,
-        equipment: result.newHeroine.equipment,
-      },
-    })
-
-    // 若玩家 HP 歸零 → 失敗
-    if (result.newHeroine.HP <= 0) {
-      setTimeout(() => {
-        dispatch({ type: ACTION.END_COMBAT, result: 'defeat' })
-        setIsProcessing(false)
-      }, 600)
-      return
-    }
-
-    setIsPlayerTurn(true)
-    setIsProcessing(false)
-  }, [])
-
-  // 同步 handleEnemyTurn 到 ref，供 goToScene 使用
-  useEffect(() => { handleEnemyTurnRef.current = handleEnemyTurn }, [handleEnemyTurn])
-
-  // ── 第一章教學戰：自動召喚 tutorialDemon ──────────────────
-
-  useEffect(() => {
-    const { phase, sceneData, combat } = state
-    if (
-      phase === 'combat' &&
-      sceneData?.isTutorialSummon &&
-      sceneData?.tutorialDemon &&
-      !combat.summonedThisBattle.includes(sceneData.tutorialDemon)
-    ) {
-      const demonId = sceneData.tutorialDemon
-      const result = executeDemonSummonEffect(demonId, state.heroine, combat)
-      dispatch({ type: ACTION.SUMMON_DEMON, demonId })
-      dispatch({
-        type: ACTION.COMBAT_APPLY_LOG,
-        combatUpdate: result.combatUpdate,
-        heroineUpdate: { SP: result.newHeroine.SP },
-      })
-      setRevealedDemons(prev => new Set([...prev, demonId]))
-    }
-  }, [state.sceneData?.sceneId, state.phase])
-
-  // ── 戰鬥：召喚惡魔 ───────────────────────────────────────
-
-  const handleOpenSummon = useCallback(() => {
-    if (!isPlayerTurn || isProcessing) return
-    dispatch({ type: ACTION.OPEN_DEMON_SUMMON })
-  }, [isPlayerTurn, isProcessing])
-
-  const handleOpenActiveSummon = useCallback(() => {
-    if (!isPlayerTurn || isProcessing) return
-    dispatch({ type: ACTION.OPEN_ACTIVE_SUMMON })
-  }, [isPlayerTurn, isProcessing])
-
-  const handleActiveSummon = useCallback((demonId) => {
-    const cur = stateRef.current
-    const { heroine, combat, demons } = cur
-
-    const result = executeActiveSummonEffect(demonId, heroine, combat, demons)
-
-    // 套用 SP 消耗與戰鬥日誌
-    dispatch({
-      type: ACTION.COMBAT_APPLY_LOG,
-      combatUpdate: result.combatUpdate,
-      heroineUpdate: { SP: result.newHeroine.SP },
-    })
-
-    if (result.success) {
-      // 召喚成功：記錄本場、heroine_axis +10、解除亂碼
-      dispatch({ type: ACTION.SUMMON_DEMON, demonId })
-      dispatch({ type: ACTION.UPDATE_DEMON_AXIS, demonId, heroineAxisDelta: 10 })
-      const newDemons = applyPostSummonAffection(demons, demonId)
-      stateRef.current = { ...stateRef.current, demons: newDemons }
-      setRevealedDemons(prev => new Set([...prev, demonId]))
-      setIsPlayerTurn(false)
-      setTimeout(() => handleEnemyTurn(), 800)
-    } else {
-      // 召喚失敗：SP 已消耗，直接換敵人回合
-      dispatch({ type: ACTION.SKIP_SUMMON })
-      setIsPlayerTurn(false)
-      setTimeout(() => handleEnemyTurn(), 800)
-    }
-  }, [handleEnemyTurn])
-
-  const handleSummon = useCallback((demonId) => {
-    const cur = stateRef.current
-    const { heroine, combat, demons } = cur
-
-    // 執行召喚效果
-    const result = executeDemonSummonEffect(demonId, heroine, combat)
-
-    // 更新狀態
-    dispatch({ type: ACTION.SUMMON_DEMON, demonId })
-    dispatch({
-      type: ACTION.COMBAT_APPLY_LOG,
-      combatUpdate: result.combatUpdate,
-    })
-
-    // 更新惡魔關係
-    const newDemons = applyPostSummonAffection(demons, demonId)
-    // 將 demons 更新注入（透過 SET_FLAG 作為暫行方案，Phase D 完整整合）
-    // 暫時直接更新 stateRef
-    stateRef.current = { ...stateRef.current, demons: newDemons }
-
-    // 解除該惡魔的亂碼遮蓋
-    setRevealedDemons(prev => new Set([...prev, demonId]))
-
-    // 回到戰鬥
-    setIsPlayerTurn(false)
-    setTimeout(() => handleEnemyTurn(), 800)
-  }, [handleEnemyTurn])
-
-  const handleSkipSummon = useCallback(() => {
-    dispatch({ type: ACTION.SKIP_SUMMON })
-    setIsPlayerTurn(false)
-    setTimeout(() => handleEnemyTurn(), 800)
-  }, [handleEnemyTurn])
 
   // ── 戰鬥：防禦 ──────────────────────────────────────────
 
@@ -507,10 +600,11 @@ export default function App() {
       type: ACTION.COMBAT_APPLY_LOG,
       combatUpdate: result.combatUpdate,
     })
+    dispatch({ type: ACTION.INCREMENT_PLAYER_ACTION })
 
     setIsPlayerTurn(false)
-    setTimeout(() => handleEnemyTurn(), 800)
-  }, [isPlayerTurn, isProcessing, handleEnemyTurn])
+    setTimeout(() => advanceToNextActorRef.current?.(), 800)
+  }, [isPlayerTurn, isProcessing])
 
   // ── 戰鬥：逃跑 ──────────────────────────────────────────
 
@@ -632,9 +726,8 @@ export default function App() {
               ☰ 選單
             </button>
             <button
-              className={`px-3 py-1 game-panel text-xs rounded transition-colors ${
-                aiSettings.enabled ? 'text-purple-400 hover:text-purple-300' : 'text-gray-600 hover:text-gray-400'
-              }`}
+              className={`px-3 py-1 game-panel text-xs rounded transition-colors ${aiSettings.enabled ? 'text-purple-400 hover:text-purple-300' : 'text-gray-600 hover:text-gray-400'
+                }`}
               onClick={() => setShowAISettings(true)}
             >
               ✦ AI{aiSettings.enabled ? ' ●' : ''}
@@ -672,11 +765,20 @@ export default function App() {
 
 
 
-          {/* AI 生成遮罩 */}
+          {/* AI 生成遮罩 - 幾何動畫版 */}
           {aiStatus === 'generating' && (
-            <div className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-black/50 backdrop-blur-sm">
-              <div className="text-game-accent text-sm animate-pulse mb-2">✦ AI 正在創作中…</div>
-              <div className="text-gray-500 text-xs">依模型不同約需 1–5 秒</div>
+            <div className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-black/60 backdrop-blur-md">
+              <div className="relative w-20 h-20 flex items-center justify-center">
+                {/* 外層旋轉菱形 */}
+                <div className="absolute inset-0 border-2 border-game-accent/30 rotate-45 animate-spin-slow rounded-sm"></div>
+                {/* 內層反向旋轉菱形 */}
+                <div className="absolute inset-4 border border-game-accent/60 rotate-45 animate-spin-reverse rounded-sm"></div>
+                {/* 中心發光球體 */}
+                <div className="w-3 h-3 bg-game-accent rounded-full shadow-[0_0_15px_rgba(168,85,247,0.8)] animate-heartbeat"></div>
+              </div>
+              <div className="mt-8 text-white text-[0.6rem] tracking-[0.4em] font-light opacity-40 uppercase">
+                loading...
+              </div>
             </div>
           )}
 
@@ -708,7 +810,6 @@ export default function App() {
             onUseSkill={handleUseSkill}
             onDefend={handleDefend}
             onOpenSummon={handleOpenSummon}
-            onOpenActiveSummon={handleOpenActiveSummon}
             onFlee={handleFlee}
             isPlayerTurn={isPlayerTurn && state.phase === 'combat'}
             isProcessing={isProcessing}
@@ -717,6 +818,7 @@ export default function App() {
 
           {state.phase === 'demon_summon' && (
             <DemonSummonModal
+              heroine={state.heroine}
               demons={state.demons}
               summonedThisBattle={state.combat.summonedThisBattle}
               isActiveSummon={state.combat.isActiveSummon ?? false}

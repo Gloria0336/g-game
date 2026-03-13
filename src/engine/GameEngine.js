@@ -9,7 +9,7 @@
 import { INITIAL_HEROINE, INITIAL_DEMONS, applyEffects, applyAwakening } from './StatsManager.js'
 import { resolveChoices, executeChoice } from './ChoiceResolver.js'
 import { resolveEnding } from './EndingResolver.js'
-import { getPrimaryDemonId } from './DemonSystem.js'
+import { getPrimaryDemonId, createDemonUnit } from './DemonSystem.js'
 
 // ─── Phase 常數 ────────────────────────────────────────────────
 
@@ -38,10 +38,11 @@ const INITIAL_COMBAT = {
   enemyAGI: 0,
   enemyStatuses: [],
   heroineStatuses: [],
-  turn: 0,
-  turnOrder: [],
+  turnQueue: [],      // 當前回合剩餘行動者佇列
   log: [],
   summonedThisBattle: [],
+  playerActionCount: 0,     // 玩家本場行動次數（用於教學延遲召喚）
+  activeDemons: {},         // { [demonId]: DemonUnit } — 場上存活惡魔
   pendingNarrative: null,   // AI 戰鬥敘事（戰後顯示）
 }
 
@@ -109,6 +110,10 @@ export const ACTION = {
   SUMMON_DEMON:        'SUMMON_DEMON',        // 召喚指定惡魔
   SKIP_SUMMON:         'SKIP_SUMMON',         // 選擇不召喚
   UPDATE_DEMON_AXIS:   'UPDATE_DEMON_AXIS',   // 更新惡魔 heroine_axis
+  INCREMENT_PLAYER_ACTION: 'INCREMENT_PLAYER_ACTION', // 玩家行動次數+1（教學用）
+  UPDATE_ACTIVE_DEMON: 'UPDATE_ACTIVE_DEMON', // 更新場上惡魔單位（HP / 技能冷卻）
+  REMOVE_ACTIVE_DEMON: 'REMOVE_ACTIVE_DEMON', // 惡魔 HP 歸零後移除
+  SET_TURN_QUEUE:     'SET_TURN_QUEUE',       // 更新回合佇列（pop 或重建）
   END_COMBAT:         'END_COMBAT',          // 戰鬥結束（victory / defeat / escape）
   SET_COMBAT_NARRATIVE: 'SET_COMBAT_NARRATIVE', // 儲存 AI 戰鬥敘事
 
@@ -291,11 +296,7 @@ export function gameReducer(state, action) {
           enemyDR: enemyData.DR ?? 0,
           enemySkillDefs: enemyData.skillDefs ?? {},
           log: [`遭遇 ${enemyData.name}！`],
-          // AGI 決定先後順序（加入序章臨時 AGI 加成）
-          turnOrder: (state.heroine.AGI + (state.prologueBonus?.AGI || 0)) >= enemyData.AGI
-            ? ['heroine', 'enemy']
-            : ['enemy', 'heroine'],
-          turn: 1,
+          turnQueue: [],   // 首次 advanceToNextActor 時惰性建立
         },
       }
     }
@@ -331,16 +332,20 @@ export function gameReducer(state, action) {
         combat: { ...state.combat, isActiveSummon: true },
       }
 
-    // ── 召喚惡魔（行動效果由 App 計算後 dispatch COMBAT_APPLY_LOG） ──
+    // ── 召喚惡魔 ─────────────────────────────────────────────────
     case ACTION.SUMMON_DEMON: {
       const { demonId } = action
       const demon = state.demons[demonId]
+      const demonUnit = createDemonUnit(demonId)
       return {
         ...state,
         phase: 'combat',
         combat: {
           ...state.combat,
           summonedThisBattle: [...state.combat.summonedThisBattle, demonId],
+          activeDemons: demonUnit
+            ? { ...state.combat.activeDemons, [demonId]: demonUnit }
+            : state.combat.activeDemons,
         },
         demons: {
           ...state.demons,
@@ -352,6 +357,39 @@ export function gameReducer(state, action) {
         },
       }
     }
+
+    // ── 更新場上惡魔單位（HP / 技能冷卻）────────────────────────
+    case ACTION.UPDATE_ACTIVE_DEMON: {
+      const { demonId, demonUnit } = action
+      return {
+        ...state,
+        combat: {
+          ...state.combat,
+          activeDemons: {
+            ...state.combat.activeDemons,
+            [demonId]: demonUnit,
+          },
+        },
+      }
+    }
+
+    // ── 移除場上惡魔（HP 歸零）──────────────────────────────────
+    case ACTION.REMOVE_ACTIVE_DEMON: {
+      const { demonId } = action
+      const { [demonId]: _removed, ...rest } = state.combat.activeDemons
+      return {
+        ...state,
+        combat: {
+          ...state.combat,
+          activeDemons: rest,
+          turnQueue: (state.combat.turnQueue ?? []).filter(id => id !== demonId),
+        },
+      }
+    }
+
+    // ── 更新回合佇列 ──────────────────────────────────────────────
+    case ACTION.SET_TURN_QUEUE:
+      return { ...state, combat: { ...state.combat, turnQueue: action.queue } }
 
     // ── 主動召喚：更新 heroine_axis ──────────────────────────────
     case ACTION.UPDATE_DEMON_AXIS: {
@@ -378,6 +416,16 @@ export function gameReducer(state, action) {
         heroine: {
           ...state.heroine,
           independence: Math.min(100, (state.heroine.independence ?? 30) + 3),
+        },
+      }
+
+    // ── 玩家行動次數累計（教學延遲召喚用）────────────────────────
+    case ACTION.INCREMENT_PLAYER_ACTION:
+      return {
+        ...state,
+        combat: {
+          ...state.combat,
+          playerActionCount: (state.combat.playerActionCount ?? 0) + 1,
         },
       }
 

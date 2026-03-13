@@ -3,7 +3,7 @@
  * - V3 heroine 欄位（情感 + 戰鬥數值）
  * - 未召喚的惡魔以亂碼遮蓋，召喚後解鎖
  */
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 
 const DEMON_NAMES = {
   demon_a: '瑠夜',
@@ -49,6 +49,23 @@ function makeGlitch(len) {
   ).join('')
 }
 
+function GlitchText({ length = 5, className = "" }) {
+  const [text, setText] = useState(() => makeGlitch(length))
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setText(makeGlitch(length))
+    }, 150 + Math.random() * 200)
+    return () => clearInterval(timer)
+  }, [length])
+
+  return (
+    <span className={`glitch-text animate-float inline-block ${className}`}>
+      {text}
+    </span>
+  )
+}
+
 function StatBar({ label, value, max = 100, color }) {
   const pct = max > 0 ? Math.max(0, Math.min(100, (value / max) * 100)) : 0
   return (
@@ -64,20 +81,6 @@ function StatBar({ label, value, max = 100, color }) {
 
 export default function StatsDisplay({ heroine, demons, mainRoute, revealedDemons }) {
   const [open, setOpen] = useState(false)
-
-  // 穩定亂碼：useMemo 保證同一次開啟期間不變動
-  const glitchData = useMemo(() => {
-    const charKeys = Object.keys(CHAR_LABELS)
-    return Object.fromEntries(
-      ['demon_a', 'demon_b', 'demon_c'].map(id => [
-        id,
-        {
-          name: makeGlitch(3),
-          vals: Object.fromEntries(charKeys.map(k => [k, makeGlitch(5)])),
-        },
-      ])
-    )
-  }, [])
 
   const revealed = revealedDemons ?? new Set()
 
@@ -124,12 +127,10 @@ export default function StatsDisplay({ heroine, demons, mainRoute, revealedDemon
             if (!charStats) return null
             const isRevealed = revealed.has(demonId)
             const isActive = !mainRoute || mainRoute === demonId
-            const glitch = glitchData[demonId]
-
             return (
               <div key={demonId} className={isActive ? '' : 'opacity-40'}>
                 <p className={`text-xs font-medium mb-2 ${isRevealed ? 'text-game-accent' : 'text-gray-600'}`}>
-                  ◆ {isRevealed ? DEMON_NAMES[demonId] : glitch.name}
+                  ◆ {isRevealed ? DEMON_NAMES[demonId] : <GlitchText length={3} className="text-gray-700" />}
                 </p>
                 <div className="flex flex-col gap-1.5 mb-4">
                   {Object.entries(CHAR_LABELS).map(([key, label]) =>
@@ -138,9 +139,9 @@ export default function StatsDisplay({ heroine, demons, mainRoute, revealedDemon
                     ) : (
                       <div key={key} className="flex items-center gap-2 text-xs">
                         <span className="w-8 text-gray-700 shrink-0">{label}</span>
-                        <span className="flex-1 text-gray-700 tracking-widest truncate font-mono">
-                          {glitch.vals[key]}
-                        </span>
+                        <div className="flex-1 text-gray-700 tracking-widest truncate font-mono">
+                          <GlitchText length={5} />
+                        </div>
                       </div>
                     )
                   )}

@@ -1,6 +1,6 @@
 /**
- * DemonSystem — V3.0
- * 惡魔召喚觸發、戰鬥效果、戰後停留與情感變化
+ * DemonSystem — V4.0
+ * 惡魔作為持久場上單位的完整戰鬥系統
  */
 
 import { addEnemyStatus } from './CombatEngine.js'
@@ -24,16 +24,42 @@ export const DEMON_DATA = {
   demon_c: {
     id: 'demon_c',
     name: '玄冥',
-    rank: '第九階・詛咒惡魔',
-    type: '詛咒 / 削弱型',
+    rank: '第九階・生死惡魔',
+    type: '詛咒 / 生死型',
+  },
+}
+
+// ─── 惡魔戰鬥數值 ─────────────────────────────────────────────
+
+export const DEMON_COMBAT_STATS = {
+  demon_a: {
+    maxHP: 60,
+    ATK: 12,
+    AGI: 8,
+    skills: [
+      { id: 'seal_strike', name: '封印術', maxCooldown: 3 },
+    ],
+  },
+  demon_b: {
+    maxHP: 80,
+    ATK: 25,
+    AGI: 12,
+    skills: [
+      { id: 'beast_impact', name: '獸神衝擊', maxCooldown: 4 },
+    ],
+  },
+  demon_c: {
+    maxHP: 50,
+    ATK: 10,
+    AGI: 6,
+    skills: [
+      { id: 'corrode_curse', name: '腐蝕詛咒', maxCooldown: 4 },
+    ],
   },
 }
 
 // ─── 召喚條件判斷 ─────────────────────────────────────────────
 
-/**
- * 回傳可召喚的惡魔列表（過濾已召喚、敵對、背叛）
- */
 export function getAvailableDemonsToSummon(demons, summonedThisBattle) {
   return ['demon_a', 'demon_b', 'demon_c'].filter(demonId => {
     const d = demons[demonId]
@@ -44,10 +70,6 @@ export function getAvailableDemonsToSummon(demons, summonedThisBattle) {
   })
 }
 
-/**
- * 判斷某惡魔是否可召喚（含背叛警告）
- * @returns {'available'|'betrayed'|'hostile'|'already_summoned'}
- */
 export function getSummonStatus(demons, demonId, summonedThisBattle) {
   const d = demons[demonId]
   if (!d) return 'hostile'
@@ -57,53 +79,73 @@ export function getSummonStatus(demons, demonId, summonedThisBattle) {
   return 'available'
 }
 
-// ─── 召喚戰鬥效果 ─────────────────────────────────────────────
+// ─── 場上單位建立 ─────────────────────────────────────────────
 
 /**
- * 執行惡魔召喚效果，回傳更新後的戰鬥狀態與日誌
- *
- * 瑠夜：封印術 — 敵人下回合跳過 + 回復女主角 20% maxSP
- * 颯牙：獸神衝擊 — ATK × 3 × 1.6 直接傷害（無視 DR%）
- * 玄冥：腐蝕詛咒 — 目標 DR% −20%（3 回合）+ 反傷 10%
- *
- * @param {string} demonId
- * @param {object} heroine
- * @param {object} combat
- * @returns {{ newHeroine, combatUpdate, logs }}
+ * 建立惡魔場上單位，技能冷卻初始為 0（召喚後立即可用）
  */
-export function executeDemonSummonEffect(demonId, heroine, combat) {
+export function createDemonUnit(demonId) {
+  const stats = DEMON_COMBAT_STATS[demonId]
+  const data  = DEMON_DATA[demonId]
+  if (!stats || !data) return null
+
+  const skills = {}
+  for (const s of stats.skills) {
+    skills[s.id] = { name: s.name, cooldown: 0, maxCooldown: s.maxCooldown }
+  }
+
+  return {
+    id:        demonId,
+    name:      data.name,
+    currentHP: stats.maxHP,
+    maxHP:     stats.maxHP,
+    ATK:       stats.ATK,
+    AGI:       stats.AGI,
+    skills,
+  }
+}
+
+// ─── 惡魔技能效果 ─────────────────────────────────────────────
+
+/**
+ * 執行惡魔技能，回傳戰鬥更新與女主角更新
+ * 技能冷卻由呼叫方（executeDemonTurn）負責重置
+ */
+export function executeDemonSkill(demonId, demonUnit, combat, heroine) {
   const logs = []
-  let newHeroine = { ...heroine }
   let combatUpdate = {}
+  let heroineUpdate = null
   let newEnemyStatuses = [...(combat.enemyStatuses ?? [])]
 
   switch (demonId) {
     case 'demon_a': {
-      // 封印術：敵人下回合跳過 + 回復 20% maxSP
+      // 封印術：敵人下回合跳過 + 回復女主角 20% maxSP
       newEnemyStatuses = addEnemyStatus(newEnemyStatuses, {
         type: 'seal',
         duration: 1,
         value: 0,
       })
-      const spRestore = Math.floor(newHeroine.maxSP * 0.2)
-      newHeroine.SP = Math.min(newHeroine.maxSP, newHeroine.SP + spRestore)
-      logs.push(`【瑠夜】封印術發動——敵人下回合被封印`)
-      logs.push(`【瑠夜】靈力補給：SP +${spRestore}`)
+      const spRestore = Math.floor((heroine?.maxSP ?? 0) * 0.2)
+      logs.push(`【瑠夜・封印術】敵人被封印，跳過下回合！`)
+      if (spRestore > 0) {
+        logs.push(`【瑠夜】靈力補給：SP +${spRestore}`)
+        heroineUpdate = { SP: Math.min(heroine.maxSP, (heroine.SP ?? 0) + spRestore) }
+      }
       combatUpdate.enemyStatuses = newEnemyStatuses
       break
     }
 
     case 'demon_b': {
       // 獸神衝擊：ATK × 3 × 1.6 無視 DR%
-      const rawDmg = heroine.ATK * 3 * 1.6
+      const rawDmg = demonUnit.ATK * 3 * 1.6
       const damage = Math.max(1, Math.round(rawDmg * (0.9 + Math.random() * 0.2)))
       combatUpdate.enemyHP = Math.max(0, combat.enemyHP - damage)
-      logs.push(`【颯牙】獸神衝擊——造成 ${damage} 點傷害（無視防禦）`)
+      logs.push(`【颯牙・獸神衝擊】無視防禦——造成 ${damage} 點傷害！`)
       break
     }
 
     case 'demon_c': {
-      // 腐蝕詛咒：DR% −20%（3 回合）+ 反傷 10%
+      // 腐蝕詛咒：DR% −20%（3 回合）+ 反傷 10% + 回復主角 30% maxHP
       newEnemyStatuses = addEnemyStatus(newEnemyStatuses, {
         type: 'corrode',
         duration: 3,
@@ -114,31 +156,110 @@ export function executeDemonSummonEffect(demonId, heroine, combat) {
         duration: 3,
         value: 10,
       })
-      logs.push(`【玄冥】腐蝕詛咒——敵人防禦降低 20%，並施加反傷`)
+      const hpRestore = Math.floor((heroine?.maxHP ?? 0) * 0.3)
+      logs.push(`【玄冥・腐蝕詛咒】敵人防禦降低 20%，施加反傷！`)
+      if (hpRestore > 0) {
+        logs.push(`【玄冥】生死之力：HP +${hpRestore}`)
+        heroineUpdate = { HP: Math.min(heroine.maxHP, (heroine.HP ?? 0) + hpRestore) }
+      }
       combatUpdate.enemyStatuses = newEnemyStatuses
       break
     }
 
     default:
-      logs.push(`召喚失敗：未知惡魔 ${demonId}`)
+      logs.push(`【${demonUnit.name}】技能發動失敗`)
   }
 
-  // 背叛的惡魔作為敵方援軍（暫時以日誌提示）
-  // Phase D 實作時擴充
-
-  return { newHeroine, combatUpdate: { ...combatUpdate, log: logs }, logs }
+  return { combatUpdate: { ...combatUpdate, log: logs }, heroineUpdate }
 }
 
-// ─── 主動召喚效果 ─────────────────────────────────────────────
+// ─── 惡魔普通攻擊 ─────────────────────────────────────────────
+
+export function executeDemonBasicAttack(demonUnit, combat) {
+  const effectiveDR = Math.max(0, (combat.enemyDR ?? 0) / 100)
+  const rawDmg = demonUnit.ATK * (0.9 + Math.random() * 0.2)
+  const damage = Math.max(1, Math.round(rawDmg * (1 - effectiveDR)))
+  const newEnemyHP = Math.max(0, combat.enemyHP - damage)
+  return {
+    combatUpdate: {
+      enemyHP: newEnemyHP,
+      log: [`【${demonUnit.name}】攻擊——造成 ${damage} 點傷害`],
+    },
+  }
+}
+
+// ─── 惡魔回合行動 ─────────────────────────────────────────────
 
 /**
- * 主動召喚：消耗全部 SP，demon_axis < 15 時召喚失敗
- * 成功時套用一般戰鬥效果，heroine_axis +10 由 App 透過 UPDATE_DEMON_AXIS 處理
+ * 自動決定惡魔行動：技能冷卻 = 0 時優先使用技能，否則普攻
+ * 回傳 { combatUpdate, heroineUpdate, newDemonUnit }
  */
-export function executeActiveSummonEffect(demonId, heroine, combat, demons) {
-  const spConsumed = heroine.SP
-  const newHeroine = { ...heroine, SP: 0 }
-  const logs = [`消耗全部靈力（${spConsumed} SP）以嘗試主動召喚……`]
+export function executeDemonTurn(demonId, demonUnit, combat, heroine) {
+  const skills = { ...demonUnit.skills }
+
+  // 找出可用技能（cooldown = 0）
+  const readySkill = Object.entries(skills).find(([, s]) => s.cooldown === 0)
+
+  let combatUpdate = {}
+  let heroineUpdate = null
+
+  if (readySkill) {
+    const [skillId] = readySkill
+    const skillResult = executeDemonSkill(demonId, demonUnit, combat, heroine)
+    combatUpdate = skillResult.combatUpdate
+    heroineUpdate = skillResult.heroineUpdate
+
+    // 重置已使用技能冷卻，其他技能 -1
+    for (const id of Object.keys(skills)) {
+      if (id === skillId) {
+        skills[id] = { ...skills[id], cooldown: skills[id].maxCooldown }
+      } else {
+        skills[id] = { ...skills[id], cooldown: Math.max(0, skills[id].cooldown - 1) }
+      }
+    }
+  } else {
+    // 普攻，全部技能 cooldown -1
+    const attackResult = executeDemonBasicAttack(demonUnit, combat)
+    combatUpdate = attackResult.combatUpdate
+    for (const id of Object.keys(skills)) {
+      skills[id] = { ...skills[id], cooldown: Math.max(0, skills[id].cooldown - 1) }
+    }
+  }
+
+  const newDemonUnit = { ...demonUnit, skills }
+  return { combatUpdate, heroineUpdate, newDemonUnit }
+}
+
+// ─── 敵人攻擊惡魔 ─────────────────────────────────────────────
+
+export function executeEnemyAttackOnDemon(demonUnit, combat) {
+  const damage = Math.max(1, Math.round(combat.enemyATK * (0.9 + Math.random() * 0.2)))
+  const newDemonHP = Math.max(0, demonUnit.currentHP - damage)
+  const logs = [`敵人攻擊【${demonUnit.name}】——造成 ${damage} 點傷害！`]
+  if (newDemonHP <= 0) {
+    logs.push(`【${demonUnit.name}】力竭退場！`)
+  }
+  return { damage, newDemonHP, logs }
+}
+
+// ─── 主動召喚效果（資源檢查）───────────────────────────────────
+
+/**
+ * 主動召喚資源檢查：消耗 80 SP，demon_axis < 15 時失敗
+ * 成功時只回傳 { success: true, newHeroine } 供 App.jsx dispatch SUMMON_DEMON
+ */
+export function executeActiveSummonEffect(demonId, heroine, _combat, demons) {
+  const SP_COST = 80
+  if (heroine.SP < SP_COST) {
+    return {
+      success: false,
+      newHeroine: heroine,
+      combatUpdate: { log: [`靈力不足（需要 ${SP_COST} SP）無法主動召喚！`] },
+    }
+  }
+
+  const newHeroine = { ...heroine, SP: heroine.SP - SP_COST }
+  const logs = [`消耗靈力（${SP_COST} SP）以嘗試主動召喚……`]
 
   const demonAxis = demons[demonId]?.demon_axis ?? 0
   if (demonAxis < 15) {
@@ -148,23 +269,13 @@ export function executeActiveSummonEffect(demonId, heroine, combat, demons) {
     return { success: false, newHeroine, combatUpdate: { log: logs } }
   }
 
-  const effect = executeDemonSummonEffect(demonId, newHeroine, combat)
-  return {
-    success: true,
-    newHeroine: effect.newHeroine,
-    combatUpdate: {
-      ...effect.combatUpdate,
-      log: [...logs, ...effect.logs],
-    },
-  }
+  logs.push(`${DEMON_DATA[demonId]?.name ?? demonId} 應召而至！`)
+  return { success: true, newHeroine, combatUpdate: { log: logs } }
 }
 
 // ─── 召喚後情感更新 ───────────────────────────────────────────
 
-/**
- * 惡魔援助成功後更新關係數值
- */
-export function applyPostSummonAffection(demons, demonId) {
+export function applyPostSummonAffection(demons, demonId, axisDelta = 5) {
   const d = demons[demonId]
   if (!d) return demons
 
@@ -174,55 +285,36 @@ export function applyPostSummonAffection(demons, demonId) {
       ...d,
       trust:      clamp(d.trust + 2),
       affection:  clamp(d.affection + 2, -50, 100),
-      demon_axis: clamp(d.demon_axis + 5),
+      demon_axis: clamp(d.demon_axis + axisDelta),
     },
   }
 }
 
 // ─── 戰後停留計算 ─────────────────────────────────────────────
 
-/**
- * 計算召喚後惡魔是否停留對話
- * 首次召喚：強制停留
- * 後續：summon_count 決定停留機率
- */
 export function calcDemonStay(demonId, demons) {
   const d = demons[demonId]
   if (!d) return false
 
-  if (d.summon_count <= 1) return true          // 首次強制
+  if (d.summon_count <= 1) return true
   if (d.summon_count <= 3) return Math.random() < 0.8
   return Math.random() < 0.5
 }
 
 // ─── 惡魔停留對話類型判定 ────────────────────────────────────
 
-/**
- * 判斷惡魔停留對話的類型
- * @returns {'regular'|'concern'|'taunt'|'boundary'}
- */
 export function getDemonDialogueType(demonId, demons, heroine) {
   const d = demons[demonId]
   if (!d) return 'regular'
 
-  // 越界行動（DES ≥ 120 + lust ≥ 50）— Phase C 解鎖 18+ 設定後
   if (heroine.DES >= 120 && d.lust >= 50) return 'boundary'
-
-  // 挑釁嘲諷（heroine_axis < 20）
   if (d.heroine_axis < 20) return 'taunt'
-
-  // 關心確認（trust ≥ 30）
   if (d.trust >= 30) return 'concern'
-
   return 'regular'
 }
 
 // ─── 四向分歧判定（每章章末） ────────────────────────────────
 
-/**
- * 判定當前各惡魔路徑走向
- * @returns {'romantic'|'obsessed'|'hostile'|'betrayal_warning'|'active'}
- */
 export function judgePathDirection(demonId, demons) {
   const d = demons[demonId]
   if (!d) return 'active'
@@ -232,16 +324,9 @@ export function judgePathDirection(demonId, demons) {
   if (contract_status === 'hostile')          return 'hostile'
   if (contract_status === 'betrayed')         return 'betrayal_warning'
 
-  // 「傾心」路徑
   if (heroine_axis >= 70 && demon_axis >= 40) return 'romantic'
-
-  // 「惡魔傾心」路徑
   if (demon_axis >= 80 && heroine_axis >= 20 && heroine_axis < 70) return 'obsessed'
-
-  // 「敵對」初兆
   if (heroine_axis <= -30) return 'hostile'
-
-  // 「背叛」初兆
   if (demon_axis >= 90 && Math.abs(heroine_axis) <= 10) return 'betrayal_warning'
 
   return 'active'
@@ -249,11 +334,6 @@ export function judgePathDirection(demonId, demons) {
 
 // ─── 主選惡魔輔助函式 ─────────────────────────────────────────
 
-/**
- * 回傳 demon_axis 最高的惡魔 ID（平手時取字典序最小者）
- * @param {object} demons  state.demons
- * @returns {string|null}
- */
 export function getPrimaryDemonId(demons) {
   let bestId   = null
   let bestAxis = -1
@@ -266,4 +346,3 @@ export function getPrimaryDemonId(demons) {
   }
   return bestId
 }
-

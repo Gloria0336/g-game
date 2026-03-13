@@ -73,6 +73,50 @@ const MONSTER_DB = {
     description: '以碎石構成的低階魔物，行動緩慢但防禦厚實。',
   },
 
+  // ── Tier A 第一章教學專屬怪物 ────────────────────────────────
+
+  fire_wraith: {
+    id:     'fire_wraith',
+    name:   '焰靈幽鬼',
+    tier:   'A',
+    HP:     90,
+    ATK:    10,
+    AGI:    5,
+    DR:     10,
+    evadeRate: 20,
+    skills:  [],
+    loot:   { tierPool: 1, guaranteed: false },
+    description: '由裂隙火焰凝聚的幽靈型魔物，身形飄忽，普通攻擊難以命中。搭配瑠夜封印術，展示封印的戰術價值。',
+  },
+
+  heavy_beast: {
+    id:     'heavy_beast',
+    name:   '重甲巨獸',
+    tier:   'A',
+    HP:     100,
+    ATK:    12,
+    AGI:    3,
+    DR:     35,
+    evadeRate: 0,
+    skills:  [],
+    loot:   { tierPool: 1, guaranteed: false },
+    description: '全身覆蓋厚重甲殼的巨型魔物，普通攻擊幾乎無效。颯牙的無視防禦攻擊可造成全額傷害。',
+  },
+
+  shadow_lurker: {
+    id:     'shadow_lurker',
+    name:   '暗影潛伏者',
+    tier:   'A',
+    HP:     85,
+    ATK:    14,
+    AGI:    7,
+    DR:     20,
+    evadeRate: 10,
+    skills:  [],
+    loot:   { tierPool: 1, guaranteed: false },
+    description: '棲息於暗影的中階魔物，防禦與速度兼備。玄冥的腐蝕詛咒可大幅削弱其防禦，展示詛咒型惡魔的戰略價值。',
+  },
+
   // ── Tier B 中期魔物（第 3–6 章）────────────────────────────
 
   rift_knight: {

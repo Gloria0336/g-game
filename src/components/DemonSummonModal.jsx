@@ -31,6 +31,7 @@ const DEMON_STYLE = {
 }
 
 export default function DemonSummonModal({
+  heroine,
   demons,
   summonedThisBattle = [],
   onSummon,
@@ -52,7 +53,7 @@ export default function DemonSummonModal({
           </h2>
           <p className="text-gray-400 text-xs mt-1">
             {isActiveSummon
-              ? '消耗全部靈力（SP）強行呼喚——契約軸需達 15 以上'
+              ? '消耗靈力（80 SP）強行呼喚——將獲得 DES+5 與 契約軸+8'
               : '危機已至——契約書在颤動'}
           </p>
         </div>
@@ -65,9 +66,10 @@ export default function DemonSummonModal({
             const style  = DEMON_STYLE[demonId]
             const demon  = demons[demonId] ?? {}
 
+            const spInsufficient = isActiveSummon && heroine.SP < 80
             const axisInsufficient = isActiveSummon && (demon.demon_axis ?? 0) < 15
             const isDisabled = isActiveSummon
-              ? status === 'hostile'
+              ? (status === 'hostile' || spInsufficient)
               : status !== 'available'
             const isBetray = status === 'betrayed'
 
@@ -108,9 +110,14 @@ export default function DemonSummonModal({
                   <span>信賴 {demon.trust ?? 0}</span>
                   <span>好感 {demon.affection ?? 0}</span>
                   {isActiveSummon && (
-                    <span className={`col-span-2 mt-0.5 ${axisInsufficient ? 'text-red-500' : 'text-violet-400'}`}>
-                      契約軸 {demon.demon_axis ?? 0}{axisInsufficient ? ' ⚠ 不足' : ' ✓'}
-                    </span>
+                    <div className="col-span-2 mt-1 space-y-0.5">
+                      <div className={axisInsufficient ? 'text-red-500' : 'text-violet-400'}>
+                        契約軸 {demon.demon_axis ?? 0}{axisInsufficient ? ' ⚠ 不足' : ' ✓'}
+                      </div>
+                      {spInsufficient && (
+                        <div className="text-red-500">靈力不足（需 80 SP）</div>
+                      )}
+                    </div>
                   )}
                 </div>
 
