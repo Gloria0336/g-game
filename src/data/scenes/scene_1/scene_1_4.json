@@ -1,0 +1,52 @@
+{
+  "sceneId": "1-4",
+  "type": "narrative",
+  "background": "ruined_town_night",
+  "chapter": 1,
+  "dialogues": [
+    {
+      "speaker": "narrator",
+      "text": "戰鬥結束後，光紋沒有立刻散去。瑠夜站在妳身旁一步的位置，像刻意把距離留在一個曖昧的範圍內。"
+    },
+    {
+      "speaker": "demon_a",
+      "text": "妳剛才叫我了。"
+    },
+    {
+      "speaker": "heroine",
+      "text": "情況緊急而已。"
+    },
+    {
+      "speaker": "demon_a",
+      "text": "我知道。所以這才讓人愉快。"
+    },
+    {
+      "speaker": "demon_a",
+      "text": "第一次就能叫得這麼順，妳比我想的誠實。"
+    },
+    {
+      "type": "choice",
+      "prompt": "",
+      "choices": [
+        {
+          "text": "「我只是為了活下去利用你。」",
+          "effects": { "demon_a": { "heroine_axis": -8 } },
+          "next": "1-4-r2",
+          "response": "利用也很好。至少妳已經開始依賴結果了。"
+        },
+        {
+          "text": "「剛才確實是你救了我。」",
+          "effects": { "demon_a": { "heroine_axis": 8 } },
+          "next": "1-4-r2",
+          "response": "這句謝意，比我想像中更甜。"
+        },
+        {
+          "text": "「你到底想從我身上得到什麼？」",
+          "effects": { "demon_a": { "heroine_axis": 3 } },
+          "next": "1-4-r2",
+          "response": "一個答案。看看妳最後會變成什麼樣子。"
+        }
+      ]
+    }
+  ]
+}

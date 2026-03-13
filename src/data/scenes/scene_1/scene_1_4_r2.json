@@ -1,0 +1,48 @@
+{
+  "sceneId": "1-4-r2",
+  "type": "narrative",
+  "background": "ruined_town_night",
+  "chapter": 1,
+  "dialogues": [
+    {
+      "speaker": "narrator",
+      "text": "他伸手替妳撥開臉側沾上的灰燼，動作自然得讓人一瞬間忘了他不是人類。"
+    },
+    {
+      "speaker": "heroine",
+      "text": "別隨便碰我。"
+    },
+    {
+      "speaker": "demon_a",
+      "text": "可妳沒有躲。"
+    },
+    {
+      "type": "choice",
+      "prompt": "",
+      "choices": [
+        {
+          "text": "「下次沒我允許，不准靠這麼近。」",
+          "effects": { "demon_a": { "heroine_axis": -6 } },
+          "next": "1-5",
+          "response": "好嚴格。不過我會先記著，之後再看情況違不違反。"
+        },
+        {
+          "text": "「……只要你別太過分。」",
+          "effects": { "demon_a": { "heroine_axis": 6 } },
+          "next": "1-5",
+          "response": "這算退讓嗎？我很珍惜。"
+        },
+        {
+          "text": "「你是不是很喜歡看我不自在？」",
+          "effects": { "demon_a": { "heroine_axis": 4 } },
+          "next": "1-5",
+          "response": "嗯。因為妳露出那種表情時，會特別真實。"
+        }
+      ]
+    },
+    {
+      "speaker": "narrator",
+      "text": "他最後輕輕一笑，身影才重新散回書頁之間。"
+    }
+  ]
+}

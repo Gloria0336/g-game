@@ -1,0 +1,33 @@
+{
+  "sceneId": "1-1",
+  "type": "narrative",
+  "background": "ruined_town_night",
+  "nextScene": "1-2",
+  "chapter": 1,
+  "dialogues": [
+    {
+      "speaker": "narrator",
+      "text": "火沒有立刻熄滅。倒塌的屋樑在夜裡發出細碎聲響，像有人仍在廢墟深處喘息。"
+    },
+    {
+      "speaker": "narrator",
+      "text": "妳站在原地，掌心裡的三本契約書一陣比一陣更燙，像剛獲得心跳一樣。"
+    },
+    {
+      "speaker": "heroine",
+      "text": "……它們在動。"
+    },
+    {
+      "speaker": "narrator",
+      "text": "不是錯覺。最上方那一本，封面上的空白印記，正浮出淡色光紋。"
+    },
+    {
+      "speaker": "heroine",
+      "text": "這不是普通的書。"
+    },
+    {
+      "speaker": "narrator",
+      "text": "妳話音才落，書頁便自己翻開了。"
+    }
+  ]
+}

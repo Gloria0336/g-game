@@ -1,0 +1,77 @@
+{
+  "sceneId": "1-8",
+  "type": "narrative",
+  "background": "ruined_town_shadow",
+  "nextScene": "1-9",
+  "chapter": 1,
+  "dialogues": [
+    {
+      "speaker": "narrator",
+      "text": "最後一本書安靜得異常。沒有光，也沒有火，只是把周圍的溫度一點點壓低。"
+    },
+    {
+      "speaker": "heroine",
+      "text": "還剩最後一個……"
+    },
+    {
+      "speaker": "unknown",
+      "text": "妳終於想起來了。"
+    },
+    {
+      "speaker": "narrator",
+      "text": "聲音不是從正前方傳來，而是從妳側後的影子裡。"
+    },
+    {
+      "speaker": "narrator",
+      "text": "妳猛地回頭。"
+    },
+    {
+      "speaker": "narrator",
+      "text": "男人站在陰影最深處，像從一開始就在那裡。衣襬幾乎與夜色融在一起，只有眼神冷靜得太明確。"
+    },
+    {
+      "speaker": "demon_c",
+      "text": "玄冥。"
+    },
+    {
+      "speaker": "heroine",
+      "text": "你走路都沒有聲音嗎？"
+    },
+    {
+      "speaker": "demon_c",
+      "text": "有。只是妳沒聽見。"
+    },
+    {
+      "speaker": "heroine",
+      "text": "……這句話有點傷人。"
+    },
+    {
+      "speaker": "demon_c",
+      "text": "實話而已。"
+    },
+    {
+      "speaker": "narrator",
+      "text": "（陰影裡潛伏型魔物現身）"
+    },
+    {
+      "speaker": "demon_c",
+      "text": "來了。牠比前兩個更會等失誤。"
+    },
+    {
+      "speaker": "heroine",
+      "text": "這次你也要我叫名字？"
+    },
+    {
+      "speaker": "demon_c",
+      "text": "……不然呢。"
+    },
+    {
+      "speaker": "heroine",
+      "text": "玄冥！"
+    },
+    {
+      "speaker": "demon_c",
+      "text": "夠了。"
+    }
+  ]
+}

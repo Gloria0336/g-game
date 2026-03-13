@@ -1,0 +1,52 @@
+{
+  "sceneId": "1-7",
+  "type": "narrative",
+  "background": "ruined_town_fire",
+  "chapter": 1,
+  "dialogues": [
+    {
+      "speaker": "narrator",
+      "text": "赤色衝擊撕開敵人胸口後，空氣裡還殘著灼熱的震盪。颯牙甩了甩手，像只是順手打碎一塊礙事的石頭。"
+    },
+    {
+      "speaker": "demon_b",
+      "text": "看見差距了吧？"
+    },
+    {
+      "speaker": "heroine",
+      "text": "你真的很愛把這句話掛嘴邊。"
+    },
+    {
+      "speaker": "demon_b",
+      "text": "有用就夠了。"
+    },
+    {
+      "speaker": "demon_b",
+      "text": "弱就承認，承認了才知道該怎麼變強。"
+    },
+    {
+      "type": "choice",
+      "prompt": "",
+      "choices": [
+        {
+          "text": "「我不會一直比你弱。」",
+          "effects": { "demon_b": { "heroine_axis": 8 } },
+          "next": "1-7-r2",
+          "response": "哈，這句像樣。那就別讓我失望。"
+        },
+        {
+          "text": "「你講話真的很惹人厭。」",
+          "effects": { "demon_b": { "heroine_axis": -8 } },
+          "next": "1-7-r2",
+          "response": "能活下來的人，不需要說話好聽。"
+        },
+        {
+          "text": "「所以你是在教我，還是在羞辱我？」",
+          "effects": { "demon_b": { "heroine_axis": 3 } },
+          "next": "1-7-r2",
+          "response": "兩個都有。妳自己挑著用。"
+        }
+      ]
+    }
+  ]
+}

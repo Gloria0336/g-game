@@ -1,0 +1,52 @@
+{
+  "sceneId": "1-10",
+  "type": "narrative",
+  "background": "ruined_town_shadow",
+  "chapter": 1,
+  "dialogues": [
+    {
+      "speaker": "narrator",
+      "text": "黑色咒紋沿著敵人的四肢蔓延時，妳才發現玄冥的戰鬥方式幾乎沒有多餘動作。他不是壓制，而是讓敵人一步步失去反抗資格。"
+    },
+    {
+      "speaker": "demon_c",
+      "text": "妳出手不慢。"
+    },
+    {
+      "speaker": "heroine",
+      "text": "這算誇獎？"
+    },
+    {
+      "speaker": "demon_c",
+      "text": "算。"
+    },
+    {
+      "speaker": "demon_c",
+      "text": "比我想的穩。"
+    },
+    {
+      "type": "choice",
+      "prompt": "",
+      "choices": [
+        {
+          "text": "「剛才多虧你補上那一下。」",
+          "effects": { "demon_c": { "heroine_axis": 8 } },
+          "next": "1-10-r2",
+          "response": "……妳有看見就好。"
+        },
+        {
+          "text": "「你要是早提醒，我就不會被逼那麼近。」",
+          "effects": { "demon_c": { "heroine_axis": -8 } },
+          "next": "1-10-r2",
+          "response": "下次我會更早。"
+        },
+        {
+          "text": "「你一直都這樣安靜地幫人收尾嗎？」",
+          "effects": { "demon_c": { "heroine_axis": 3 } },
+          "next": "1-10-r2",
+          "response": "不是幫人。只是順手。"
+        }
+      ]
+    }
+  ]
+}

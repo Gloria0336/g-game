@@ -1,0 +1,81 @@
+{
+  "sceneId": "1-2",
+  "type": "narrative",
+  "background": "ruined_town_night",
+  "nextScene": "1-3",
+  "chapter": 1,
+  "dialogues": [
+    {
+      "speaker": "unknown",
+      "text": "現在才發現，太慢了吧？"
+    },
+    {
+      "speaker": "narrator",
+      "text": "那聲音貼著耳邊響起，溫柔得像安撫，卻莫名讓人背脊發冷。"
+    },
+    {
+      "speaker": "heroine",
+      "text": "誰？"
+    },
+    {
+      "speaker": "narrator",
+      "text": "淡色光紋在妳面前凝聚成人影。男人的衣角垂落，笑意很淺，卻像早就認識妳很久。"
+    },
+    {
+      "speaker": "demon_a",
+      "text": "妳可以叫我瑠夜。"
+    },
+    {
+      "speaker": "heroine",
+      "text": "……你在書裡？"
+    },
+    {
+      "speaker": "demon_a",
+      "text": "比較像，妳把我從裡面碰醒了。"
+    },
+    {
+      "speaker": "heroine",
+      "text": "我可沒答應。"
+    },
+    {
+      "speaker": "demon_a",
+      "text": "但妳拿起來了，不是嗎？"
+    },
+    {
+      "speaker": "narrator",
+      "text": "那句話過分平靜，像在陳述一件已經成立、無法反悔的事。"
+    },
+    {
+      "speaker": "narrator",
+      "text": "（遠處傳來魔物低吼）"
+    },
+    {
+      "speaker": "demon_a",
+      "text": "看來妳沒什麼時間消化現實。"
+    },
+    {
+      "speaker": "heroine",
+      "text": "你想做什麼？"
+    },
+    {
+      "speaker": "demon_a",
+      "text": "讓妳活過今晚。然後看看，妳值不值得我留下。"
+    },
+    {
+      "speaker": "demon_a",
+      "text": "叫我的名字。"
+    },
+    {
+      "speaker": "heroine",
+      "text": "你命令人也太自然了吧。"
+    },
+    {
+      "speaker": "demon_a",
+      "text": "不是命令，是建議。妳現在一個人撐不住。"
+    },
+    {
+      "speaker": "heroine",
+      "text": "……瑠夜！"
+    }
+  ]
+}

@@ -24,20 +24,22 @@ export const MODELS = [
   },
 ]
 
+import { DEMON_DATA } from './DemonSystem.js'
+
 // ─── 角色設定（送入 prompt 的角色聲音描述）────────────────────
 
 const CHAR_PROFILES = {
-  char_a: '明澤律｜溫柔陷阱型・青梅竹馬・強烈佔有慾・說話低沉溫柔，偶爾透露令人不安的執著',
-  char_b: '御堂颯｜直球挑釁型・競爭對手・笨拙地表達感情・說話強硬直接，遇挑撥易語塞',
-  char_c: '夜科玄｜神秘引力型・轉學生・背負傷痛・說話極簡深遠，沉默多於言語',
+  demon_a: '瑠夜｜第七階束縛惡魔・控制封印型・低沉溫柔的語調下藏著不動聲色的支配慾，習慣用問句代替命令',
+  demon_b: '颯牙｜第五階戰鬼惡魔・物理爆發型・語氣直接強硬，喜歡用挑釁逼對方露出真性情，輸了才會沉默',
+  demon_c: '玄冥｜第九階詛咒惡魔・詛咒削弱型・極少說話，開口必藏深意，習慣以沉默讓對方自己填補恐懼',
 }
 
 const SPEAKER_LABEL = {
   narrator: '旁白',
-  heroine: '女主角',
-  char_a: '明澤律',
-  char_b: '御堂颯',
-  char_c: '夜科玄',
+  heroine:  '女主角',
+  demon_a:  '瑠夜',
+  demon_b:  '颯牙',
+  demon_c:  '玄冥',
 }
 
 // ─── Prompt 建構 ──────────────────────────────────────────────
@@ -46,13 +48,13 @@ const SPEAKER_LABEL = {
  * 根據場景骨架與遊戲狀態建構 AI prompt
  */
 function buildPrompt(sceneData, gameState) {
-  const { heroine, characters, mainRoute, currentChapter, flags } = gameState
-  const charStats = mainRoute ? characters[mainRoute] : null
+  const { heroine, demons, mainRoute, currentChapter, flags } = gameState
+  const demonStats = mainRoute ? demons[mainRoute] : null
 
   // 數值快照（緊湊格式）
-  const heroineStats = `心防${heroine.guard}/心動${heroine.flutter}/洞察${heroine.insight}/魅力${heroine.charm}/慾望${heroine.desire}`
-  const charStatsStr = charStats
-    ? `${SPEAKER_LABEL[mainRoute] ?? mainRoute}: 好感${charStats.affection}/進度${charStats.progress}/信賴${charStats.trust}/情慾${charStats.lust}`
+  const heroineStats = `心防${heroine.heart_guard}/心動${heroine.heart_flutter}/洞察${heroine.insight}/獨立${heroine.independence}/慾望${heroine.desire}`
+  const charStatsStr = demonStats
+    ? `${SPEAKER_LABEL[mainRoute] ?? mainRoute}（${DEMON_DATA[mainRoute]?.rank ?? ''}）: 好感${demonStats.affection}/惡魔軸${demonStats.demon_axis}/信賴${demonStats.trust}/情慾${demonStats.lust}`
     : ''
 
   // 場景中出現的角色設定

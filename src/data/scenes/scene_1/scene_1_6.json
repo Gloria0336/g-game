@@ -1,0 +1,10 @@
+{
+  "sceneId": "1-6",
+  "type": "combat",
+  "background": "ruined_town_fire",
+  "enemyId": "heavy_beast",
+  "nextScene": "1-7",
+  "chapter": 1,
+  "isTutorialSummon": true,
+  "tutorialDemon": "demon_b"
+}

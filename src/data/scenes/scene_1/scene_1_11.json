@@ -1,0 +1,58 @@
+{
+  "sceneId": "1-11",
+  "type": "narrative",
+  "background": "ruined_town_dawn",
+  "nextScene": "2-1",
+  "chapter": 1,
+  "isChapterEnd": true,
+  "dialogues": [
+    {
+      "speaker": "narrator",
+      "text": "三場戰鬥結束後，廢墟短暫安靜下來。東方天色微微泛白，像夜晚終於願意裂開一道縫。"
+    },
+    {
+      "speaker": "narrator",
+      "text": "三本契約書漂浮在妳面前，封面上的紋樣已不再空白。"
+    },
+    {
+      "speaker": "heroine",
+      "text": "瑠夜……颯牙……玄冥。"
+    },
+    {
+      "speaker": "demon_a",
+      "text": "這樣聽起來，像被妳好好記住了。"
+    },
+    {
+      "speaker": "demon_b",
+      "text": "不過就是名字，少一副宣誓的樣子。"
+    },
+    {
+      "speaker": "demon_c",
+      "text": "之後會更麻煩。"
+    },
+    {
+      "speaker": "heroine",
+      "text": "我現在後悔還來得及嗎？"
+    },
+    {
+      "speaker": "demon_a",
+      "text": "來不及。"
+    },
+    {
+      "speaker": "demon_b",
+      "text": "太晚了。"
+    },
+    {
+      "speaker": "demon_c",
+      "text": "契約已經碰上了。"
+    },
+    {
+      "speaker": "narrator",
+      "text": "妳握緊三本書，第一次清楚明白：自己獲得的不只是力量，還有三個會改變之後每一步的人。"
+    },
+    {
+      "speaker": "narrator",
+      "text": "而真正的選擇，才正要開始。"
+    }
+  ]
+}

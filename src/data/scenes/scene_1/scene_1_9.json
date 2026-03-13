@@ -1,0 +1,10 @@
+{
+  "sceneId": "1-9",
+  "type": "combat",
+  "background": "ruined_town_shadow",
+  "enemyId": "shadow_lurker",
+  "nextScene": "1-10",
+  "chapter": 1,
+  "isTutorialSummon": true,
+  "tutorialDemon": "demon_c"
+}

@@ -1,0 +1,52 @@
+{
+  "sceneId": "1-10-r2",
+  "type": "narrative",
+  "background": "ruined_town_shadow",
+  "chapter": 1,
+  "dialogues": [
+    {
+      "speaker": "narrator",
+      "text": "他看了妳一眼，視線在妳微微發抖的手上停了一瞬，又移開。"
+    },
+    {
+      "speaker": "demon_c",
+      "text": "妳在抖。"
+    },
+    {
+      "speaker": "heroine",
+      "text": "那是因為今晚真的很荒謬。"
+    },
+    {
+      "speaker": "demon_c",
+      "text": "還站得住，就不算糟。"
+    },
+    {
+      "type": "choice",
+      "prompt": "",
+      "choices": [
+        {
+          "text": "「有你們在，至少沒剛才那麼糟。」",
+          "effects": { "demon_c": { "heroine_axis": 6 } },
+          "next": "1-11",
+          "response": "……嗯。那就好。"
+        },
+        {
+          "text": "「別用那種好像很懂我的口氣說話。」",
+          "effects": { "demon_c": { "heroine_axis": -6 } },
+          "next": "1-11",
+          "response": "我沒有懂。只是看見。"
+        },
+        {
+          "text": "「你看起來比誰都像習慣這種事。」",
+          "effects": { "demon_c": { "heroine_axis": 4 } },
+          "next": "1-11",
+          "response": "習慣，不代表喜歡。"
+        }
+      ]
+    },
+    {
+      "speaker": "narrator",
+      "text": "他說完後便安靜地退回陰影，連消失都像沒有打擾任何人。"
+    }
+  ]
+}

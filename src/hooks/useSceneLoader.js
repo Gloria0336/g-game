@@ -8,9 +8,10 @@
 import { useState, useCallback } from 'react'
 
 function sceneIdToPath(sceneId) {
-  // '1-1-a' → 'scene_1_1_a'
+  // '1-1-a' → 'scene_1/scene_1_1_a'
+  const chapter = sceneId.split('-')[0]
   const normalized = sceneId.replace(/-/g, '_')
-  return `/src/data/scenes/scene_${normalized}.json`
+  return `/src/data/scenes/scene_${chapter}/scene_${normalized}.json`
 }
 
 export function useSceneLoader() {
@@ -21,8 +22,10 @@ export function useSceneLoader() {
     setLoading(true)
     setError(null)
     try {
+      const chapter = sceneId.split('-')[0]
+      const filename = `scene_${sceneId.replace(/-/g, '_')}`
       // Vite 動態 import（dev & build 都支援）
-      const module = await import(`../data/scenes/scene_${sceneId.replace(/-/g, '_')}.json`)
+      const module = await import(`../data/scenes/scene_${chapter}/${filename}.json`)
       setLoading(false)
       return module.default
     } catch (err) {

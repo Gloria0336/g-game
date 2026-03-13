@@ -1,0 +1,10 @@
+{
+  "sceneId": "1-3",
+  "type": "combat",
+  "background": "ruined_town_night",
+  "enemyId": "fire_wraith",
+  "nextScene": "1-4",
+  "chapter": 1,
+  "isTutorialSummon": true,
+  "tutorialDemon": "demon_a"
+}

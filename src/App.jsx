@@ -396,6 +396,28 @@ export default function App() {
   // 同步 handleEnemyTurn 到 ref，供 goToScene 使用
   useEffect(() => { handleEnemyTurnRef.current = handleEnemyTurn }, [handleEnemyTurn])
 
+  // ── 第一章教學戰：自動召喚 tutorialDemon ──────────────────
+
+  useEffect(() => {
+    const { phase, sceneData, combat } = state
+    if (
+      phase === 'combat' &&
+      sceneData?.isTutorialSummon &&
+      sceneData?.tutorialDemon &&
+      !combat.summonedThisBattle.includes(sceneData.tutorialDemon)
+    ) {
+      const demonId = sceneData.tutorialDemon
+      const result = executeDemonSummonEffect(demonId, state.heroine, combat)
+      dispatch({ type: ACTION.SUMMON_DEMON, demonId })
+      dispatch({
+        type: ACTION.COMBAT_APPLY_LOG,
+        combatUpdate: result.combatUpdate,
+        heroineUpdate: { SP: result.newHeroine.SP },
+      })
+      setRevealedDemons(prev => new Set([...prev, demonId]))
+    }
+  }, [state.sceneData?.sceneId, state.phase])
+
   // ── 戰鬥：召喚惡魔 ───────────────────────────────────────
 
   const handleOpenSummon = useCallback(() => {

@@ -1,0 +1,52 @@
+{
+  "sceneId": "1-7-r2",
+  "type": "narrative",
+  "background": "ruined_town_fire",
+  "chapter": 1,
+  "dialogues": [
+    {
+      "speaker": "narrator",
+      "text": "他低頭看著妳手臂上的擦傷，皺了一下眉，卻沒有直接問疼不疼。"
+    },
+    {
+      "speaker": "demon_b",
+      "text": "下次先顧好妳自己。別蠢到讓敵人摸到妳身後。"
+    },
+    {
+      "speaker": "heroine",
+      "text": "……你這是在關心我？"
+    },
+    {
+      "speaker": "demon_b",
+      "text": "少自作多情。我只是不想契約者太快爛掉。"
+    },
+    {
+      "type": "choice",
+      "prompt": "",
+      "choices": [
+        {
+          "text": "「那你就繼續看著我變強。」",
+          "effects": { "demon_b": { "heroine_axis": 6 } },
+          "next": "1-8",
+          "response": "行。我看妳能走到哪。"
+        },
+        {
+          "text": "「你嘴巴硬成這樣，不累嗎？」",
+          "effects": { "demon_b": { "heroine_axis": -6 } },
+          "next": "1-8",
+          "response": "比起哄人，這樣省事多了。"
+        },
+        {
+          "text": "「至少你有在看著我，對吧？」",
+          "effects": { "demon_b": { "heroine_axis": 5 } },
+          "next": "1-8",
+          "response": "……哼。妳倒是挺會抓重點。"
+        }
+      ]
+    },
+    {
+      "speaker": "narrator",
+      "text": "他嘖了一聲，卻沒否認，接著才化成赤色殘光回到契約書裡。"
+    }
+  ]
+}

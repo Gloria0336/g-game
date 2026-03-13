@@ -1,0 +1,69 @@
+{
+  "sceneId": "1-5",
+  "type": "narrative",
+  "background": "ruined_town_fire",
+  "nextScene": "1-6",
+  "chapter": 1,
+  "dialogues": [
+    {
+      "speaker": "narrator",
+      "text": "瑠夜退去後，第二本契約書立刻劇烈震顫，像早就不耐煩等下去。"
+    },
+    {
+      "speaker": "narrator",
+      "text": "（赤色光焰炸開）"
+    },
+    {
+      "speaker": "unknown",
+      "text": "終於輪到我了？妳跟那傢伙廢話也太久。"
+    },
+    {
+      "speaker": "heroine",
+      "text": "……又來一個。"
+    },
+    {
+      "speaker": "narrator",
+      "text": "男人幾乎是踩著火光現身的。肩背挺直，眼神鋒利，氣勢比剛才那個還更像災禍本身。"
+    },
+    {
+      "speaker": "demon_b",
+      "text": "我是颯牙。別把我跟剛剛那種笑裡藏刀的傢伙混一起。"
+    },
+    {
+      "speaker": "heroine",
+      "text": "你這開場也沒比較討喜。"
+    },
+    {
+      "speaker": "demon_b",
+      "text": "我又不是來討妳喜歡的。"
+    },
+    {
+      "speaker": "narrator",
+      "text": "（前方重型魔物撞開殘牆）"
+    },
+    {
+      "speaker": "demon_b",
+      "text": "來了。這種貨色，才值得我出手一次。"
+    },
+    {
+      "speaker": "demon_b",
+      "text": "站後面。"
+    },
+    {
+      "speaker": "heroine",
+      "text": "你憑什麼命令我？"
+    },
+    {
+      "speaker": "demon_b",
+      "text": "因為妳現在砍不穿牠。"
+    },
+    {
+      "speaker": "heroine",
+      "text": "……那你最好真的能行。"
+    },
+    {
+      "speaker": "demon_b",
+      "text": "睜大眼看好。"
+    }
+  ]
+}
