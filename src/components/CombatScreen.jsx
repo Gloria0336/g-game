@@ -82,6 +82,42 @@ function SkillButton({ skillId, heroine, onUse }) {
   )
 }
 
+// ── 場上惡魔浮動面板 ─────────────────────────────────────────
+
+function ActiveDemonsPanel({ activeDemons }) {
+  const demons = Object.values(activeDemons)
+  if (demons.length === 0) return null
+
+  return (
+    <div className="absolute bottom-2 right-2 flex flex-col gap-1.5 pointer-events-none z-10">
+      {demons.map(demon => {
+        const hpPct = Math.max(0, Math.min(100, (demon.currentHP / demon.maxHP) * 100))
+        return (
+          <div key={demon.id} className="w-28 bg-gray-900/90 border border-violet-800/70 rounded p-1.5 shadow-lg">
+            <div className="text-violet-300 font-semibold mb-1" style={{ fontSize: '0.65rem' }}>
+              ◈ {demon.name}
+            </div>
+            <div className="flex items-center gap-1 mb-1">
+              <span className="text-gray-500 shrink-0" style={{ fontSize: '0.55rem' }}>HP</span>
+              <div className="flex-1 bg-gray-800 rounded-full overflow-hidden" style={{ height: '4px' }}>
+                <div
+                  className="h-full bg-violet-600 rounded-full transition-all duration-300"
+                  style={{ width: `${hpPct}%` }}
+                />
+              </div>
+              <span className="text-gray-400 shrink-0" style={{ fontSize: '0.55rem' }}>{demon.currentHP}</span>
+            </div>
+            <div className="flex gap-2" style={{ fontSize: '0.6rem' }}>
+              <span className="text-gray-500">ATK <span className="text-rose-300">{demon.ATK}</span></span>
+              <span className="text-gray-500">AGI <span className="text-amber-300">{demon.AGI}</span></span>
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 // ── 主元件 ────────────────────────────────────────────────────
 
 export default function CombatScreen({
@@ -118,6 +154,10 @@ export default function CombatScreen({
               {enemyName ?? enemyId ?? '未知魔物'}
             </div>
             <StatBar label="HP" value={enemyHP} max={enemyMaxHP} color="bg-rose-600" />
+            <div className="flex gap-3 mt-1">
+              <span className="text-gray-500 text-xs">AGI <span className="text-amber-300 font-mono">{combat.enemyAGI ?? '—'}</span></span>
+              <span className="text-gray-500 text-xs">ATK <span className="text-rose-300 font-mono">{combat.enemyATK ?? '—'}</span></span>
+            </div>
 
             {/* 敵人狀態 */}
             {enemyStatuses.length > 0 && (
@@ -143,8 +183,9 @@ export default function CombatScreen({
       </div>
 
       {/* ── 中間：戰鬥日誌 ── */}
-      <div className="flex-1 overflow-hidden game-panel mx-4 my-3 rounded">
+      <div className="flex-1 overflow-hidden game-panel mx-4 my-3 rounded relative">
         <CombatLog logs={log} />
+        <ActiveDemonsPanel activeDemons={combat.activeDemons ?? {}} />
       </div>
 
       {/* ── 底部：女主角數值 + 行動列 ── */}
@@ -156,6 +197,11 @@ export default function CombatScreen({
           <StatBar label="SP" value={heroine.SP}    max={heroine.maxSP} color="bg-blue-500" />
           <DurabilityBar label="上" value={equip.upper?.durability ?? 0} />
           <DurabilityBar label="下" value={equip.lower?.durability ?? 0} />
+        </div>
+        <div className="flex gap-4 text-xs">
+          <span className="text-gray-500">AGI <span className="text-amber-400 font-mono">{heroine.AGI ?? '—'}</span></span>
+          <span className="text-gray-500">WIL <span className="text-cyan-400 font-mono">{heroine.WIL ?? '—'}</span></span>
+          <span className="text-gray-500">ATK <span className="text-rose-400 font-mono">{heroine.ATK ?? '—'}</span></span>
         </div>
 
         {/* 女主角狀態標籤 */}
