@@ -258,17 +258,19 @@ export function executeActiveSummonEffect(demonId, heroine, _combat, demons) {
     }
   }
 
-  const newHeroine = { ...heroine, SP: heroine.SP - SP_COST }
-  const logs = [`消耗靈力（${SP_COST} SP）以嘗試主動召喚……`]
-
   const demonAxis = demons[demonId]?.demon_axis ?? 0
   if (demonAxis < 15) {
-    logs.push(
-      `【召喚失敗】${DEMON_DATA[demonId]?.name ?? demonId} 的契約連結尚不足夠（契約軸 ${demonAxis} < 15）`
-    )
-    return { success: false, newHeroine, combatUpdate: { log: logs } }
+    return {
+      success: false,
+      newHeroine: heroine,
+      combatUpdate: { log: [
+        `【召喚失敗】${DEMON_DATA[demonId]?.name ?? demonId} 的契約連結尚不足夠（契約軸 ${demonAxis} < 15）`,
+      ]},
+    }
   }
 
+  const newHeroine = { ...heroine, SP: heroine.SP - SP_COST }
+  const logs = [`消耗靈力（${SP_COST} SP）以嘗試主動召喚……`]
   logs.push(`${DEMON_DATA[demonId]?.name ?? demonId} 應召而至！`)
   return { success: true, newHeroine, combatUpdate: { log: logs } }
 }

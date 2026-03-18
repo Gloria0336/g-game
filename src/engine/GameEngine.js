@@ -109,7 +109,8 @@ export const ACTION = {
   OPEN_ACTIVE_SUMMON:  'OPEN_ACTIVE_SUMMON',  // 打開主動召喚面板（消耗全部 SP）
   SUMMON_DEMON:        'SUMMON_DEMON',        // 召喚指定惡魔
   SKIP_SUMMON:         'SKIP_SUMMON',         // 選擇不召喚
-  UPDATE_DEMON_AXIS:   'UPDATE_DEMON_AXIS',   // 更新惡魔 heroine_axis
+  UPDATE_DEMON_AXIS:     'UPDATE_DEMON_AXIS',       // 更新惡魔 heroine_axis
+  UPDATE_DEMON_RELATION: 'UPDATE_DEMON_RELATION',   // 召喚後更新 trust / affection / demon_axis
   INCREMENT_PLAYER_ACTION: 'INCREMENT_PLAYER_ACTION', // 玩家行動次數+1（教學用）
   UPDATE_ACTIVE_DEMON: 'UPDATE_ACTIVE_DEMON', // 更新場上惡魔單位（HP / 技能冷卻）
   REMOVE_ACTIVE_DEMON: 'REMOVE_ACTIVE_DEMON', // 惡魔 HP 歸零後移除
@@ -403,6 +404,25 @@ export function gameReducer(state, action) {
           [demonId]: {
             ...d,
             heroine_axis: Math.min(100, Math.max(-100, (d.heroine_axis ?? 0) + heroineAxisDelta)),
+          },
+        },
+      }
+    }
+
+    // ── 惡魔關係更新（召喚後 trust / affection / demon_axis）────────
+    case ACTION.UPDATE_DEMON_RELATION: {
+      const { demonId, trustDelta = 0, affectionDelta = 0, axisDelta = 0 } = action
+      const d = state.demons[demonId]
+      if (!d) return state
+      return {
+        ...state,
+        demons: {
+          ...state.demons,
+          [demonId]: {
+            ...d,
+            trust:      Math.min(100, Math.max(0,   (d.trust ?? 0)      + trustDelta)),
+            affection:  Math.min(100, Math.max(-50,  (d.affection ?? 0)  + affectionDelta)),
+            demon_axis: Math.min(100, Math.max(0,    (d.demon_axis ?? 0) + axisDelta)),
           },
         },
       }

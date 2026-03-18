@@ -21,7 +21,6 @@ import {
   executeDemonTurn,
   executeDemonSkill,
   executeEnemyAttackOnDemon,
-  applyPostSummonAffection,
 } from './engine/DemonSystem.js'
 import { getSkillData } from './engine/SkillDB.js'
 import { rollSkillReward } from './engine/SkillRewardSystem.js'
@@ -213,7 +212,8 @@ export default function App() {
     if (currentDialogue + 1 >= sceneData.dialogues.length) {
       // 覺醒場景：場景結束後顯示結果
       if (sceneData.isAwakeningScene) {
-        const awakeningType = judgeAwakeningType(cur.awakeningScores)
+        const hpPercent = cur.heroine.HP / cur.heroine.maxHP
+        const awakeningType = judgeAwakeningType(cur.flags, hpPercent)
         setPendingAwakeningType(awakeningType)
         setShowAwakeningResult(true)
         return
@@ -269,15 +269,22 @@ export default function App() {
   const advanceToNextActor = useCallback(() => {
     const { heroine, combat } = stateRef.current
     let queue = [...(combat.turnQueue ?? [])]
+    let isNewRound = false
 
-    // 佇列耗盡 → 建立新回合
     if (queue.length === 0) {
       queue = buildTurnQueue(heroine, combat.activeDemons ?? {}, combat)
-      dispatch({ type: ACTION.COMBAT_APPLY_LOG, combatUpdate: { log: ['── 新回合 ──'] } })
+      isNewRound = true
     }
 
     const next = queue[0]
-    dispatch({ type: ACTION.SET_TURN_QUEUE, queue: queue.slice(1) })
+    const remaining = queue.slice(1)
+
+    if (isNewRound) {
+      // 新回合：log 與剩餘佇列合併一次 dispatch，確保 stateRef 更新後不會重建佇列
+      dispatch({ type: ACTION.COMBAT_APPLY_LOG, combatUpdate: { log: ['── 新回合 ──'], turnQueue: remaining } })
+    } else {
+      dispatch({ type: ACTION.SET_TURN_QUEUE, queue: remaining })
+    }
 
     if (next === 'heroine') {
       setIsPlayerTurn(true)
@@ -319,15 +326,15 @@ export default function App() {
     const cur = stateRef.current
     const { heroine, combat } = cur
 
-    // 封印狀態：跳過敵人行動 → 直接回到下一行動者
-    const sealStatus = combat.enemyStatuses?.find(s => s.type === 'seal')
-    if (sealStatus) {
+    // 封印 / 遲滯狀態：跳過敵人行動 → 直接回到下一行動者
+    const skipStatus = combat.enemyStatuses?.find(s => s.type === 'seal' || s.type === 'delay')
+    if (skipStatus) {
       dispatch({
         type: ACTION.COMBAT_APPLY_LOG,
         combatUpdate: {
-          log: ['敵人被封印，跳過行動！'],
+          log: [skipStatus.type === 'delay' ? '敵人陷入遲滯，跳過行動！' : '敵人被封印，跳過行動！'],
           enemyStatuses: combat.enemyStatuses
-            .map(s => s.type === 'seal' ? { ...s, duration: s.duration - 1 } : s)
+            .map(s => (s.type === 'seal' || s.type === 'delay') ? { ...s, duration: s.duration - 1 } : s)
             .filter(s => s.duration > 0),
         },
       })
@@ -365,6 +372,13 @@ export default function App() {
         equipment: result.newHeroine.equipment,
       },
     })
+
+    // reflect 致死判定：敵人被反傷擊殺 → 勝利
+    const reflectEnemyHP = result.combatUpdate.enemyHP
+    if (reflectEnemyHP !== undefined && reflectEnemyHP <= 0) {
+      setTimeout(() => { dispatch({ type: ACTION.END_COMBAT, result: 'victory' }); setIsProcessing(false) }, 600)
+      return
+    }
 
     if (result.newHeroine.HP <= 0) {
       setTimeout(() => { dispatch({ type: ACTION.END_COMBAT, result: 'defeat' }); setIsProcessing(false) }, 600)
@@ -440,8 +454,7 @@ export default function App() {
       dispatch({ type: ACTION.UPDATE_DEMON_AXIS, demonId, heroineAxisDelta: 10 })
       dispatch({ type: ACTION.COMBAT_APPLY_LOG, heroineUpdate: { DES: (cur.heroine.DES ?? 0) + 5 } })
 
-      const newDemons = applyPostSummonAffection(demons, demonId, 8)
-      stateRef.current = { ...stateRef.current, demons: newDemons }
+      dispatch({ type: ACTION.UPDATE_DEMON_RELATION, demonId, trustDelta: 2, affectionDelta: 2, axisDelta: 8 })
       setRevealedDemons(prev => new Set([...prev, demonId]))
 
       // 入場技能（非第一章）
@@ -481,8 +494,7 @@ export default function App() {
       combatUpdate: { log: [`【${DEMON_DATA[demonId]?.name ?? demonId}】應召而至！`] },
     })
 
-    const newDemons = applyPostSummonAffection(demons, demonId)
-    stateRef.current = { ...stateRef.current, demons: newDemons }
+    dispatch({ type: ACTION.UPDATE_DEMON_RELATION, demonId, trustDelta: 2, affectionDelta: 2, axisDelta: 5 })
     setRevealedDemons(prev => new Set([...prev, demonId]))
 
     // 入場技能（非第一章）

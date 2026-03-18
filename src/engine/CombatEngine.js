@@ -253,10 +253,13 @@ export function executeBasicAttack(heroine, combat) {
   const enemyMarkStatus = combat.enemyStatuses.find(s => s.type === 'mark')
   const markAmp = enemyMarkStatus ? 25 : 0
 
+  const corrodeStatus = combat.enemyStatuses.find(s => s.type === 'corrode')
+  const effectiveEnemyDR = Math.max(0, (combat.enemyDR ?? 0) - (corrodeStatus?.drReduction ?? 0))
+
   const damage = calcDamage({
     atk: heroine.ATK,
     ampPercent: 15 + markAmp,
-    drPercent: combat.enemyDR ?? 0,
+    drPercent: effectiveEnemyDR,
   })
 
   const newEnemyHP = Math.max(0, combat.enemyHP - damage)
@@ -286,7 +289,7 @@ export function executeSkill(heroine, skillData, combat) {
   const logs = []
 
   // SP 消耗（詛咒狀態額外 +8）
-  const cursed = heroine.heroineStatuses?.find(s => s.type === 'curse')
+  const cursed = (combat.heroineStatuses ?? []).find(s => s.type === 'curse')
   const spCost = skillData.spCost + (cursed ? 8 : 0)
 
   if (heroine.SP < spCost) {
@@ -309,6 +312,9 @@ export function executeSkill(heroine, skillData, combat) {
       const hits = effect.hits ?? 1
       let totalDmg = 0
 
+      const corrodeStatus = combat.enemyStatuses.find(s => s.type === 'corrode')
+      const effectiveEnemyDR = Math.max(0, (combat.enemyDR ?? 0) - (corrodeStatus?.drReduction ?? 0))
+
       for (let i = 0; i < hits; i++) {
         const spBonus = newHeroine.SP / newHeroine.maxSP > 0.6 ? 5 : 0
         const { hit: thisHit } = rollHit(70 + spBonus)
@@ -318,7 +324,7 @@ export function executeSkill(heroine, skillData, combat) {
         const dmg = calcDamage({
           atk: newHeroine.ATK,
           ampPercent: (effect.ampPercent ?? 0) + markAmp,
-          drPercent: combat.enemyDR ?? 0,
+          drPercent: effectiveEnemyDR,
           ignoreDRAmount: effect.ignoreDR ?? 0,
         })
         totalDmg += dmg
@@ -327,6 +333,12 @@ export function executeSkill(heroine, skillData, combat) {
 
       damage = totalDmg
       combatUpdate.enemyHP = Math.max(0, combat.enemyHP - totalDmg)
+
+      // 攻擊命中後附加狀態（如流血、遲滯）
+      if (effect.applyStatus && totalDmg > 0) {
+        newEnemyStatuses = addEnemyStatus(newEnemyStatuses, effect.applyStatus)
+        logs.push(`${skillData.name}：附加 ${effect.applyStatus.type} 狀態`)
+      }
       break
     }
 
@@ -342,8 +354,13 @@ export function executeSkill(heroine, skillData, combat) {
     }
 
     case 'buff_self': {
-      // 自身 buff（迴避、護盾等）
-      logs.push(`${skillData.name}：${effect.description ?? '自身強化'}`)
+      if (effect.applyStatus) {
+        const existing = (combat.heroineStatuses ?? []).filter(s => s.type !== effect.applyStatus.type)
+        combatUpdate.heroineStatuses = [...existing, effect.applyStatus]
+        logs.push(`${skillData.name}：${effect.description ?? '自身強化（' + effect.applyStatus.type + '）'}`)
+      } else {
+        logs.push(`${skillData.name}：${effect.description ?? '自身強化'}`)
+      }
       break
     }
 
@@ -419,6 +436,7 @@ export function executeSkill(heroine, skillData, combat) {
       effect.durabilityDamage
     )
     combatUpdate.heroineEquipment = newEquipment
+    newHeroine.equipment = newEquipment  // 同步持久化
     if (desGain > 0) {
       newHeroine.DES = Math.min(200, (newHeroine.DES ?? 0) + desGain)
       logs.push(`裝備受損！DES +${desGain}`)
@@ -531,10 +549,23 @@ export function executeEnemyAttack(heroine, combat) {
     logs.push(`敵人攻擊：命中，造成 ${damage} 傷害`)
   }
 
+  // reflect 反傷：敵人攻擊命中後，傷害的 N% 反彈回敵人
+  const reflectStatus = (combat.enemyStatuses ?? []).find(s => s.type === 'reflect')
+  let newEnemyHP = combat.enemyHP
+  if (reflectStatus && damage > 0) {
+    const reflectDmg = Math.max(1, Math.floor(damage * (reflectStatus.value ?? 10) / 100))
+    newEnemyHP = Math.max(0, combat.enemyHP - reflectDmg)
+    logs.push(`反傷：${reflectDmg} 傷害反射回敵人！`)
+  }
+
   return {
     damage,
     newHeroine,
-    combatUpdate: { log: logs, heroineStatuses: currentHeroineStatuses },
+    combatUpdate: {
+      log: logs,
+      heroineStatuses: currentHeroineStatuses,
+      ...(newEnemyHP < combat.enemyHP ? { enemyHP: newEnemyHP } : {}),
+    },
   }
 }
 
