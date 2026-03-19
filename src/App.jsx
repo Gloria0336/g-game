@@ -411,7 +411,6 @@ export default function App() {
       heroineUpdate: {
         HP: result.newHeroine.HP,
         DES: result.newHeroine.DES,
-        desire: result.newHeroine.desire,
         equipment: result.newHeroine.equipment,
       },
     })

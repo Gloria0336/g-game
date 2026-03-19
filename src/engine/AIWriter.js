@@ -52,7 +52,7 @@ function buildPrompt(sceneData, gameState) {
   const demonStats = mainRoute ? demons[mainRoute] : null
 
   // 數值快照（緊湊格式）
-  const heroineStats = `心防${heroine.heart_guard}/心動${heroine.heart_flutter}/洞察${heroine.insight}/獨立${heroine.independence}/慾望${heroine.desire}`
+  const heroineStats = `心動${heroine.heart}/洞察${heroine.insight}/慾望${heroine.DES}/獨立${heroine.independence}`
   const charStatsStr = demonStats
     ? `${SPEAKER_LABEL[mainRoute] ?? mainRoute}（${DEMON_DATA[mainRoute]?.rank ?? ''}）: 好感${demonStats.affection}/惡魔軸${demonStats.demon_axis}/信賴${demonStats.trust}/情慾${demonStats.lust}`
     : ''

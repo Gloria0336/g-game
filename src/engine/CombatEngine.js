@@ -8,7 +8,7 @@
  */
 
 import { getEquipmentData } from './EquipmentDB.js'
-import { clamp, syncDesireFromDES } from './StatsManager.js'
+import { clamp } from './StatsManager.js'
 
 // ─── 骰點工具 ─────────────────────────────────────────────────
 
@@ -539,9 +539,6 @@ export function executeEnemyAttack(heroine, combat) {
     newHeroine.DES = Math.min(200, newHeroine.DES + 8)
     logs.push(`HP 危急！DES +8`)
   }
-
-  // 同步 desire
-  newHeroine = syncDesireFromDES(newHeroine)
 
   if (useSkill) {
     logs.push(`${useSkill.log ?? useSkill.name}，造成 ${damage} 傷害`)

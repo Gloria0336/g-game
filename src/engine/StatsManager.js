@@ -7,10 +7,8 @@
 
 export const INITIAL_HEROINE = {
   // 情感數值
-  heart_guard: 50,
-  heart_flutter: 0,
+  heart: 10,
   insight: 30,
-  desire: 0,
   independence: 30,
 
   // 戰鬥數值
@@ -143,7 +141,7 @@ export function applyAwakening(state, awakeningType) {
  * 套用 effects 物件的數值變化
  * effects 格式：
  * {
- *   heroine: { heart_guard: -5, insight: +10, ... },
+ *   heroine: { heart: -5, insight: +10, ... },
  *   demon_a: { heroine_axis: +10, affection: +5, ... },
  *   ...
  * }
@@ -159,8 +157,10 @@ export function applyEffects(state, effects) {
     for (const [key, delta] of Object.entries(effects.heroine)) {
       if (!(key in newHeroine)) continue
       const raw = newHeroine[key] + delta
-      // DES 特殊範圍 0–200
-      if (key === 'DES') {
+      // 各欄位邊界
+      if (key === 'heart') {
+        newHeroine[key] = clamp(raw, -50, 100)
+      } else if (key === 'DES') {
         newHeroine[key] = clamp(raw, 0, 200)
       } else if (key === 'HP') {
         newHeroine[key] = clamp(raw, 0, newHeroine.maxHP)
@@ -267,7 +267,7 @@ export function checkCondition(state, condition) {
 // ─── 骰點加成計算 ─────────────────────────────────────────────
 
 export function calcStatsBonus(state, bonusStats, demonId = null) {
-  const HEROINE_STAT_KEYS = ['heart_guard', 'heart_flutter', 'insight', 'desire', 'independence', 'WIL', 'ATK', 'AGI']
+  const HEROINE_STAT_KEYS = ['heart', 'insight', 'independence', 'WIL', 'ATK', 'AGI']
   const DEMON_STAT_KEYS = ['affection', 'trust', 'lust', 'heroine_axis', 'demon_axis']
 
   let total = 0
@@ -322,15 +322,3 @@ export function evaluateContractStatus(state) {
   return { ...state, demons: newDemons }
 }
 
-// ─── DES 驅動的慾望緩升 ─────────────────────────────────────
-
-/**
- * 每次 DES 超過閾值時，緩慢提升 desire
- * 由 CombatEngine 在 DES 變動後呼叫
- */
-export function syncDesireFromDES(heroine) {
-  const desireGain = Math.floor(heroine.DES / 30) * 5
-  const newDesire = clamp(desireGain)
-  if (newDesire <= heroine.desire) return heroine
-  return { ...heroine, desire: newDesire }
-}

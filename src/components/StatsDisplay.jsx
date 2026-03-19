@@ -11,34 +11,16 @@ const DEMON_NAMES = {
   demon_c: '玄冥',
 }
 
-const EMOTIONAL_LABELS = {
-  heart_guard:   '心防',
-  heart_flutter: '心動',
-  insight:       '洞察',
-  independence:  '魅力',
-  desire:        '慾望',
-}
-
-const EMOTIONAL_COLORS = {
-  heart_guard:   'bg-blue-400',
-  heart_flutter: 'bg-pink-400',
-  insight:       'bg-cyan-400',
-  independence:  'bg-yellow-400',
-  desire:        'bg-red-400',
-}
-
 const CHAR_LABELS = {
   affection: '好感',
-  progress:  '進度',
-  trust:     '信賴',
-  lust:      '情慾',
+  progress: '進度',
+  trust: '信賴',
 }
 
 const CHAR_COLORS = {
   affection: 'bg-pink-500',
-  progress:  'bg-purple-400',
-  trust:     'bg-emerald-400',
-  lust:      'bg-orange-400',
+  progress: 'bg-purple-400',
+  trust: 'bg-emerald-400',
 }
 
 const GLITCH_CHARS = 'アイウエオカキクケコサシスセソタチツテト█▓▒░▪◆◇※＃＄'
@@ -66,8 +48,9 @@ function GlitchText({ length = 5, className = "" }) {
   )
 }
 
-function StatBar({ label, value, max = 100, color }) {
-  const pct = max > 0 ? Math.max(0, Math.min(100, (value / max) * 100)) : 0
+function StatBar({ label, value, max = 100, min = 0, color }) {
+  const span = max - min
+  const pct = span > 0 ? Math.max(0, Math.min(100, ((value - min) / span) * 100)) : 0
   return (
     <div className="flex items-center gap-2 text-xs">
       <span className="w-8 text-gray-400 shrink-0">{label}</span>
@@ -99,15 +82,8 @@ export default function StatsDisplay({ heroine, demons, mainRoute, revealedDemon
           {/* ── 女主角情感數值 ── */}
           <p className="text-game-accent text-xs font-medium mb-2">◆ 女主角</p>
           <div className="flex flex-col gap-1.5">
-            {Object.entries(EMOTIONAL_LABELS).map(([key, label]) => (
-              <StatBar
-                key={key}
-                label={label}
-                value={heroine[key] ?? 0}
-                max={100}
-                color={EMOTIONAL_COLORS[key]}
-              />
-            ))}
+            <StatBar label="心動值" value={heroine.heart ?? 10} min={-50} max={100} color="bg-pink-400" />
+            <StatBar label="慾望" value={heroine.DES ?? 0} min={0} max={200} color="bg-red-400" />
 
             {/* HP / SP — 同層級 */}
             <StatBar label="HP" value={heroine.HP ?? 0} max={heroine.maxHP ?? 100} color="bg-rose-500" />

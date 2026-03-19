@@ -48,8 +48,10 @@ export function executeChoice(choice, state, charId = null) {
   if (choice.soul_aroma) {
     const primaryId = getPrimaryDemonId(newState.demons)
     if (primaryId) {
-      const delta = choice.soul_aroma === 'positive' ? 4 : -3
-      const cur   = newState.demons[primaryId].demon_axis ?? 0
+      const delta     = choice.soul_aroma === 'positive' ? 4 : -3
+      const lustDelta = choice.soul_aroma === 'positive' ? 3 : -1
+      const cur       = newState.demons[primaryId].demon_axis ?? 0
+      const curLust   = newState.demons[primaryId].lust ?? 0
       newState = {
         ...newState,
         demons: {
@@ -57,6 +59,7 @@ export function executeChoice(choice, state, charId = null) {
           [primaryId]: {
             ...newState.demons[primaryId],
             demon_axis: Math.min(100, Math.max(0, cur + delta)),
+            lust:       Math.min(100, Math.max(0, curLust + lustDelta)),
           },
         },
       }
