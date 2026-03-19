@@ -13,6 +13,7 @@ import {
   executeDefend,
   canTriggerSummon,
   buildTurnQueue,
+  processStatusEffects,
 } from './engine/CombatEngine.js'
 import {
   DEMON_DATA,
@@ -280,8 +281,32 @@ export default function App() {
     const remaining = queue.slice(1)
 
     if (isNewRound) {
-      // 新回合：log 與剩餘佇列合併一次 dispatch，確保 stateRef 更新後不會重建佇列
-      dispatch({ type: ACTION.COMBAT_APPLY_LOG, combatUpdate: { log: ['── 新回合 ──'], turnQueue: remaining } })
+      // 遞減敵方狀態 duration，移除過期
+      const newEnemyStatuses = (combat.enemyStatuses ?? [])
+        .map(s => ({ ...s, duration: s.duration - 1 }))
+        .filter(s => s.duration > 0)
+
+      // 遞減女主角狀態 duration，移除過期（defend 已在攻擊時清除，此處統一處理其餘）
+      const newHeroineStatuses = (combat.heroineStatuses ?? [])
+        .map(s => ({ ...s, duration: s.duration - 1 }))
+        .filter(s => s.duration > 0)
+
+      // DOT 效果（bleed/poison）
+      const { newHeroine: dotHeroine, newStatuses: dotStatuses, logs: dotLogs } =
+        processStatusEffects(heroine, newHeroineStatuses)
+
+      const roundLogs = ['── 新回合 ──', ...dotLogs]
+
+      dispatch({
+        type: ACTION.COMBAT_APPLY_LOG,
+        combatUpdate: {
+          log: roundLogs,
+          turnQueue: remaining,
+          enemyStatuses: newEnemyStatuses,
+          heroineStatuses: dotStatuses,
+        },
+        ...(dotLogs.length > 0 ? { heroineUpdate: { HP: dotHeroine.HP } } : {}),
+      })
     } else {
       dispatch({ type: ACTION.SET_TURN_QUEUE, queue: remaining })
     }
@@ -350,6 +375,24 @@ export default function App() {
       const dResult = executeEnemyAttackOnDemon(demonUnit, combat)
 
       dispatch({ type: ACTION.COMBAT_APPLY_LOG, combatUpdate: { log: dResult.logs } })
+
+      // reflect 反傷：敵人攻擊惡魔時也觸發
+      const reflectOnDemon = (combat.enemyStatuses ?? []).find(s => s.type === 'reflect')
+      if (reflectOnDemon && dResult.damage > 0) {
+        const reflectDmg = Math.max(1, Math.floor(dResult.damage * (reflectOnDemon.value ?? 10) / 100))
+        const reflectedHP = Math.max(0, combat.enemyHP - reflectDmg)
+        dispatch({
+          type: ACTION.COMBAT_APPLY_LOG,
+          combatUpdate: {
+            log: [`反傷：${reflectDmg} 傷害反射回敵人！`],
+            enemyHP: reflectedHP,
+          },
+        })
+        if (reflectedHP <= 0) {
+          setTimeout(() => { dispatch({ type: ACTION.END_COMBAT, result: 'victory' }); setIsProcessing(false) }, 600)
+          return
+        }
+      }
 
       if (dResult.newDemonHP <= 0) {
         dispatch({ type: ACTION.REMOVE_ACTIVE_DEMON, demonId })
