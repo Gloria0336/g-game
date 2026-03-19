@@ -180,6 +180,12 @@ export function applyEffects(state, effects) {
     const newDemons = { ...newState.demons }
     const newDemon = { ...newDemons[demonId] }
     for (const [key, delta] of Object.entries(effects[demonId])) {
+      if (key === 'heart') {
+        const newHeroine = { ...newState.heroine }
+        newHeroine.heart = clamp(newHeroine.heart + delta, -50, 100)
+        newState = { ...newState, heroine: newHeroine }
+        continue
+      }
       if (!(key in newDemon)) continue
       // heroine_axis 範圍 -100–100
       if (key === 'heroine_axis') {

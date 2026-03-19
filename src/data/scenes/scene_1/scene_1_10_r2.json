@@ -26,19 +26,19 @@
       "choices": [
         {
           "text": "「有你們在，至少沒剛才那麼糟。」",
-          "effects": { "demon_c": { "heroine_axis": 6 } },
+          "effects": { "demon_c": { "heroine_axis": 6, "lust": 0, "heart": 0 }, "heroine": { "insight": 0, "independence": 0, "DES": 0 } },
           "next": "1-11",
           "response": "……嗯。那就好。"
         },
         {
           "text": "「別用那種好像很懂我的口氣說話。」",
-          "effects": { "demon_c": { "heroine_axis": -6 } },
+          "effects": { "demon_c": { "heroine_axis": -6, "lust": 0, "heart": 0 }, "heroine": { "insight": 0, "independence": 0, "DES": 0 } },
           "next": "1-11",
           "response": "我沒有懂。只是看見。"
         },
         {
           "text": "「你看起來比誰都像習慣這種事。」",
-          "effects": { "demon_c": { "heroine_axis": 4 } },
+          "effects": { "demon_c": { "heroine_axis": 4, "lust": 0, "heart": 0 }, "heroine": { "insight": 0, "independence": 0, "DES": 0 } },
           "next": "1-11",
           "response": "習慣，不代表喜歡。"
         }

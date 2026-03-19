@@ -22,19 +22,52 @@
       "choices": [
         {
           "text": "「下次沒我允許，不准靠這麼近。」",
-          "effects": { "demon_a": { "heroine_axis": -6 } },
+          "effects": {
+            "demon_a": {
+              "heroine_axis": -6,
+              "lust": 0,
+              "heart": 0
+            },
+            "heroine": {
+              "insight": 0,
+              "independence": 5,
+              "DES": 0
+            }
+          },
           "next": "1-5",
           "response": "好嚴格。不過我會先記著，之後再看情況違不違反。"
         },
         {
           "text": "「……只要你別太過分。」",
-          "effects": { "demon_a": { "heroine_axis": 6 } },
+          "effects": {
+            "demon_a": {
+              "heroine_axis": 6,
+              "lust": 2,
+              "heart": 5
+            },
+            "heroine": {
+              "insight": 0,
+              "independence": -3,
+              "DES": 1
+            }
+          },
           "next": "1-5",
           "response": "這算退讓嗎？我很珍惜。"
         },
         {
           "text": "「你是不是很喜歡看我不自在？」",
-          "effects": { "demon_a": { "heroine_axis": 4 } },
+          "effects": {
+            "demon_a": {
+              "heroine_axis": 4,
+              "lust": 0,
+              "heart": 2
+            },
+            "heroine": {
+              "insight": 0,
+              "independence": 0,
+              "DES": 0
+            }
+          },
           "next": "1-5",
           "response": "嗯。因為妳露出那種表情時，會特別真實。"
         }

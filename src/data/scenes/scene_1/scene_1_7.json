@@ -30,19 +30,19 @@
       "choices": [
         {
           "text": "「我不會一直比你弱。」",
-          "effects": { "demon_b": { "heroine_axis": 8 } },
+          "effects": { "demon_b": { "heroine_axis": 8, "lust": 0, "heart": 0 }, "heroine": { "insight": 0, "independence": 0, "DES": 0 } },
           "next": "1-7-r2",
           "response": "哈，這句像樣。那就別讓我失望。"
         },
         {
           "text": "「你講話真的很惹人厭。」",
-          "effects": { "demon_b": { "heroine_axis": -8 } },
+          "effects": { "demon_b": { "heroine_axis": -8, "lust": 0, "heart": 0 }, "heroine": { "insight": 0, "independence": 0, "DES": 0 } },
           "next": "1-7-r2",
           "response": "能活下來的人，不需要說話好聽。"
         },
         {
           "text": "「所以你是在教我，還是在羞辱我？」",
-          "effects": { "demon_b": { "heroine_axis": 3 } },
+          "effects": { "demon_b": { "heroine_axis": 3, "lust": 0, "heart": 0 }, "heroine": { "insight": 0, "independence": 0, "DES": 0 } },
           "next": "1-7-r2",
           "response": "兩個都有。妳自己挑著用。"
         }

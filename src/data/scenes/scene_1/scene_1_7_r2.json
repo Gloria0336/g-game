@@ -26,19 +26,19 @@
       "choices": [
         {
           "text": "「那你就繼續看著我變強。」",
-          "effects": { "demon_b": { "heroine_axis": 6 } },
+          "effects": { "demon_b": { "heroine_axis": 6, "lust": 0, "heart": 0 }, "heroine": { "insight": 0, "independence": 0, "DES": 0 } },
           "next": "1-8",
           "response": "行。我看妳能走到哪。"
         },
         {
           "text": "「你嘴巴硬成這樣，不累嗎？」",
-          "effects": { "demon_b": { "heroine_axis": -6 } },
+          "effects": { "demon_b": { "heroine_axis": -6, "lust": 0, "heart": 0 }, "heroine": { "insight": 0, "independence": 0, "DES": 0 } },
           "next": "1-8",
           "response": "比起哄人，這樣省事多了。"
         },
         {
           "text": "「至少你有在看著我，對吧？」",
-          "effects": { "demon_b": { "heroine_axis": 5 } },
+          "effects": { "demon_b": { "heroine_axis": 5, "lust": 0, "heart": 0 }, "heroine": { "insight": 0, "independence": 0, "DES": 0 } },
           "next": "1-8",
           "response": "……哼。妳倒是挺會抓重點。"
         }

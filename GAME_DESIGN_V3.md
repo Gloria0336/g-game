@@ -71,11 +71,11 @@
 
 ```
 情感數值：
-  heart_guard     (心防)       50    高 → 對惡魔保持距離，對話冷漠
-  heart_flutter   (心動)       20    高 → 旁白帶曖昧描寫
-  insight         (洞察)       30    高 → 骰點加成、看穿謊言
-  desire          (慾望)        0    高 → 主動行動傾向增強
-  independence    (獨立心)      30    高 → 不依賴召喚、解鎖獨行結局
+  heart           (心動值)      10    範圍 -50~100；低 = 防衛高，高 = 心動深  [介面可見]
+  DES             (慾望值)       0    受魔物技能/衣裝耐久/場景選擇影響  [介面可見 0–200]
+                                       → 影響 AI 敘事語氣（見 6.6 節）
+  insight         (洞察)       30    高 → 骰點加成、看穿謊言  [隱藏]
+  independence    (獨立心)      30    高 → 不依賴召喚、解鎖獨行結局  [隱藏]
 
 戰鬥數值：
   HP / maxHP      100 / 100
@@ -429,11 +429,12 @@ DES 上限：200
 
 ```javascript
 per_demon: {
-  affection:       -50–100   // 好感度（可為負：敵意）
-  trust:             0–100   // 信賴度
-  lust:              0–100   // 情慾度
-  heroine_axis:   -100–100   // 女主角對惡魔的態度（負 = 討厭）
-  demon_axis:        0–100   // 惡魔對女主角的注意度
+  affection:       -50–100   // 好感度（可為負：敵意）  [介面可見]
+  trust:             0–100   // 信賴度  [介面可見]
+  heroine_axis:   -100–100   // 女主角對惡魔的態度（負 = 討厭）  [隱藏]
+  demon_axis:        0–100   // 惡魔對女主角的注意度  [隱藏]
+  lust:              0–100   // 情慾度（對每個惡魔分別計算）  [隱藏]
+                             // 影響來源：對話 soul_aroma 選項 + DES 值
   contract_status:           // 'active' | 'hostile' | 'betrayed' | 'resolved'
   summon_count:      0+      // 召喚次數（影響惡魔態度演變速度）
 }
@@ -445,10 +446,11 @@ per_demon: {
 召喚惡魔    → demon_axis +3 / summon_count++
 不召喚      → independence +3
 惡魔援助成功→ trust +2 / affection +2
-對話選親近選項 → heroine_axis +5–15
-對話選敵意選項 → heroine_axis −5–15
+對話選親近選項 (soul_aroma: positive) → heroine_axis +5–15 / lust +3 / demon_axis +4
+對話選敵意選項 (soul_aroma: negative) → heroine_axis −5–15 / lust -1 / demon_axis -3
 惡魔在意女主角 → demon_axis +5（每次召喚後依角色個性觸發）
-DES 升高    → desire 緩慢上升（DES 每 +30 → desire +5）
+DES 升高    → 主線惡魔 lust 緩慢上升（DES 每 +30 → lust +5）
+場景選擇/遭遇 → heart ±N（依選項設計）、DES ±N（危險遭遇）
 ```
 
 ### 8.3 四向分歧路徑
@@ -487,6 +489,20 @@ DES 升高    → desire 緩慢上升（DES 每 +30 → desire +5）
      惡魔短暫成為敵人，但保有情感
      最高難度結局「以傷換傷」需另一惡魔幫助解決
 ```
+
+### 8.3.5 全數值一覽
+
+| 數值 | 範圍 | 介面 | 主要影響來源 | 影響結局方式 |
+|------|------|------|-------------|------------|
+| **heart**（心動值） | -50~100 | **顯示** | 場景選擇、惡魔對話 | 傾心/防衛路線分歧 |
+| **DES**（慾望值） | 0~200 | **顯示** | 魔物技能、衣裝耐久、場景選擇與遭遇 | AI 敘事語氣、lust 累積速度 |
+| insight（洞察） | 0~100 | 隱藏 | 覺醒類型、場景選擇 | 骰點加成、看穿謊言分支 |
+| independence（獨立心） | 0~100 | 隱藏 | 不召喚惡魔選項 | ≥40 觸發獨行路線 |
+| lust（情慾，per_demon） | 0~100 | 隱藏 | 對話 soul_aroma + DES 值 | 越界行動解鎖、執念結局 |
+| affection（per_demon） | -50~100 | 顯示 | 惡魔援助、對話選項 | 各路線主結局分歧 |
+| trust（per_demon） | 0~100 | 顯示 | 惡魔援助成功 | 路線深度、特殊對話解鎖 |
+| heroine_axis（per_demon） | -100~100 | 隱藏 | 對話親/敵選項 | 四向分歧判定（8.3 節） |
+| demon_axis（per_demon） | 0~100 | 隱藏 | 召喚次數、soul_aroma 對話 | 四向分歧判定（8.3 節） |
 
 ### 8.4 契約狀態判定時機
 
@@ -880,11 +896,9 @@ const CHAR_PROFILES = {
 
   // 女主角
   heroine: {
-    heart_guard:    50,
-    heart_flutter:  20,
-    insight:        30,
-    desire:          0,
-    independence:   30,
+    heart:          10,   // 心動值 -50~100  [介面可見]
+    insight:        30,   // 洞察  [隱藏]
+    independence:   30,   // 獨立心  [隱藏]
     HP: 100, maxHP: 100,
     SP:  80, maxSP:  80,
     ATK: 18,
@@ -906,9 +920,9 @@ const CHAR_PROFILES = {
 
   // 各惡魔關係
   demons: {
-    demon_a: { affection: 0, trust: 0, lust: 0, heroine_axis: 0, demon_axis: 0, contract_status: 'active', summon_count: 0 },
-    demon_b: { affection: 0, trust: 0, lust: 0, heroine_axis: 0, demon_axis: 0, contract_status: 'active', summon_count: 0 },
-    demon_c: { affection: 0, trust: 0, lust: 0, heroine_axis: 0, demon_axis: 0, contract_status: 'active', summon_count: 0 },
+    demon_a: { affection: 0, trust: 0, heroine_axis: 0, demon_axis: 0, lust: 0, contract_status: 'active', summon_count: 0 },
+    demon_b: { affection: 0, trust: 0, heroine_axis: 0, demon_axis: 0, lust: 0, contract_status: 'active', summon_count: 0 },
+    demon_c: { affection: 0, trust: 0, heroine_axis: 0, demon_axis: 0, lust: 0, contract_status: 'active', summon_count: 0 },
   },
 
   // 當前戰鬥狀態（phase === 'combat' 時有效）
@@ -950,7 +964,7 @@ const CHAR_PROFILES = {
       "prompt": "...",
       "choices": [
         { "text": "...", "effects": { "heroine_axis_a": 10 }, "next": "1-1-a" },
-        { "text": "...", "effects": { "heart_guard": -5 }, "next": "1-1-b" }
+        { "text": "...", "effects": { "heart": -5 }, "next": "1-1-b" }
       ]
     }
   ]

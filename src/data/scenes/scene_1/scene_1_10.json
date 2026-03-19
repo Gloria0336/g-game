@@ -30,19 +30,19 @@
       "choices": [
         {
           "text": "「剛才多虧你補上那一下。」",
-          "effects": { "demon_c": { "heroine_axis": 8 } },
+          "effects": { "demon_c": { "heroine_axis": 8, "lust": 0, "heart": 0 }, "heroine": { "insight": 0, "independence": 0, "DES": 0 } },
           "next": "1-10-r2",
           "response": "……妳有看見就好。"
         },
         {
           "text": "「你要是早提醒，我就不會被逼那麼近。」",
-          "effects": { "demon_c": { "heroine_axis": -8 } },
+          "effects": { "demon_c": { "heroine_axis": -8, "lust": 0, "heart": 0 }, "heroine": { "insight": 0, "independence": 0, "DES": 0 } },
           "next": "1-10-r2",
           "response": "下次我會更早。"
         },
         {
           "text": "「你一直都這樣安靜地幫人收尾嗎？」",
-          "effects": { "demon_c": { "heroine_axis": 3 } },
+          "effects": { "demon_c": { "heroine_axis": 3, "lust": 0, "heart": 0 }, "heroine": { "insight": 0, "independence": 0, "DES": 0 } },
           "next": "1-10-r2",
           "response": "不是幫人。只是順手。"
         }
