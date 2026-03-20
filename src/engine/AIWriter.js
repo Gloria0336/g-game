@@ -224,6 +224,149 @@ export async function fillSceneText(sceneData, gameState, apiKey, modelId) {
   return mergeAIText(sceneData, raw)
 }
 
+// ─── DES 語氣映射 ──────────────────────────────────────────
+
+function getDESTone(des) {
+  if (des <= 40)  return '清醒：旁白冷靜客觀，惡魔保持距離'
+  if (des <= 80)  return '動搖：旁白帶疲憊與緊繃，惡魔開始過度關注'
+  if (des <= 120) return '心防崩解：旁白暗示情緒，惡魔越界行為增加'
+  if (des <= 160) return '依賴萌生：情感溢出明顯，惡魔難以回到契約距離'
+  return '完全沉淪：描寫深度情感依賴'
+}
+
+const AWAKENING_BONUS_DESC = {
+  slayer:     'ATK+8、AGI+2，初始技能：本能突刺',
+  guardian:   'maxHP+30、WIL+2，初始技能：護盾展開',
+  windwalker: 'AGI+6、洞察+10，初始技能：快速連打',
+  seeker:     '洞察+25、ATK+2，初始技能：弱點標記',
+  apothecary: 'maxSP+40、WIL+4，初始技能：靈力回充',
+  balanced:   'ATK/AGI/WIL各+2，初始技能：契約脈衝',
+}
+
+// ─── 戰鬥敘事生成 ──────────────────────────────────────────
+
+/**
+ * 生成戰鬥結束後的旁白敘事（60–150字）
+ * @returns {Promise<string|null>}  純文字段落，失敗時回傳 null
+ */
+export async function generateCombatNarrative(combatResult, gameState, apiKey, modelId) {
+  const { heroine, combat } = gameState
+  const enemy = combat.enemyName ?? '魔物'
+  const hpPct = Math.round((heroine.HP / heroine.maxHP) * 100)
+  const resultLabel = combatResult === 'victory' ? '勝利' : combatResult === 'defeat' ? '落敗' : '撤退'
+
+  const prompt = `你是乙女視覺小說《心鎖》的日系劇本作家。
+
+## 任務
+以女主角視角寫一段60–150字的戰鬥後旁白。
+
+## 戰鬥結果
+結果：${resultLabel}　敵人：${enemy}　剩餘HP：${hpPct}%
+語氣模式：${getDESTone(heroine.DES)}
+
+## 寫作規則
+1. 純旁白，不加角色台詞引號
+2. 60–150字，一段文字
+3. 勝利→帶些許餘震；落敗→帶疲憊與挫折；撤退→帶緊張與解脫
+4. 禁止描寫角色死亡
+5. 只輸出純文字，不加任何說明或 markdown`
+
+  try {
+    const raw = await callOpenRouter(apiKey, modelId, prompt)
+    return raw.replace(/```[\s\S]*?```/g, '').trim() || null
+  } catch (err) {
+    console.warn('[AIWriter] generateCombatNarrative 失敗:', err)
+    return null
+  }
+}
+
+// ─── 惡魔戰後對話生成 ─────────────────────────────────────
+
+/**
+ * 生成惡魔戰後對話 + 3個玩家回應選項
+ * @returns {Promise<{ lines: string[], choices: { text: string, effects: object }[] }|null>}
+ */
+export async function generateDemonDialogue(demonId, combatResult, gameState, apiKey, modelId) {
+  const { heroine, demons } = gameState
+  const demonStats = demons[demonId]
+  if (!demonStats) return null
+
+  const resultLabel = combatResult === 'victory' ? '勝利' : combatResult === 'defeat' ? '落敗' : '撤退'
+
+  const prompt = `你是乙女視覺小說《心鎖》的日系劇本作家。
+
+## 角色設定
+${CHAR_PROFILES[demonId] ?? demonId}
+
+## 任務
+惡魔在協助戰鬥後（${resultLabel}），與女主角有一段簡短對話。
+生成惡魔的1–3句台詞，以及女主角可選的3個回應方向。
+
+## 當前數值
+好感：${demonStats.affection}　信賴：${demonStats.trust}　情慾：${demonStats.lust}
+女主角視角：${demonStats.heroine_axis}　惡魔視角：${demonStats.demon_axis}
+語氣模式：${getDESTone(heroine.DES)}
+
+## 寫作規則
+1. 台詞用「」；動作/心理用（）；每句10–50字
+2. 3個選項要有明顯不同情緒方向（如感謝/淡漠/刺探）
+3. 好感高→偏溫柔；信賴低→保持距離；情慾高→帶隱約肢體意識
+4. 只輸出 JSON，不加任何說明
+
+## 輸出格式
+{"lines":["台詞1","台詞2"],"choices":[{"text":"回應A","effects":{"heroine_axis":5}},{"text":"回應B","effects":{"heroine_axis":-3,"trust":2}},{"text":"回應C","effects":{"lust":3}}]}`
+
+  try {
+    const raw = await callOpenRouter(apiKey, modelId, prompt)
+    const cleaned = raw.replace(/^```(?:json)?\s*/m, '').replace(/\s*```$/m, '').trim()
+    const parsed = JSON.parse(cleaned)
+    if (!Array.isArray(parsed.lines) || !Array.isArray(parsed.choices)) throw new Error('格式錯誤')
+    return parsed
+  } catch (err) {
+    console.warn('[AIWriter] generateDemonDialogue 失敗:', err)
+    return null
+  }
+}
+
+// ─── 覺醒演出台詞生成 ─────────────────────────────────────
+
+/**
+ * 生成覺醒演出台詞序列（3–6條）
+ * @returns {Promise<{ speaker: string, text: string }[]|null>}
+ */
+export async function generateAwakeningScene(awakeningType, gameState, apiKey, modelId) {
+  const prompt = `你是乙女視覺小說《心鎖》的日系劇本作家。
+
+## 任務
+女主角剛完成覺醒試煉，以戲劇性方式發現自己的力量。
+生成3–6條覺醒演出台詞（旁白或女主角內心）。
+
+## 覺醒類型
+${awakeningType}（${AWAKENING_BONUS_DESC[awakeningType] ?? awakeningType}）
+
+## 寫作規則
+1. 旁白不加引號；女主角內心用（ ）
+2. 每條10–40字
+3. 情緒層次：困惑/痛楚 → 震驚 → 覺悟/決意
+4. 只輸出 JSON，不加說明
+
+## 輸出格式
+[{"speaker":"narrator","text":"台詞"},{"speaker":"heroine","text":"台詞"}]`
+
+  try {
+    const raw = await callOpenRouter(apiKey, modelId, prompt)
+    const cleaned = raw.replace(/^```(?:json)?\s*/m, '').replace(/\s*```$/m, '').trim()
+    const parsed = JSON.parse(cleaned)
+    if (!Array.isArray(parsed)) throw new Error('格式錯誤')
+    return parsed
+  } catch (err) {
+    console.warn('[AIWriter] generateAwakeningScene 失敗:', err)
+    return null
+  }
+}
+
+// ─── API Key 驗證 ──────────────────────────────────────────
+
 /**
  * 驗證 OpenRouter API Key（輕量呼叫）
  * @returns {Promise<{ ok: boolean, message: string }>}

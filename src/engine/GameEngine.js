@@ -43,7 +43,9 @@ const INITIAL_COMBAT = {
   summonedThisBattle: [],
   playerActionCount: 0,     // 玩家本場行動次數（用於教學延遲召喚）
   activeDemons: {},         // { [demonId]: DemonUnit } — 場上存活惡魔
-  pendingNarrative: null,   // AI 戰鬥敘事（戰後顯示）
+  pendingNarrative: null,       // AI 戰鬥敘事（戰後顯示）
+  pendingDemonDialogue: null,   // AI 惡魔對話 { lines:[], choices:[] }
+  activeDemonDialogueId: null,  // 當前對話惡魔 ID
 }
 
 // ─── 初始 GameState ────────────────────────────────────────────
@@ -62,6 +64,7 @@ export const INITIAL_STATE = {
   ending: null,
   _pendingNextScene: null,
   _prevPhase: null,
+  pendingAwakeningScene: null,  // AI 覺醒演出台詞 [{ speaker, text }]
 
   // 序章臨時戰鬥加成（入場路線決定，AWAKENING_FINISH 後清除）
   prologueBonus: { ATK: 0, AGI: 0, WIL: 0 },
@@ -117,6 +120,9 @@ export const ACTION = {
   SET_TURN_QUEUE:     'SET_TURN_QUEUE',       // 更新回合佇列（pop 或重建）
   END_COMBAT:         'END_COMBAT',          // 戰鬥結束（victory / defeat / escape）
   SET_COMBAT_NARRATIVE: 'SET_COMBAT_NARRATIVE', // 儲存 AI 戰鬥敘事
+  SET_DEMON_DIALOGUE:   'SET_DEMON_DIALOGUE',   // 儲存 AI 惡魔對話
+  SET_AWAKENING_SCENE:  'SET_AWAKENING_SCENE',  // 儲存 AI 覺醒台詞
+  PICK_DEMON_RESPONSE:  'PICK_DEMON_RESPONSE',  // 玩家選擇惡魔回應
 
   // 惡魔對話
   START_DEMON_DIALOGUE: 'START_DEMON_DIALOGUE',
@@ -476,9 +482,64 @@ export function gameReducer(state, action) {
         combat: { ...state.combat, pendingNarrative: action.narrative },
       }
 
+    // ── 儲存 AI 惡魔對話 ─────────────────────────────────────────
+    case ACTION.SET_DEMON_DIALOGUE:
+      return {
+        ...state,
+        combat: {
+          ...state.combat,
+          pendingDemonDialogue: action.dialogue,
+          activeDemonDialogueId: action.demonId,
+        },
+      }
+
+    // ── 儲存 AI 覺醒台詞 ─────────────────────────────────────────
+    case ACTION.SET_AWAKENING_SCENE:
+      return { ...state, pendingAwakeningScene: action.scene }
+
+    // ── 玩家選擇惡魔回應（套用 effects，回到 dialogue）─────────────
+    case ACTION.PICK_DEMON_RESPONSE: {
+      const { choiceIndex } = action
+      const { activeDemonDialogueId, pendingDemonDialogue } = state.combat
+      const choice = pendingDemonDialogue?.choices?.[choiceIndex]
+
+      let newDemons = state.demons
+      if (choice?.effects && activeDemonDialogueId) {
+        const effects = choice.effects
+        const d = state.demons[activeDemonDialogueId]
+        if (d) {
+          newDemons = {
+            ...state.demons,
+            [activeDemonDialogueId]: {
+              ...d,
+              heroine_axis: Math.min(100, Math.max(-100, (d.heroine_axis ?? 0) + (effects.heroine_axis ?? 0))),
+              trust:        Math.min(100, Math.max(0,    (d.trust ?? 0)        + (effects.trust ?? 0))),
+              affection:    Math.min(100, Math.max(-50,  (d.affection ?? 0)    + (effects.affection ?? 0))),
+              lust:         Math.min(100, Math.max(0,    (d.lust ?? 0)         + (effects.lust ?? 0))),
+            },
+          }
+        }
+      }
+
+      return {
+        ...state,
+        phase: 'dialogue',
+        demons: newDemons,
+        combat: { ...state.combat, pendingDemonDialogue: null, activeDemonDialogueId: null },
+      }
+    }
+
     // ── 惡魔戰後對話 ─────────────────────────────────────────────
     case ACTION.START_DEMON_DIALOGUE:
-      return { ...state, phase: 'demon_dialogue' }
+      return {
+        ...state,
+        phase: 'demon_dialogue',
+        combat: {
+          ...state.combat,
+          activeDemonDialogueId: action.demonId ?? null,
+          pendingDemonDialogue: null,
+        },
+      }
 
     case ACTION.END_DEMON_DIALOGUE:
       return { ...state, phase: 'dialogue', _pendingNextScene: action.nextScene ?? null }

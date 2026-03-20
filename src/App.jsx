@@ -6,7 +6,12 @@ import { useReducer, useEffect, useCallback, useRef, useState } from 'react'
 import { getEquipmentData } from './engine/EquipmentDB.js'
 import { getItemData } from './engine/ItemDB.js'
 import { gameReducer, INITIAL_STATE, ACTION } from './engine/GameEngine.js'
-import { fillSceneText } from './engine/AIWriter.js'
+import {
+  fillSceneText,
+  generateCombatNarrative,
+  generateDemonDialogue,
+  generateAwakeningScene,
+} from './engine/AIWriter.js'
 import { judgeAwakeningType } from './engine/StatsManager.js'
 import {
   executeBasicAttack,
@@ -46,6 +51,7 @@ import CombatScreen from './components/CombatScreen.jsx'
 import DemonSummonModal from './components/DemonSummonModal.jsx'
 import SkillRewardScreen from './components/SkillRewardScreen.jsx'
 import SkillManageScreen from './components/SkillManageScreen.jsx'
+import DemonDialogueScreen from './components/DemonDialogueScreen.jsx'
 
 // ── 背包 Modal ────────────────────────────────────────────────
 
@@ -147,10 +153,27 @@ const AWAKENING_SKILLS = {
   balanced: '契約脈衝',
 }
 
-function AwakeningResultPanel({ awakeningType, onConfirm }) {
+function AwakeningResultPanel({ awakeningType, scene, sceneIdx, onAdvanceScene, onConfirm }) {
+  const showingScene = scene && sceneIdx < scene.length
+
   return (
     <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/80 backdrop-blur-sm">
       <div className="max-w-sm w-full mx-6 game-panel rounded-lg p-8 text-center">
+
+        {/* AI 覺醒演出台詞 */}
+        {scene && scene.length > 0 && (
+          <div className="mb-6 text-left space-y-2 min-h-[72px]">
+            {scene.slice(0, sceneIdx + 1).map((line, i) => (
+              <p key={i} className={`text-sm leading-relaxed ${
+                line.speaker === 'heroine' ? 'text-gray-300 italic' : 'text-gray-400'
+              }`}>
+                {line.speaker === 'heroine' ? `（${line.text}）` : line.text}
+              </p>
+            ))}
+          </div>
+        )}
+        {!scene && <div className="mb-6 h-[72px]" />}
+
         <p className="text-game-accent text-xs tracking-widest mb-4">AWAKENING</p>
         <h2 className="text-white text-xl font-bold mb-3">
           {AWAKENING_LABELS[awakeningType]}
@@ -158,13 +181,24 @@ function AwakeningResultPanel({ awakeningType, onConfirm }) {
         <p className="text-gray-400 text-sm mb-6">
           初始技能解鎖：<span className="text-game-accent">{AWAKENING_SKILLS[awakeningType]}</span>
         </p>
-        <button
-          onClick={onConfirm}
-          className="px-8 py-3 border border-game-accent text-game-accent
-            hover:bg-game-accent/15 rounded transition-all text-sm"
-        >
-          繼續
-        </button>
+
+        {showingScene ? (
+          <button
+            onClick={onAdvanceScene}
+            className="px-8 py-3 border border-gray-600 text-gray-300
+              hover:border-game-accent hover:text-game-accent rounded transition-all text-sm"
+          >
+            ▶
+          </button>
+        ) : (
+          <button
+            onClick={onConfirm}
+            className="px-8 py-3 border border-game-accent text-game-accent
+              hover:bg-game-accent/15 rounded transition-all text-sm"
+          >
+            確認覺醒
+          </button>
+        )}
       </div>
     </div>
   )
@@ -213,6 +247,8 @@ export default function App() {
   // 覺醒結果顯示
   const [showAwakeningResult, setShowAwakeningResult] = useState(false)
   const [pendingAwakeningType, setPendingAwakeningType] = useState(null)
+  const [pendingAwakeningScene, setPendingAwakeningScene] = useState(null)
+  const [awakeningSceneIdx, setAwakeningSceneIdx] = useState(0)
 
   // 戰鬥處理中標誌
   const [isProcessing, setIsProcessing] = useState(false)
@@ -242,6 +278,32 @@ export default function App() {
     }
     return () => clearTimeout(aiErrorTimerRef.current)
   }, [aiStatus])
+
+  // combat_end → AI 戰鬥敘事生成
+  useEffect(() => {
+    if (state.phase !== 'combat_end') return
+    if (!aiSettings.enabled || !aiSettings.apiKey) return
+    if (state.combat.pendingNarrative != null) return  // 已生成過
+    generateCombatNarrative(state.combat.result, stateRef.current, aiSettings.apiKey, aiSettings.modelId)
+      .then(narrative => {
+        if (narrative) dispatch({ type: ACTION.SET_COMBAT_NARRATIVE, narrative })
+      })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.phase, state.combat.result])
+
+  // demon_dialogue → AI 惡魔對話生成
+  useEffect(() => {
+    if (state.phase !== 'demon_dialogue') return
+    if (!aiSettings.enabled || !aiSettings.apiKey) return
+    if (state.combat.pendingDemonDialogue != null) return  // 已生成過
+    const demonId = state.combat.activeDemonDialogueId
+    if (!demonId) return
+    generateDemonDialogue(demonId, state.combat.result, stateRef.current, aiSettings.apiKey, aiSettings.modelId)
+      .then(dialogue => {
+        if (dialogue) dispatch({ type: ACTION.SET_DEMON_DIALOGUE, dialogue, demonId })
+      })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.phase, state.combat.activeDemonDialogueId])
 
   // ── 場景載入 ─────────────────────────────────────────────
 
@@ -762,7 +824,21 @@ export default function App() {
       const hpPercent = cur.heroine.HP / cur.heroine.maxHP
       const awakeningType = judgeAwakeningType(cur.flags, hpPercent)
       setPendingAwakeningType(awakeningType)
+      setPendingAwakeningScene(null)
+      setAwakeningSceneIdx(0)
+      // 非同步生成覺醒台詞（不阻塞面板顯示）
+      if (aiSettings.enabled && aiSettings.apiKey) {
+        generateAwakeningScene(awakeningType, cur, aiSettings.apiKey, aiSettings.modelId)
+          .then(scene => { if (scene) setPendingAwakeningScene(scene) })
+      }
       setShowAwakeningResult(true)
+      return
+    }
+
+    // 勝利且有召喚惡魔 → 惡魔戰後對話
+    if (combat.result === 'victory' && combat.summonedThisBattle.length > 0) {
+      const demonId = combat.summonedThisBattle[combat.summonedThisBattle.length - 1]
+      dispatch({ type: ACTION.START_DEMON_DIALOGUE, demonId })
       return
     }
 
@@ -777,6 +853,21 @@ export default function App() {
 
     // 跳往下一場景
     const nextScene = sceneData?.nextScene
+    if (nextScene) await goToScene(nextScene)
+  }, [goToScene, aiSettings])
+
+  // ── 惡魔回應選擇（demon_dialogue → 技能掉落 / 下一場景）────
+
+  const handleDemonResponsePick = useCallback(async (choiceIndex) => {
+    dispatch({ type: ACTION.PICK_DEMON_RESPONSE, choiceIndex })
+    // 等 state 更新後處理後續流程
+    const cur = stateRef.current
+    const candidates = rollSkillReward(cur)
+    if (candidates.length > 0) {
+      dispatch({ type: ACTION.SHOW_SKILL_REWARD, candidates })
+      return
+    }
+    const nextScene = cur.sceneData?.nextScene
     if (nextScene) await goToScene(nextScene)
   }, [goToScene])
 
@@ -988,10 +1079,25 @@ export default function App() {
         </>
       )}
 
+      {/* ── 惡魔戰後對話 ── */}
+      {state.phase === 'demon_dialogue' && (
+        <>
+          <BackgroundLayer background={state.sceneData?.background ?? 'forest_ruin'} />
+          <DemonDialogueScreen
+            demonId={state.combat.activeDemonDialogueId}
+            dialogue={state.combat.pendingDemonDialogue}
+            onSelect={handleDemonResponsePick}
+          />
+        </>
+      )}
+
       {/* ── 覺醒結果彈窗（phase 無關，任何時機都可顯示）── */}
       {showAwakeningResult && pendingAwakeningType && (
         <AwakeningResultPanel
           awakeningType={pendingAwakeningType}
+          scene={pendingAwakeningScene}
+          sceneIdx={awakeningSceneIdx}
+          onAdvanceScene={() => setAwakeningSceneIdx(i => i + 1)}
           onConfirm={handleAwakeningConfirm}
         />
       )}
