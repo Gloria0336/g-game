@@ -2,7 +2,7 @@
  * ChoiceResolver — 選項條件判定與骰點結果解析
  */
 import { checkCondition, calcStatsBonus, applyEffects } from './StatsManager.js'
-import { performDiceCheck } from './DiceSystem.js'
+import { performDiceCheck } from './DiceEngine.js'
 import { getPrimaryDemonId } from './DemonSystem.js'
 
 /**

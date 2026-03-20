@@ -32,13 +32,10 @@ export function rollD20() {
 export function performDiceCheck(dc, statsBonus = 0) {
   const roll = rollD20()
   const total = roll + statsBonus
-  return {
-    roll,
-    bonus: statsBonus,
-    total,
-    dc,
-    success: total >= dc,
-  }
+  const isCritSuccess = roll === 20
+  const isCritFailure = roll === 1
+  const success = isCritSuccess || (!isCritFailure && total >= dc)
+  return { roll, bonus: statsBonus, total, dc, isCritSuccess, isCritFailure, success }
 }
 
 // ─── D100 戰鬥命中系統 ────────────────────────────────────────
