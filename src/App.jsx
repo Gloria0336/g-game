@@ -3,6 +3,8 @@
  * 串接遊戲引擎（Phase A）所有 UI 元件與戰鬥邏輯
  */
 import { useReducer, useEffect, useCallback, useRef, useState } from 'react'
+import { getEquipmentData } from './engine/EquipmentDB.js'
+import { getItemData } from './engine/ItemDB.js'
 import { gameReducer, INITIAL_STATE, ACTION } from './engine/GameEngine.js'
 import { fillSceneText } from './engine/AIWriter.js'
 import { judgeAwakeningType } from './engine/StatsManager.js'
@@ -44,6 +46,87 @@ import CombatScreen from './components/CombatScreen.jsx'
 import DemonSummonModal from './components/DemonSummonModal.jsx'
 import SkillRewardScreen from './components/SkillRewardScreen.jsx'
 import SkillManageScreen from './components/SkillManageScreen.jsx'
+
+// ── 背包 Modal ────────────────────────────────────────────────
+
+function InventoryModal({ heroine, onClose }) {
+  const equip = heroine.equipment ?? {}
+  const items = heroine.items ?? []
+  const slots = [
+    { key: 'weapon',    label: '武器' },
+    { key: 'accessory', label: '飾品' },
+    { key: 'upper',     label: '上衣' },
+    { key: 'lower',     label: '下身' },
+  ]
+  return (
+    <div className="absolute inset-0 z-30 flex items-end justify-start" onClick={onClose}>
+      <div
+        className="m-4 mb-16 w-80 game-panel rounded-lg p-4 flex flex-col gap-3"
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between">
+          <span className="text-gray-300 text-sm font-semibold">🎒 背包</span>
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-300 text-xs">✕</button>
+        </div>
+
+        {/* 裝備欄 */}
+        <div>
+          <div className="text-gray-500 text-xs mb-1.5">裝備中</div>
+          <div className="grid grid-cols-4 gap-1.5">
+            {slots.map(({ key, label }) => {
+              const e = equip[key]
+              const data = e ? getEquipmentData(e.id) : null
+              return (
+                <div key={key}
+                  className="bg-gray-900 border border-gray-700 rounded p-1.5 flex flex-col
+                             items-center justify-center min-h-[52px] text-center">
+                  <div className="text-gray-600 text-xs mb-0.5">{label}</div>
+                  {data ? (
+                    <>
+                      <div className="text-gray-200 text-xs font-semibold leading-tight">{data.name}</div>
+                      {e.durability != null && (
+                        <div className={`text-xs mt-0.5 ${
+                          e.durability >= 60 ? 'text-blue-400' :
+                          e.durability >= 30 ? 'text-yellow-400' : 'text-red-500'
+                        }`}>{e.durability}</div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="text-gray-700 text-xs">空</div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* 背包物品 */}
+        <div>
+          <div className="text-gray-500 text-xs mb-1.5">背包物品</div>
+          {items.length > 0 ? (
+            <div className="flex flex-wrap gap-1.5">
+              {items.map((item, i) => {
+                const data = getItemData(item.id)
+                return (
+                  <div key={i}
+                    className="bg-gray-900 border border-gray-700 rounded px-2 py-1"
+                    title={data?.description ?? ''}>
+                    <span className="text-gray-300 text-xs">{data?.name ?? item.id}</span>
+                    {(item.quantity ?? 1) > 1 && (
+                      <span className="text-gray-500 text-xs ml-1">×{item.quantity}</span>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          ) : (
+            <div className="text-gray-700 text-xs">（背包空空如也）</div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
 
 // ── 覺醒結果面板 ─────────────────────────────────────────────
 
@@ -139,6 +222,7 @@ export default function App() {
   const [showAISettings, setShowAISettings] = useState(false)
   const [showSaveLoad, setShowSaveLoad] = useState(false)
   const [showSkillManage, setShowSkillManage] = useState(false)
+  const [showInventory, setShowInventory] = useState(false)
   const [revealedDemons, setRevealedDemons] = useState(new Set())
 
   // stateRef（避免 stale closure）
@@ -792,6 +876,14 @@ export default function App() {
             >
               ⚔ 技能
             </button>
+            <button
+              className={`px-3 py-1 game-panel text-xs rounded transition-colors ${
+                showInventory ? 'text-amber-300' : 'text-gray-400 hover:text-game-accent'
+              }`}
+              onClick={() => setShowInventory(v => !v)}
+            >
+              🎒 背包
+            </button>
           </div>
 
           {/* 一般對話框 */}
@@ -914,6 +1006,11 @@ export default function App() {
             onSkip={handleSkipSkill}
           />
         </>
+      )}
+
+      {/* ── 背包（VN 場景中可打開） ── */}
+      {showInventory && (
+        <InventoryModal heroine={state.heroine} onClose={() => setShowInventory(false)} />
       )}
 
       {/* ── 技能管理（VN 場景中可打開） ── */}

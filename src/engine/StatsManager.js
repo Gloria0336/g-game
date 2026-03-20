@@ -28,7 +28,12 @@ export const INITIAL_HEROINE = {
   equipment: {
     upper: { id: 'covenant_coat', durability: 75 },
     lower: { id: 'covenant_skirt', durability: 75 },
+    weapon: null,
+    accessory: null,
   },
+
+  // 背包物品 [{ id, quantity }]
+  items: [],
 
   // 遮掩劑狀態（道具機制）
   shroud_active: false,

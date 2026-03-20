@@ -3,7 +3,7 @@
  * 移植自 Dungen TRPG combatEngine，去除 TypeScript，適配心鎖數值規格
  *
  * 核心公式：
- *   最終傷害 = (Raw ATK × [0.9–1.1]) × (1 + Amp%) × (1 − DR%) × (1 − SkillDR%) − FlatDR
+ *   最終傷害 = (Raw ATK × [0.95–1.05]) × (1 + Amp%) × (1 − DR%) × (1 − SkillDR%) − FlatDR
  *   最低傷害 = 1
  */
 
@@ -17,9 +17,9 @@ function randInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min
 }
 
-/** ATK 浮動 0.9–1.1 */
+/** ATK 浮動 0.95–1.05 */
 function atkFlutter() {
-  return 0.9 + Math.random() * 0.2
+  return 0.95 + Math.random() * 0.1
 }
 
 // ─── DR 計算 ──────────────────────────────────────────────────
@@ -258,7 +258,7 @@ export function executeBasicAttack(heroine, combat) {
 
   const damage = calcDamage({
     atk: heroine.ATK,
-    ampPercent: 15 + markAmp,
+    ampPercent: 0 + markAmp,
     drPercent: effectiveEnemyDR,
   })
 
