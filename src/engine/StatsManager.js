@@ -178,6 +178,26 @@ export function applyEffects(state, effects) {
     newState = { ...newState, heroine: newHeroine }
   }
 
+  // 女主角裝備更新
+  if (effects.heroine?.equipment) {
+    const newHeroine = {
+      ...newState.heroine,
+      equipment: { ...newState.heroine.equipment }
+    }
+    for (const [slot, item] of Object.entries(effects.heroine.equipment)) {
+      if (item === null) {
+        newHeroine.equipment[slot] = null
+      } else if (typeof item === 'string') {
+        // 傳入字串 ID，預設 100 耐久度
+        newHeroine.equipment[slot] = { id: item, durability: 100 }
+      } else {
+        // 傳入物件 { id, durability }
+        newHeroine.equipment[slot] = { ...item }
+      }
+    }
+    newState = { ...newState, heroine: newHeroine }
+  }
+
   // 各惡魔關係數值
   const demonIds = ['demon_a', 'demon_b', 'demon_c']
   for (const demonId of demonIds) {

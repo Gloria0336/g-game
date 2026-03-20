@@ -4,6 +4,8 @@
  */
 import { useReducer, useEffect, useCallback, useRef, useState } from 'react'
 import { getEquipmentData } from './engine/EquipmentDB.js'
+import { getWeaponData } from './engine/WeaponDB.js'
+import { getAccessoryData } from './engine/AccessoriesDB.js'
 import { getItemData } from './engine/ItemDB.js'
 import { gameReducer, INITIAL_STATE, ACTION } from './engine/GameEngine.js'
 import {
@@ -81,7 +83,12 @@ function InventoryModal({ heroine, onClose }) {
           <div className="grid grid-cols-4 gap-1.5">
             {slots.map(({ key, label }) => {
               const e = equip[key]
-              const data = e ? getEquipmentData(e.id) : null
+              let data = null
+              if (e) {
+                if (key === 'weapon') data = getWeaponData(e.id)
+                else if (key === 'accessory') data = getAccessoryData(e.id)
+                else data = getEquipmentData(e.id)
+              }
               return (
                 <div key={key}
                   className="bg-gray-900 border border-gray-700 rounded p-1.5 flex flex-col

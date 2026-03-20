@@ -40,6 +40,21 @@
     {
       "speaker": "narrator",
       "text": "妳的手握緊了那把鐵劍的劍柄。"
+    },
+    {
+      "type": "choice",
+      "choices": [
+        {
+          "id": "pickup_iron_sword",
+          "text": "拿起鐵劍",
+          "next": "0-2",
+          "effects": {
+            "heroine": {
+              "equipment": { "weapon": "iron_sword" }
+            }
+          }
+        }
+      ]
     }
   ]
 }
