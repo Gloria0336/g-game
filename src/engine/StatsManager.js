@@ -160,7 +160,7 @@ export function applyEffects(state, effects) {
   if (effects.heroine) {
     const newHeroine = { ...newState.heroine }
     for (const [key, delta] of Object.entries(effects.heroine)) {
-      if (!(key in newHeroine)) continue
+      if (!(key in newHeroine) || typeof newHeroine[key] !== 'number') continue
       const raw = newHeroine[key] + delta
       // 各欄位邊界
       if (key === 'heart') {

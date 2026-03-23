@@ -68,7 +68,7 @@ export default function StatsDisplay({ heroine, demons, mainRoute, revealedDemon
   const revealed = revealedDemons ?? new Set()
 
   return (
-    <div className="absolute top-4 right-4 z-20 text-xs">
+    <div className="absolute top-4 right-4 z-40 text-xs">
       <button
         className="px-3 py-1 game-panel text-gray-400 hover:text-game-accent text-xs rounded transition-colors"
         onClick={() => setOpen((v) => !v)}
@@ -111,7 +111,13 @@ export default function StatsDisplay({ heroine, demons, mainRoute, revealedDemon
                 <div className="flex flex-col gap-1.5 mb-4">
                   {Object.entries(CHAR_LABELS).map(([key, label]) =>
                     isRevealed ? (
-                      <StatBar key={key} label={label} value={charStats[key] ?? 0} max={100} color={CHAR_COLORS[key]} />
+                      <StatBar 
+                        key={key} 
+                        label={label} 
+                        value={key === 'progress' ? (charStats.demon_axis ?? 0) : (charStats[key] ?? 0)} 
+                        max={100} 
+                        color={CHAR_COLORS[key]} 
+                      />
                     ) : (
                       <div key={key} className="flex items-center gap-2 text-xs">
                         <span className="w-8 text-gray-700 shrink-0">{label}</span>

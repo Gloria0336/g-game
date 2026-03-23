@@ -5,7 +5,7 @@
 import { useState } from 'react'
 import { getSkillData } from '../engine/SkillDB.js'
 import { getEquipmentData } from '../engine/EquipmentDB.js'
-import { getItemData } from '../engine/ItemDB.js'
+import { getWeaponData } from '../engine/WeaponDB.js'
 import { canTriggerSummon } from '../engine/CombatEngine.js'
 import CombatLog from './CombatLog.jsx'
 
@@ -121,11 +121,10 @@ function ActiveDemonsPanel({ activeDemons }) {
   )
 }
 
-// ── 背包面板 ──────────────────────────────────────────────────
+// ── 裝備面板 ──────────────────────────────────────────────────
 
-function InventoryPanel({ heroine }) {
+function EquipmentPanel({ heroine }) {
   const equip = heroine.equipment ?? {}
-  const items = heroine.items ?? []
 
   const slots = [
     { key: 'weapon',    label: '武器' },
@@ -137,13 +136,13 @@ function InventoryPanel({ heroine }) {
   return (
     <div className="absolute bottom-full left-0 right-0 bg-gray-950 border border-gray-700
                     rounded-t p-3 z-20 flex flex-col gap-2 shadow-2xl">
-
-      {/* 裝備欄 */}
-      <div className="text-gray-400 text-xs font-semibold">裝備中</div>
+      <div className="text-gray-400 text-xs font-semibold">裝備列表</div>
       <div className="grid grid-cols-4 gap-1.5">
         {slots.map(({ key, label }) => {
           const e = equip[key]
-          const data = e ? getEquipmentData(e.id) : null
+          const data = e
+            ? (key === 'weapon' ? getWeaponData(e.id) : getEquipmentData(e.id))
+            : null
           return (
             <div key={key}
               className="bg-gray-900 border border-gray-700 rounded p-1.5 flex flex-col
@@ -152,11 +151,17 @@ function InventoryPanel({ heroine }) {
               {data ? (
                 <>
                   <div className="text-gray-200 text-xs font-semibold leading-tight">{data.name}</div>
+                  {data.atkBonus > 0 && (
+                    <div className="text-rose-400 text-xs mt-0.5">ATK +{data.atkBonus}</div>
+                  )}
+                  {data.hitBonus > 0 && (
+                    <div className="text-amber-400 text-xs">命中 +{data.hitBonus}</div>
+                  )}
                   {e.durability != null && (
                     <div className={`text-xs mt-0.5 ${
                       e.durability >= 60 ? 'text-blue-400' :
                       e.durability >= 30 ? 'text-yellow-400' : 'text-red-500'
-                    }`}>{e.durability}</div>
+                    }`}>耐久 {e.durability}</div>
                   )}
                 </>
               ) : (
@@ -166,29 +171,6 @@ function InventoryPanel({ heroine }) {
           )
         })}
       </div>
-
-      {/* 背包物品 */}
-      <div className="text-gray-400 text-xs font-semibold mt-1">背包物品</div>
-      {items.length > 0 ? (
-        <div className="flex flex-wrap gap-1.5">
-          {items.map((item, i) => {
-            const data = getItemData(item.id)
-            const name = data?.name ?? item.id
-            return (
-              <div key={i}
-                className="bg-gray-900 border border-gray-700 rounded px-2 py-1"
-                title={data?.description ?? ''}>
-                <span className="text-gray-300 text-xs">{name}</span>
-                {(item.quantity ?? 1) > 1 && (
-                  <span className="text-gray-500 text-xs ml-1">×{item.quantity}</span>
-                )}
-              </div>
-            )
-          })}
-        </div>
-      ) : (
-        <div className="text-gray-700 text-xs">（背包空空如也）</div>
-      )}
     </div>
   )
 }
@@ -306,7 +288,7 @@ export default function CombatScreen({
 
         {/* 技能列 + 背包按鈕 */}
         <div className="flex gap-1.5 relative">
-          {showInventory && <InventoryPanel heroine={heroine} />}
+          {showInventory && <EquipmentPanel heroine={heroine} />}
           {activeSkills.length > 0
             ? activeSkills.map(id => (
                 <SkillButton
@@ -326,8 +308,8 @@ export default function CombatScreen({
                 : 'border-gray-700 text-gray-500 hover:border-gray-500 hover:text-gray-300'
             }`}
           >
-            <div>🎒</div>
-            <div>背包</div>
+            <div>⚔</div>
+            <div>裝備</div>
           </button>
         </div>
 

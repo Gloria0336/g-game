@@ -920,7 +920,7 @@ export default function App() {
   })()
 
   // VN 畫面顯示判定
-  const showVNOverlay = ['dialogue', 'choice', 'dice', 'awakening'].includes(state.phase)
+  const showVNOverlay = ['dialogue', 'choice', 'dice', 'awakening', 'demon_dialogue'].includes(state.phase)
 
   return (
     <div className="relative w-screen h-screen overflow-hidden bg-game-dark">
@@ -1086,16 +1086,12 @@ export default function App() {
         </>
       )}
 
-      {/* ── 惡魔戰後對話 ── */}
       {state.phase === 'demon_dialogue' && (
-        <>
-          <BackgroundLayer background={state.sceneData?.background ?? 'forest_ruin'} />
-          <DemonDialogueScreen
-            demonId={state.combat.activeDemonDialogueId}
-            dialogue={state.combat.pendingDemonDialogue}
-            onSelect={handleDemonResponsePick}
-          />
-        </>
+        <DemonDialogueScreen
+          demonId={state.combat.activeDemonDialogueId}
+          dialogue={state.combat.pendingDemonDialogue}
+          onSelect={handleDemonResponsePick}
+        />
       )}
 
       {/* ── 覺醒結果彈窗（phase 無關，任何時機都可顯示）── */}
