@@ -24,6 +24,7 @@ import {
   canTriggerSummon,
   buildTurnQueue,
   processStatusEffects,
+  tickCooldowns,
 } from './engine/CombatEngine.js'
 import {
   DEMON_DATA,
@@ -57,6 +58,7 @@ import SkillRewardScreen from './components/SkillRewardScreen.jsx'
 import SkillManageScreen from './components/SkillManageScreen.jsx'
 import DemonDialogueScreen from './components/DemonDialogueScreen.jsx'
 import WorldMapScreen from './components/WorldMapScreen.jsx'
+import DebugMenu from './components/DebugMenu.jsx' // [NEW]
 
 // ── 背包 Modal ────────────────────────────────────────────────
 
@@ -264,11 +266,11 @@ export default function App() {
   const [showSaveLoad, setShowSaveLoad] = useState(false)
   const [showSkillManage, setShowSkillManage] = useState(false)
   const [showInventory, setShowInventory] = useState(false)
+  const [showDebugMenu, setShowDebugMenu] = useState(false)
   const [revealedDemons, setRevealedDemons] = useState(new Set())
 
   // stateRef（避免 stale closure）
   const stateRef = useRef(state)
-  useEffect(() => { stateRef.current = state }, [state])
 
   // 回合推進 ref（避免 goToScene TDZ 問題）
   const handleEnemyTurnRef = useRef(null)
@@ -283,6 +285,17 @@ export default function App() {
     }
     return () => clearTimeout(aiErrorTimerRef.current)
   }, [aiStatus])
+
+  // [Debug] 快捷鍵偵聽 (~)
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === '`' || e.key === '~') {
+        setShowDebugMenu(prev => !prev)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
 
   // ── DES 溢出監測：DES ≥ 200 → 提前壞結局 ─────────────────────
   useEffect(() => {
@@ -374,6 +387,42 @@ export default function App() {
 
     dispatch({ type: ACTION.LOAD_SCENE, sceneData })
   }, [loadScene, aiSettings])
+
+  useEffect(() => {
+    stateRef.current = state
+    // [Debug] 曝露給 Console
+    if (process.env.NODE_ENV === 'development') {
+      window.game = {
+        state,
+        dispatch,
+        goToScene,
+        // 快捷功能
+        setStat: (heroineStats) => dispatch({ type: ACTION.DEBUG_MODIFY_STATE, payload: { heroine: heroineStats } }),
+        addSkill: (id) => {
+          const s = getSkillData(id)
+          if (!s) return console.error('Skill not found:', id)
+          const { active, inventory } = state.skills
+          if (active.includes(id) || inventory.some(i => (i.id || i) === id)) return console.warn('Skill already owned')
+          if (active.length < 4) dispatch({ type: ACTION.DEBUG_MODIFY_STATE, payload: { skills: { active: [...active, id], inventory } } })
+          else if (inventory.length < 12) dispatch({ type: ACTION.DEBUG_MODIFY_STATE, payload: { skills: { active, inventory: [...inventory, id] } } })
+        },
+        addEquip: (id, slot = 'weapon') => {
+          const data = slot === 'weapon' ? getWeaponData(id) : getAccessoryData(id)
+          if (!data) return console.error('Equip not found:', id)
+          // 直接強制更換裝備並套用數值 (由於 StatsManager.applyEffects 太複雜且依賴 VN 格式，這裡直接覆寫)
+          const newHeroine = { ...state.heroine }
+          newHeroine.equipment = { ...newHeroine.equipment, [slot]: { id, durability: 100 } }
+          // 同時增加基礎數值 (簡化版：僅 ATK/AGI/WIL/HP/SP)
+          if (data.ATK) newHeroine.ATK += data.ATK
+          if (data.AGI) newHeroine.AGI += data.AGI
+          if (data.WIL) newHeroine.WIL += data.WIL
+          if (data.maxHP) { newHeroine.maxHP += data.maxHP; newHeroine.HP += data.maxHP }
+          if (data.maxSP) { newHeroine.maxSP += data.maxSP; newHeroine.SP += data.maxSP }
+          dispatch({ type: ACTION.DEBUG_MODIFY_STATE, payload: { heroine: newHeroine } })
+        }
+      }
+    }
+  }, [state, goToScene])
 
   // ── 遊戲開始（序章） ─────────────────────────────────────
 
@@ -477,6 +526,9 @@ export default function App() {
         .map(s => ({ ...s, duration: s.duration - 1 }))
         .filter(s => s.duration > 0)
 
+      // 遞減技能冷卻
+      const nextSkillCDs = tickCooldowns(combat.skillCooldowns ?? {})
+
       // DOT 效果（bleed/poison）
       const { newHeroine: dotHeroine, newStatuses: dotStatuses, logs: dotLogs } =
         processStatusEffects(heroine, newHeroineStatuses)
@@ -490,6 +542,7 @@ export default function App() {
           turnQueue: remaining,
           enemyStatuses: newEnemyStatuses,
           heroineStatuses: dotStatuses,
+          skillCooldowns: nextSkillCDs,
         },
         ...(dotLogs.length > 0 ? { heroineUpdate: { HP: dotHeroine.HP } } : {}),
       })
@@ -1281,6 +1334,15 @@ export default function App() {
         />
       )}
 
+      {/* [Debug] 調試選單 */}
+      {showDebugMenu && (
+        <DebugMenu
+          state={state}
+          dispatch={dispatch}
+          goToScene={goToScene}
+          onClose={() => setShowDebugMenu(false)}
+        />
+      )}
     </div>
   )
 }

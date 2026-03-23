@@ -55,14 +55,19 @@ function DurabilityBar({ label, value }) {
 
 // ── 技能按鈕 ──────────────────────────────────────────────────
 
-function SkillButton({ skillId, heroine, onUse }) {
+function SkillButton({ skillId, heroine, combat, onUse }) {
   const skill = getSkillData(skillId)
   if (!skill) return null
+
+  const skillCDs = combat?.skillCooldowns ?? {}
+  const skillUses = combat?.skillUses ?? {}
+  const cd = skillCDs[skillId] ?? 0
+  const isMaxed = skill.maxUses && (skillUses[skillId] ?? 0) >= skill.maxUses
 
   const canAfford = heroine.SP >= skill.spCost
   const meetsHP = !skill.requireHPBelow || (heroine.HP / heroine.maxHP) < skill.requireHPBelow
 
-  const disabled = !canAfford || !meetsHP
+  const disabled = !canAfford || !meetsHP || cd > 0 || isMaxed
 
   return (
     <button
@@ -70,13 +75,26 @@ function SkillButton({ skillId, heroine, onUse }) {
       disabled={disabled}
       title={skill.description}
       className={`
-        flex-1 min-w-0 px-2 py-2 rounded text-xs text-center transition-all border
+        flex-1 min-w-0 px-2 py-2 rounded text-xs text-center transition-all border relative overflow-hidden
         ${disabled
           ? 'border-gray-700 text-gray-600 cursor-not-allowed bg-gray-900/50'
           : 'border-game-border text-game-accent hover:border-game-accent hover:bg-game-accent/10 cursor-pointer'
         }
       `}
     >
+      {/* Cooldown Overlay */}
+      {cd > 0 && (
+        <div className="absolute inset-0 bg-black/60 flex items-center justify-center font-bold text-game-accent z-10">
+          CD {cd}
+        </div>
+      )}
+      {/* Maxed Overlay */}
+      {isMaxed && (
+        <div className="absolute inset-0 bg-black/60 flex items-center justify-center font-bold text-red-500 z-10 text-[0.6rem]">
+          耗盡
+        </div>
+      )}
+
       <div className="font-semibold truncate">{skill.name}</div>
       <div className={`text-xs mt-0.5 ${canAfford ? 'text-blue-400' : 'text-red-600'}`}>
         SP {skill.spCost}
@@ -291,12 +309,13 @@ export default function CombatScreen({
           {showInventory && <EquipmentPanel heroine={heroine} />}
           {activeSkills.length > 0
             ? activeSkills.map(id => (
-              <SkillButton
-                key={id}
-                skillId={id}
-                heroine={heroine}
-                onUse={onUseSkill}
-              />
+                <SkillButton
+                  key={id}
+                  skillId={id}
+                  heroine={heroine}
+                  combat={combat}
+                  onUse={onUseSkill}
+                />
             ))
             : <p className="text-gray-600 text-xs self-center">（尚未習得主動技能）</p>
           }

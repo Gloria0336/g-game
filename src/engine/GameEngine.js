@@ -46,6 +46,8 @@ const INITIAL_COMBAT = {
   summonedThisBattle: [],
   playerActionCount: 0,     // 玩家本場行動次數（用於教學延遲召喚）
   activeDemons: {},         // { [demonId]: DemonUnit } — 場上存活惡魔
+  skillCooldowns: {},       // { skillId: remainingTurns }
+  skillUses: {},            // { skillId: totalUses }
   pendingNarrative: null,       // AI 戰鬥敘事（戰後顯示）
   pendingDemonDialogue: null,   // AI 惡魔對話 { lines:[], choices:[] }
   activeDemonDialogueId: null,  // 當前對話惡魔 ID
@@ -177,6 +179,9 @@ export const ACTION = {
   MARK_PRIVATE_MOMENT:     'MARK_PRIVATE_MOMENT',     // 標記惡魔私下互動已觸發
   TRIGGER_FINAL_EVAL:      'TRIGGER_FINAL_EVAL',      // 進入 Ch.E1 評估
   APPLY_FINAL_EVAL_RESULT: 'APPLY_FINAL_EVAL_RESULT', // 寫入 finalTrack 並進入 Ch.E2
+
+  // ── 調試工具 ──
+  DEBUG_MODIFY_STATE: 'DEBUG_MODIFY_STATE', // 深度修改或覆蓋 state
 }
 
 // ─── Reducer ──────────────────────────────────────────────────
@@ -795,6 +800,22 @@ export function gameReducer(state, action) {
       // 由 App 呼叫 MapEngine.advanceToNextSubLayer() 計算後傳入 newExploration
       const { newExploration } = action
       return { ...state, exploration: newExploration, phase: 'map' }
+    }
+
+    // ── 調試工具：深度修改狀態 ──
+    case ACTION.DEBUG_MODIFY_STATE: {
+      const { payload } = action
+      // 這裡僅做一層的簡單合併，若需更深層可遞歸或手動指定
+      return {
+        ...state,
+        ...payload,
+        heroine: payload.heroine ? { ...state.heroine, ...payload.heroine } : state.heroine,
+        combat: payload.combat ? { ...state.combat, ...payload.combat } : state.combat,
+        exploration: payload.exploration ? { ...state.exploration, ...payload.exploration } : state.exploration,
+        flags: payload.flags ? { ...state.flags, ...payload.flags } : state.flags,
+        demons: payload.demons ? { ...state.demons, ...payload.demons } : state.demons,
+        skills: payload.skills ? { ...state.skills, ...payload.skills } : state.skills, // [ADD]
+      }
     }
 
     // 記錄戰鬥完成
