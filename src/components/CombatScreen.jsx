@@ -6,6 +6,7 @@ import { useState } from 'react'
 import { getSkillData } from '../engine/SkillDB.js'
 import { getEquipmentData } from '../engine/EquipmentDB.js'
 import { getWeaponData } from '../engine/WeaponDB.js'
+import { getAccessoryData } from '../engine/AccessoriesDB.js'
 import { canTriggerSummon } from '../engine/CombatEngine.js'
 import CombatLog from './CombatLog.jsx'
 
@@ -20,9 +21,8 @@ function StatBar({ label, value, max, color = 'bg-red-500', thin = false }) {
       <span className="text-gray-400 text-xs w-8 shrink-0">{label}</span>
       <div className={`flex-1 bg-gray-800 rounded-full overflow-hidden ${thin ? 'h-1.5' : 'h-2.5'}`}>
         <div
-          className={`h-full rounded-full transition-all duration-300 ${
-            danger ? 'bg-red-700 animate-pulse' : color
-          }`}
+          className={`h-full rounded-full transition-all duration-300 ${danger ? 'bg-red-700 animate-pulse' : color
+            }`}
           style={{ width: `${pct}%` }}
         />
       </div>
@@ -39,8 +39,8 @@ function DurabilityBar({ label, value }) {
   const pct = Math.max(0, Math.min(100, value))
   const color =
     pct >= 60 ? 'bg-blue-500' :
-    pct >= 30 ? 'bg-yellow-500' :
-    'bg-red-700'
+      pct >= 30 ? 'bg-yellow-500' :
+        'bg-red-700'
 
   return (
     <div className="flex items-center gap-1.5">
@@ -127,10 +127,10 @@ function EquipmentPanel({ heroine }) {
   const equip = heroine.equipment ?? {}
 
   const slots = [
-    { key: 'weapon',    label: '武器' },
+    { key: 'weapon', label: '武器' },
     { key: 'accessory', label: '飾品' },
-    { key: 'upper',     label: '上衣' },
-    { key: 'lower',     label: '下身' },
+    { key: 'upper', label: '上衣' },
+    { key: 'lower', label: '下身' },
   ]
 
   return (
@@ -141,7 +141,9 @@ function EquipmentPanel({ heroine }) {
         {slots.map(({ key, label }) => {
           const e = equip[key]
           const data = e
-            ? (key === 'weapon' ? getWeaponData(e.id) : getEquipmentData(e.id))
+            ? key === 'weapon'    ? getWeaponData(e.id)
+            : key === 'accessory' ? getAccessoryData(e.id)
+            :                       getEquipmentData(e.id)
             : null
           return (
             <div key={key}
@@ -158,10 +160,9 @@ function EquipmentPanel({ heroine }) {
                     <div className="text-amber-400 text-xs">命中 +{data.hitBonus}</div>
                   )}
                   {e.durability != null && (
-                    <div className={`text-xs mt-0.5 ${
-                      e.durability >= 60 ? 'text-blue-400' :
-                      e.durability >= 30 ? 'text-yellow-400' : 'text-red-500'
-                    }`}>耐久 {e.durability}</div>
+                    <div className={`text-xs mt-0.5 ${e.durability >= 60 ? 'text-blue-400' :
+                        e.durability >= 30 ? 'text-yellow-400' : 'text-red-500'
+                      }`}>耐久 {e.durability}</div>
                   )}
                 </>
               ) : (
@@ -231,11 +232,10 @@ export default function CombatScreen({
           </div>
 
           {/* 回合指示 */}
-          <div className={`shrink-0 px-3 py-1 rounded text-xs font-bold border ${
-            isPlayerTurn
+          <div className={`shrink-0 px-3 py-1 rounded text-xs font-bold border ${isPlayerTurn
               ? 'border-game-accent text-game-accent'
               : 'border-gray-600 text-gray-500'
-          }`}>
+            }`}>
             {isProcessing ? '處理中…' : isPlayerTurn ? '你的回合' : '敵人回合'}
           </div>
         </div>
@@ -252,8 +252,8 @@ export default function CombatScreen({
 
         {/* 女主角數值 */}
         <div className="grid grid-cols-2 gap-x-6 gap-y-1">
-          <StatBar label="HP" value={heroine.HP}    max={heroine.maxHP} color="bg-rose-500" />
-          <StatBar label="SP" value={heroine.SP}    max={heroine.maxSP} color="bg-blue-500" />
+          <StatBar label="HP" value={heroine.HP} max={heroine.maxHP} color="bg-rose-500" />
+          <StatBar label="SP" value={heroine.SP} max={heroine.maxSP} color="bg-blue-500" />
           <DurabilityBar label="上" value={equip.upper?.durability ?? 0} />
           <DurabilityBar label="下" value={equip.lower?.durability ?? 0} />
         </div>
@@ -291,22 +291,21 @@ export default function CombatScreen({
           {showInventory && <EquipmentPanel heroine={heroine} />}
           {activeSkills.length > 0
             ? activeSkills.map(id => (
-                <SkillButton
-                  key={id}
-                  skillId={id}
-                  heroine={heroine}
-                  onUse={onUseSkill}
-                />
-              ))
+              <SkillButton
+                key={id}
+                skillId={id}
+                heroine={heroine}
+                onUse={onUseSkill}
+              />
+            ))
             : <p className="text-gray-600 text-xs self-center">（尚未習得主動技能）</p>
           }
           <button
             onClick={() => setShowInventory(v => !v)}
-            className={`shrink-0 w-14 py-1.5 rounded text-xs border transition-all ${
-              showInventory
+            className={`shrink-0 w-14 py-1.5 rounded text-xs border transition-all ${showInventory
                 ? 'border-amber-500 text-amber-300 bg-amber-500/10'
                 : 'border-gray-700 text-gray-500 hover:border-gray-500 hover:text-gray-300'
-            }`}
+              }`}
           >
             <div>⚔</div>
             <div>裝備</div>
@@ -318,11 +317,10 @@ export default function CombatScreen({
           <button
             onClick={onBasicAttack}
             disabled={disabled}
-            className={`flex-1 py-2.5 rounded text-sm font-semibold border transition-all ${
-              disabled
+            className={`flex-1 py-2.5 rounded text-sm font-semibold border transition-all ${disabled
                 ? 'border-gray-700 text-gray-600 cursor-not-allowed'
                 : 'border-game-accent text-game-accent hover:bg-game-accent/15 active:scale-95'
-            }`}
+              }`}
           >
             普通攻擊
           </button>
@@ -330,11 +328,10 @@ export default function CombatScreen({
           <button
             onClick={onDefend}
             disabled={disabled}
-            className={`flex-1 py-2.5 rounded text-sm font-semibold border transition-all ${
-              disabled
+            className={`flex-1 py-2.5 rounded text-sm font-semibold border transition-all ${disabled
                 ? 'border-gray-700 text-gray-600 cursor-not-allowed'
                 : 'border-cyan-600 text-cyan-300 hover:bg-cyan-600/15 active:scale-95'
-            }`}
+              }`}
           >
             防禦
           </button>
@@ -343,13 +340,12 @@ export default function CombatScreen({
             <button
               onClick={onOpenSummon}
               disabled={disabled}
-              className={`flex-1 py-2.5 rounded text-sm font-semibold border transition-all leading-tight ${
-                disabled
+              className={`flex-1 py-2.5 rounded text-sm font-semibold border transition-all leading-tight ${disabled
                   ? 'border-gray-700 text-gray-600 cursor-not-allowed'
                   : isPassiveSummon
                     ? 'border-purple-500 text-purple-300 hover:bg-purple-500/15 active:scale-95 animate-pulse'
                     : 'border-violet-700 text-violet-400 hover:bg-violet-700/15 active:scale-95'
-              }`}
+                }`}
             >
               <div>{isPassiveSummon ? '✦ 召喚惡魔' : '◈ 召喚惡魔'}</div>
               {!isPassiveSummon && (
@@ -361,11 +357,10 @@ export default function CombatScreen({
           <button
             onClick={onFlee}
             disabled={disabled}
-            className={`px-4 py-2.5 rounded text-sm border transition-all ${
-              disabled
+            className={`px-4 py-2.5 rounded text-sm border transition-all ${disabled
                 ? 'border-gray-700 text-gray-600 cursor-not-allowed'
                 : 'border-gray-600 text-gray-400 hover:border-gray-400 active:scale-95'
-            }`}
+              }`}
           >
             逃離
           </button>

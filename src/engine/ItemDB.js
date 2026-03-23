@@ -17,6 +17,32 @@ const ITEM_DB = {
     type:        'consumable',
     effect:      'bait',
   },
+
+  // ── 修補材料 ──────────────────────────────────────────────
+  repair_kit_basic: {
+    id:          'repair_kit_basic',
+    name:        '初階修補材料',
+    description: '基礎修繕材料，修復目標裝備 30 點耐久。',
+    type:        'repair',
+    repairAmount: 30,
+    target:      'single',
+  },
+  repair_kit_mid: {
+    id:          'repair_kit_mid',
+    name:        '中階修補材料',
+    description: '品質較佳的修繕材料，修復目標裝備 60 點耐久。',
+    type:        'repair',
+    repairAmount: 60,
+    target:      'single',
+  },
+  repair_kit_advanced: {
+    id:          'repair_kit_advanced',
+    name:        '高階修補材料',
+    description: '頂級修繕材料，完全修復所有已裝備服裝的耐久至 100。',
+    type:        'repair',
+    repairAmount: 100,
+    target:      'all',
+  },
 }
 
 /**

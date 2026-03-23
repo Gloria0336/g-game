@@ -10,6 +10,7 @@ import { INITIAL_HEROINE, INITIAL_DEMONS, applyEffects, applyAwakening } from '.
 import { resolveChoices, executeChoice } from './ChoiceResolver.js'
 import { resolveEnding } from './EndingResolver.js'
 import { getPrimaryDemonId, createDemonUnit } from './DemonSystem.js'
+import { getItemData } from './ItemDB.js'
 
 // ─── Phase 常數 ────────────────────────────────────────────────
 
@@ -673,12 +674,25 @@ export function gameReducer(state, action) {
       return { ...state, heroine, demons }
     }
 
-    // ── 使用道具（shroud_balm / bait_bell）─────────────────────────
+    // ── 使用道具 ────────────────────────────────────────────────
     case ACTION.USE_ITEM: {
-      const { itemId } = action
-      const inv = state.skills.inventory.filter(i => i !== itemId && i?.id !== itemId)
+      const { itemId, slot } = action
       let heroine = { ...state.heroine }
       let demons  = { ...state.demons }
+
+      // 從背包消耗（修補材料等 heroine.items）
+      const inBackpack = (heroine.items ?? []).find(i => i.id === itemId)
+      if (inBackpack) {
+        const newQty = (inBackpack.quantity ?? 1) - 1
+        heroine = {
+          ...heroine,
+          items: newQty <= 0
+            ? heroine.items.filter(i => i.id !== itemId)
+            : heroine.items.map(i => i.id === itemId ? { ...i, quantity: newQty } : i),
+        }
+      }
+      // 從技能欄消耗（shroud_balm / bait_bell 等）
+      const inv = state.skills.inventory.filter(i => i !== itemId && i?.id !== itemId)
 
       if (itemId === 'shroud_balm') {
         heroine.shroud_active = true
@@ -688,6 +702,30 @@ export function gameReducer(state, action) {
         if (primaryId) {
           const cur = demons[primaryId].demon_axis ?? 0
           demons[primaryId] = { ...demons[primaryId], demon_axis: Math.min(100, cur + 15) }
+        }
+      } else {
+        const itemData = getItemData(itemId)
+        if (itemData?.type === 'repair') {
+          const eq = { ...heroine.equipment }
+          if (itemData.target === 'all') {
+            // 高階修補：所有已裝備服裝設為 100
+            if (eq.upper) eq.upper = { ...eq.upper, durability: 100 }
+            if (eq.lower) eq.lower = { ...eq.lower, durability: 100 }
+          } else {
+            // 初/中階：修復指定槽位；未指定則自動選耐久最低的槽
+            const targetSlot = slot ?? (['upper', 'lower', 'weapon']
+              .filter(s => eq[s])
+              .reduce((a, b) =>
+                (eq[a]?.durability ?? 999) <= (eq[b]?.durability ?? 999) ? a : b
+              ))
+            if (eq[targetSlot]) {
+              eq[targetSlot] = {
+                ...eq[targetSlot],
+                durability: Math.min(100, (eq[targetSlot].durability ?? 0) + itemData.repairAmount),
+              }
+            }
+          }
+          heroine = { ...heroine, equipment: eq }
         }
       }
 

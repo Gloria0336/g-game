@@ -3,6 +3,9 @@
  * 負責所有數值的讀寫、邊界約束、覺醒套用、契約狀態判定
  */
 
+import { getWeaponData } from './WeaponDB.js'
+import { getAccessoryData } from './AccessoriesDB.js'
+
 // ─── 初始數值 ─────────────────────────────────────────────────
 
 export const INITIAL_HEROINE = {
@@ -20,6 +23,9 @@ export const INITIAL_HEROINE = {
   AGI: 8,
   WIL: 6,
   DES: 0,
+  hit:   0,
+  dodge: 0,
+  drPen: 0,
 
   // 覺醒類型
   awakening: null,
@@ -181,23 +187,42 @@ export function applyEffects(state, effects) {
     newState = { ...newState, heroine: newHeroine }
   }
 
-  // 女主角裝備更新
+  // 女主角裝備更新（含裝備加成的增減）
   if (effects.heroine?.equipment) {
     const newHeroine = {
       ...newState.heroine,
       equipment: { ...newState.heroine.equipment }
     }
+
+    const EQUIP_STAT_KEYS = ['ATK', 'AGI', 'WIL', 'maxHP', 'maxSP', 'insight', 'hit', 'dodge', 'drPen']
+
+    const shiftSlotBonus = (slot, sign) => {
+      const eq = newHeroine.equipment[slot]
+      if (!eq) return
+      const data = slot === 'weapon'    ? getWeaponData(eq.id)
+                 : slot === 'accessory' ? getAccessoryData(eq.id)
+                 : null
+      if (!data) return
+      for (const key of EQUIP_STAT_KEYS) {
+        if (!data[key]) continue
+        newHeroine[key] = Math.max(0, (newHeroine[key] ?? 0) + sign * data[key])
+      }
+      newHeroine.HP = Math.min(newHeroine.HP, newHeroine.maxHP)
+      newHeroine.SP = Math.min(newHeroine.SP, newHeroine.maxSP)
+    }
+
     for (const [slot, item] of Object.entries(effects.heroine.equipment)) {
+      shiftSlotBonus(slot, -1)   // 扣除舊裝備加成
       if (item === null) {
         newHeroine.equipment[slot] = null
       } else if (typeof item === 'string') {
-        // 傳入字串 ID，預設 100 耐久度
         newHeroine.equipment[slot] = { id: item, durability: 100 }
       } else {
-        // 傳入物件 { id, durability }
         newHeroine.equipment[slot] = { ...item }
       }
+      shiftSlotBonus(slot, +1)   // 套用新裝備加成
     }
+
     newState = { ...newState, heroine: newHeroine }
   }
 

@@ -2,7 +2,7 @@
   "sceneId": "1-11",
   "type": "narrative",
   "background": "ruined_town_dawn",
-  "nextScene": "2-1",
+  "nextPhase": "map",
   "chapter": 1,
   "isChapterEnd": true,
   "dialogues": [
@@ -12,7 +12,7 @@
     },
     {
       "speaker": "narrator",
-      "text": "三本契約書漂浮在妳面前，封面上的紋樣已不再空白。"
+      "text": "三份契約漂浮在妳面前，紙張上的紋樣已不再空白。"
     },
     {
       "speaker": "heroine",
@@ -48,7 +48,7 @@
     },
     {
       "speaker": "narrator",
-      "text": "妳握緊三本書，第一次清楚明白：自己獲得的不只是力量，還有三個會改變之後每一步的人。"
+      "text": "妳握緊三份卷軸，第一次清楚明白：自己獲得的不只是力量，還有三個會改變之後每一步的人。"
     },
     {
       "speaker": "narrator",

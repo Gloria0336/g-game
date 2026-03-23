@@ -8,6 +8,7 @@ import { getWeaponData } from './engine/WeaponDB.js'
 import { getAccessoryData } from './engine/AccessoriesDB.js'
 import { getItemData } from './engine/ItemDB.js'
 import { gameReducer, INITIAL_STATE, ACTION } from './engine/GameEngine.js'
+import { generateSubLayerLocations } from './engine/MapEngine.js'
 import {
   fillSceneText,
   generateCombatNarrative,
@@ -55,6 +56,7 @@ import DemonSummonModal from './components/DemonSummonModal.jsx'
 import SkillRewardScreen from './components/SkillRewardScreen.jsx'
 import SkillManageScreen from './components/SkillManageScreen.jsx'
 import DemonDialogueScreen from './components/DemonDialogueScreen.jsx'
+import WorldMapScreen from './components/WorldMapScreen.jsx'
 
 // ── 背包 Modal ────────────────────────────────────────────────
 
@@ -62,10 +64,10 @@ function InventoryModal({ heroine, onClose }) {
   const equip = heroine.equipment ?? {}
   const items = heroine.items ?? []
   const slots = [
-    { key: 'weapon',    label: '武器' },
+    { key: 'weapon', label: '武器' },
     { key: 'accessory', label: '飾品' },
-    { key: 'upper',     label: '上衣' },
-    { key: 'lower',     label: '下身' },
+    { key: 'upper', label: '上衣' },
+    { key: 'lower', label: '下身' },
   ]
   return (
     <div className="absolute inset-0 z-30 flex items-end justify-start" onClick={onClose}>
@@ -99,10 +101,9 @@ function InventoryModal({ heroine, onClose }) {
                     <>
                       <div className="text-gray-200 text-xs font-semibold leading-tight">{data.name}</div>
                       {e.durability != null && (
-                        <div className={`text-xs mt-0.5 ${
-                          e.durability >= 60 ? 'text-blue-400' :
-                          e.durability >= 30 ? 'text-yellow-400' : 'text-red-500'
-                        }`}>{e.durability}</div>
+                        <div className={`text-xs mt-0.5 ${e.durability >= 60 ? 'text-blue-400' :
+                            e.durability >= 30 ? 'text-yellow-400' : 'text-red-500'
+                          }`}>{e.durability}</div>
                       )}
                     </>
                   ) : (
@@ -172,9 +173,8 @@ function AwakeningResultPanel({ awakeningType, scene, sceneIdx, onAdvanceScene, 
         {scene && scene.length > 0 && (
           <div className="mb-6 text-left space-y-2 min-h-[72px]">
             {scene.slice(0, sceneIdx + 1).map((line, i) => (
-              <p key={i} className={`text-sm leading-relaxed ${
-                line.speaker === 'heroine' ? 'text-gray-300 italic' : 'text-gray-400'
-              }`}>
+              <p key={i} className={`text-sm leading-relaxed ${line.speaker === 'heroine' ? 'text-gray-300 italic' : 'text-gray-400'
+                }`}>
                 {line.speaker === 'heroine' ? `（${line.text}）` : line.text}
               </p>
             ))}
@@ -183,9 +183,6 @@ function AwakeningResultPanel({ awakeningType, scene, sceneIdx, onAdvanceScene, 
         {!scene && <div className="mb-6 h-[72px]" />}
 
         <p className="text-game-accent text-xs tracking-widest mb-4">AWAKENING</p>
-        <h2 className="text-white text-xl font-bold mb-3">
-          {AWAKENING_LABELS[awakeningType]}
-        </h2>
         <p className="text-gray-400 text-sm mb-6">
           初始技能解鎖：<span className="text-game-accent">{AWAKENING_SKILLS[awakeningType]}</span>
         </p>
@@ -295,7 +292,7 @@ export default function App() {
     dispatch({ type: ACTION.SET_FLAG, flag: 'des_overflow_triggered', value: true })
     const ending = resolveDesOverflowEnding(state)
     dispatch({ type: ACTION.TRIGGER_ENDING, ending })
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.heroine.DES, state.flags.des_overflow_triggered])
 
   // ── demon_axis 鎖定監測：任一惡魔 demon_axis = 100 → 鎖定 ────
@@ -309,7 +306,7 @@ export default function App() {
         break
       }
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     state.demons.demon_a?.demon_axis,
     state.demons.demon_b?.demon_axis,
@@ -326,7 +323,7 @@ export default function App() {
       .then(narrative => {
         if (narrative) dispatch({ type: ACTION.SET_COMBAT_NARRATIVE, narrative })
       })
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.phase, state.combat.result])
 
   // demon_dialogue → AI 惡魔對話生成
@@ -340,7 +337,7 @@ export default function App() {
       .then(dialogue => {
         if (dialogue) dispatch({ type: ACTION.SET_DEMON_DIALOGUE, dialogue, demonId })
       })
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.phase, state.combat.activeDemonDialogueId])
 
   // ── 場景載入 ─────────────────────────────────────────────
@@ -407,6 +404,11 @@ export default function App() {
       const nextScene = sceneData.nextScene
       if (nextScene) {
         await goToScene(nextScene)
+      } else if (sceneData.nextPhase === 'map') {
+        // 第一章結束，轉入地圖前初始化地點
+        const firstLocations = generateSubLayerLocations(1, 1) // 1-1
+        dispatch({ type: ACTION.SET_SUBLAYER_LOCATIONS, locations: firstLocations })
+        dispatch({ type: ACTION.ENTER_MAP })
       } else if (sceneData.isChapterEnd) {
         dispatch({ type: ACTION.TRIGGER_ENDING })
       }
@@ -868,7 +870,13 @@ export default function App() {
 
   const handleCombatEndContinue = useCallback(async () => {
     const cur = stateRef.current
-    const { combat, sceneData } = cur
+    const { combat, sceneData, exploration } = cur
+
+    // 處理探索階段的戰鬥紀錄
+    if (exploration?.currentLayer > 0 && combat.result === 'victory') {
+      const isTierC = combat.enemyData?.tier === 'C'
+      dispatch({ type: ACTION.RECORD_BATTLE, tierC: isTierC })
+    }
 
     // 序章戰鬥（scene_0_3）勝利後觸發覺醒結果
     if (sceneData?.isPrologueCombat && combat.result === 'victory') {
@@ -904,7 +912,12 @@ export default function App() {
 
     // 跳往下一場景
     const nextScene = sceneData?.nextScene
-    if (nextScene) await goToScene(nextScene)
+    if (nextScene) {
+      await goToScene(nextScene)
+    } else if (exploration?.currentLayer > 0) {
+      // 若是在地圖探索中的戰鬥，且沒有特別指定的下個場景，則回到地圖
+      dispatch({ type: ACTION.ENTER_MAP })
+    }
   }, [goToScene, aiSettings])
 
   // ── 惡魔回應選擇（demon_dialogue → 技能掉落 / 下一場景）────
@@ -1019,9 +1032,8 @@ export default function App() {
               ⚔ 技能
             </button>
             <button
-              className={`px-3 py-1 game-panel text-xs rounded transition-colors ${
-                showInventory ? 'text-amber-300' : 'text-gray-400 hover:text-game-accent'
-              }`}
+              className={`px-3 py-1 game-panel text-xs rounded transition-colors ${showInventory ? 'text-amber-300' : 'text-gray-400 hover:text-game-accent'
+                }`}
               onClick={() => setShowInventory(v => !v)}
             >
               🎒 背包
@@ -1181,15 +1193,7 @@ export default function App() {
 
       {/* ── 地圖探索 ── */}
       {state.phase === 'map' && (
-        <div className="relative w-screen h-screen overflow-hidden bg-game-dark flex flex-col items-center justify-center">
-          <BackgroundLayer background="dungeon_map" />
-          <div className="z-10 text-center">
-            <div className="text-game-accent text-lg font-semibold mb-2">
-              {state.exploration?.currentLayer}-{state.exploration?.currentSubLayer} 探索中
-            </div>
-            <div className="text-gray-400 text-sm">（地圖畫面施工中）</div>
-          </div>
-        </div>
+        <WorldMapScreen state={state} dispatch={dispatch} />
       )}
 
       {/* ── Ch.E1 最終評估 ── */}

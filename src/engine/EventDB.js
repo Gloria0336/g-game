@@ -81,7 +81,7 @@ export const CRISIS_RESCUE_SUBTYPES = {
       // 召喚惡魔在場時，各惡魔依個性調整 heroine_axis
       demon_a: { heroine_axis: +2, note: '瑠夜：隱性認可，認為這是明智之舉' },
       demon_b: { heroine_axis: -3, note: '颯牙：明顯不滿，認為這是懦弱的行為' },
-      demon_c: { heroine_axis:  0, note: '玄冥：無反應' },
+      demon_c: { heroine_axis: 0, note: '玄冥：無反應' },
     },
   },
 
@@ -90,7 +90,7 @@ export const CRISIS_RESCUE_SUBTYPES = {
     name: '小鎮外圍危機',
     scenario: '被魔物追逐的逃難者',
     interventionFlow: 'force_combat',
-    successRewards:  { heart: 3, flags: ['npc_favor_town'] },
+    successRewards: { heart: 3, flags: ['npc_favor_town'] },
     failurePenalties: { npc_fail: true, DES: 10 },
   },
 
@@ -100,7 +100,7 @@ export const CRISIS_RESCUE_SUBTYPES = {
     scenario: '被廢墟結構困住的探索者',
     interventionFlow: 'dice',
     diceStats: ['WIL', 'AGI'],     // 合力判定（取平均）
-    successRewards:  { heart: 2, chainEvent: 'item_discovery' },
+    successRewards: { heart: 2, chainEvent: 'item_discovery' },
     failurePenalties: { HP: -0.10, durability: -2 },
   },
 
@@ -109,7 +109,7 @@ export const CRISIS_RESCUE_SUBTYPES = {
     name: '荒廢曠野危機',
     scenario: '野外魔物包圍的傷者',
     interventionFlow: 'force_combat',
-    successRewards:  { heart: 3, flags: ['npc_favor_outskirts'] },
+    successRewards: { heart: 3, flags: ['npc_favor_outskirts'] },
     failurePenalties: { npc_fail: true, DES: 10 },
   },
 
@@ -119,7 +119,7 @@ export const CRISIS_RESCUE_SUBTYPES = {
     scenario: '困在搖搖欲墜台頂的哨兵',
     interventionFlow: 'dice',
     diceStats: ['AGI'],
-    successRewards:  { heart: 2, independence: 1 },
+    successRewards: { heart: 2, independence: 1 },
     failurePenalties: { chainEvent: 'encounter_combat', note: '落下引發魔物注意' },
   },
 
@@ -128,7 +128,7 @@ export const CRISIS_RESCUE_SUBTYPES = {
     name: '破碎公路危機',
     scenario: '路上遭魔物攻擊的旅人',
     interventionFlow: 'force_combat',
-    successRewards:  { heart: 3, possibleTrade: true },
+    successRewards: { heart: 3, possibleTrade: true },
     failurePenalties: { npc_fail: true },
   },
 
@@ -138,7 +138,7 @@ export const CRISIS_RESCUE_SUBTYPES = {
     scenario: '被魔物巢穴困住的倖存者',
     interventionFlow: 'force_combat',
     combatModifier: { enemyCountBonus: 1 }, // 敵方數量 +1
-    successRewards:  { heart: 3, chainEvent: 'item_discovery' },
+    successRewards: { heart: 3, chainEvent: 'item_discovery' },
     failurePenalties: { npc_fail: true, DES: 15 },
   },
 
@@ -148,7 +148,7 @@ export const CRISIS_RESCUE_SUBTYPES = {
     scenario: '觸發古代機關被困的人',
     interventionFlow: 'dice',
     diceStats: ['insight'],
-    successRewards:  { heart: 2, chainEvent: 'investigation' },
+    successRewards: { heart: 2, chainEvent: 'investigation' },
     failurePenalties: { chainTrap: 'trap.seal', targetsAll: true },
   },
 
@@ -163,7 +163,7 @@ export const CRISIS_RESCUE_SUBTYPES = {
       successGuaranteed: true,     // 惡魔協助必定成功
       cost: { DES: 10 },
     },
-    successRewards:  { heart: 3, insight: 2 },
+    successRewards: { heart: 3, insight: 2 },
     failurePenalties: { DES: 20 },
   },
 
@@ -179,7 +179,7 @@ export const CRISIS_RESCUE_SUBTYPES = {
         flow: 'dice',
         diceStats: ['WIL'],
         diceDC: 80,               // 高門檻
-        successRewards:  { heart: 5, independence: 3 },
+        successRewards: { heart: 5, independence: 3 },
         failurePenalties: { DES: 25, HP: -0.15 },
       },
       {
@@ -214,7 +214,7 @@ export const RIFT_ANOMALY_SUBTYPES = {
         id: 'summon_guide',
         label: '召喚惡魔協助定向',
         requiresSummon: true,
-        rewards:  { DES: +5 },
+        rewards: { DES: +5 },
         demonBonus: { demon_axis: +3 },
       },
       {
@@ -222,7 +222,7 @@ export const RIFT_ANOMALY_SUBTYPES = {
         label: '獨自靠直覺前進',
         flow: 'dice',
         diceStats: ['WIL'],
-        successRewards:  { independence: +3 },
+        successRewards: { independence: +3 },
         failurePenalties: { DES: +12, HP: -0.05 },
       },
       { id: 'retreat', label: '撤退' },
@@ -239,13 +239,13 @@ export const RIFT_ANOMALY_SUBTYPES = {
         label: '抵抗衝擊',
         flow: 'dice',
         diceStats: ['WIL'],
-        successRewards:  { DES: +5 },
+        successRewards: { DES: +5 },
         failurePenalties: { DES: +20 },
       },
       {
         id: 'flow_with',
         label: '順流而下',
-        rewards:  { DES: +10, insight: +3 },
+        rewards: { DES: +10, insight: +3 },
       },
       { id: 'retreat', label: '撤退' },
     ],
@@ -284,13 +284,13 @@ export const RIFT_ANOMALY_SUBTYPES = {
         label: '對抗幻覺',
         flow: 'dice',
         diceStats: ['insight'],
-        successRewards:  { insight: +3 },
+        successRewards: { insight: +3 },
         failurePenalties: { heroine_axis: -5, target: 'highest_affection' },
       },
       {
         id: 'indulge',
         label: '沉溺幻覺',
-        rewards:  { DES: +15, lust: +5, target: 'highest_demon_axis' },
+        rewards: { DES: +15, lust: +5, target: 'highest_demon_axis' },
       },
       { id: 'retreat', label: '撤退' },
     ],
@@ -311,7 +311,7 @@ export const RIFT_ANOMALY_SUBTYPES = {
         label: '嘗試強化封印',
         flow: 'dice',
         diceStats: ['WIL'],
-        successRewards:  { flags: ['seal_reinforced'] },
+        successRewards: { flags: ['seal_reinforced'] },
         failurePenalties: { DES: +8, HP: -0.10 },
       },
       { id: 'retreat', label: '撤退' },
@@ -436,9 +436,9 @@ export const ITEM_DISCOVERY = {
   name: '物品發現',
   flow: 'auto',                     // 自動觸發，無選擇
   itemPool: {
-    recovery:    ['hp_potion', 'sp_potion', 'des_suppressant'],
-    repair:      ['durability_kit_small', 'durability_kit_large'],
-    skill:       ['skill_fragment'],  // 特殊技能前置碎片
+    recovery: ['hp_potion', 'sp_potion', 'des_suppressant'],
+    repair: ['durability_kit_small', 'durability_kit_large'],
+    skill: ['skill_fragment'],  // 特殊技能前置碎片
   },
   rarityByLayer: {
     1: 'common',
@@ -468,8 +468,8 @@ export const DEMON_PRIVATE_MOMENT = {
   },
   baseRewards: {
     heroine_axis: { range: [-15, 15] },  // 依選項決定方向與大小
-    demon_axis:   { range: [-10, 10] },
-    lust:         { range: [0, 10] },
+    demon_axis: { range: [-10, 10] },
+    lust: { range: [0, 10] },
   },
   penalties: {
     wrongChoice: { affection: -5, heroine_axis: -10 },
@@ -510,12 +510,12 @@ export const NPC_ENCOUNTER = {
 // ────────────────────────────────────────
 
 const EVENT_MAP = {
-  encounter_combat:      ENCOUNTER_COMBAT,
-  investigation:         INVESTIGATION,
-  rest_recovery:         REST_RECOVERY,
-  item_discovery:        ITEM_DISCOVERY,
-  demon_private_moment:  DEMON_PRIVATE_MOMENT,
-  npc_encounter:         NPC_ENCOUNTER,
+  encounter_combat: ENCOUNTER_COMBAT,
+  investigation: INVESTIGATION,
+  rest_recovery: REST_RECOVERY,
+  item_discovery: ITEM_DISCOVERY,
+  demon_private_moment: DEMON_PRIVATE_MOMENT,
+  npc_encounter: NPC_ENCOUNTER,
   ...Object.fromEntries(Object.entries(CRISIS_RESCUE_SUBTYPES).map(([k, v]) => [k, v])),
   ...Object.fromEntries(Object.entries(RIFT_ANOMALY_SUBTYPES).map(([k, v]) => [k, v])),
   ...Object.fromEntries(Object.entries(TRAP_SUBTYPES).map(([k, v]) => [k, v])),
@@ -539,8 +539,4 @@ export function getCrisisNoInterventionDef() {
   return CRISIS_RESCUE_SUBTYPES.noIntervention
 }
 
-export {
-  CRISIS_RESCUE_SUBTYPES,
-  RIFT_ANOMALY_SUBTYPES,
-  TRAP_SUBTYPES,
-}
+

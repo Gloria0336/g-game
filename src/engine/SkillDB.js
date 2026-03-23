@@ -34,20 +34,20 @@ const SKILL_DB = {
     id: 'T1_03', tier: 1, name: '本能突刺', spCost: 18,
     effect: {
       type: 'attack',
-      ampPercent: 50,          // ×1.5 → +50% over baseline
+      ampPercent: 80,          // ×1.8 → +80% over baseline
       ignoreDR: 0.1,           // 無視 10% DR
     },
-    description: '傷害倍率 ×1.5，忽略目標 10% 減傷',
+    description: '傷害倍率 ×1.8，忽略目標 10% 減傷',
   },
 
   T1_04: {
-    id: 'T1_04', tier: 1, name: '契約脈衝', spCost: 10,
+    id: 'T1_04', tier: 1, name: '契約脈衝', spCost: 15,
     effect: {
       type: 'attack_heal_sp',
       ampPercent: 20,          // ×1.2
-      spRestore: 15,
+      spRestore: 10,
     },
-    description: '傷害倍率 ×1.2，回復自身 15 SP',
+    description: '傷害倍率 ×1.2，回復自身 10 SP',
   },
 
   T1_05: {
@@ -55,7 +55,7 @@ const SKILL_DB = {
     effect: {
       type: 'multi_attack',
       hits: 2,
-      ampPercent: -25,         // 各 60% 傷害（+15 基礎，-40）≈ -25
+      ampPercent: -40,         // 各 60% 傷害（+15 基礎，-40）≈ -25
       durabilityDamage: { amount: 0, target: 'none' },
     },
     description: '攻擊 2 次，各 60% 傷害，命中獨立判定',
@@ -120,26 +120,26 @@ const SKILL_DB = {
   },
 
   T1_12: {
-    id: 'T1_12', tier: 1, name: '重擊', spCost: 25,
+    id: 'T1_12', tier: 1, name: '重擊', spCost: 30,
     effect: {
       type: 'attack',
-      ampPercent: 60,
+      ampPercent: 100,
       durabilityDamage: { amount: 6, target: 'upper' },
     },
-    description: '傷害倍率 ×1.6，目標上裝耐久 −6',
+    description: '傷害倍率 ×2，目標上裝耐久 −6',
   },
 
   T1_13: {
     id: 'T1_13', tier: 1, name: '纏縛術', spCost: 16,
     effect: {
       type: 'debuff_hit',
-      applyStatus: { type: 'entangle', duration: 2, evadePenalty: 20 },
+      applyStatus: { type: 'entangle', duration: 2, evadePenalty: 30 },
     },
-    description: '目標迴避率 −20%（2 回合）',
+    description: '目標迴避率 −30%（2 回合）',
   },
 
   T1_14: {
-    id: 'T1_14', tier: 1, name: '輕傷自癒', spCost: 12,
+    id: 'T1_14', tier: 1, name: '輕傷自癒', spCost: 15,
     noAttack: true,
     effect: {
       type: 'heal_hp',
@@ -160,13 +160,13 @@ const SKILL_DB = {
   },
 
   T1_16: {
-    id: 'T1_16', tier: 1, name: '衝刺突擊', spCost: 22,
+    id: 'T1_16', tier: 1, name: '衝刺突擊', spCost: 20,
     effect: {
       type: 'attack',
-      ampPercent: 40,
-      selfPenalty: { type: 'hit_down', duration: 1, value: 15 },
+      ampPercent: 80,
+      selfPenalty: { type: 'hit_down', duration: 1, value: 20 },
     },
-    description: '傷害倍率 ×1.4，但自身下回合命中 −15%',
+    description: '傷害倍率 ×1.8，但自身下回合命中 −20%',
   },
 
   T1_17: {
