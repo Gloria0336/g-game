@@ -2,6 +2,7 @@
  * EndingResolver — 根據最終數值與 flag 判定結局
  */
 import { checkCondition } from './StatsManager.js'
+import { getDominantDemon } from './ExplorationSystem.js'
 
 // ─── DES 溢出提前結局（priority: 99，由 App.jsx 直接 dispatch）────────────
 
@@ -114,6 +115,57 @@ export function resolveEnding(state, charId) {
 
   // fallback：未完待續
   return charEndings.find((e) => e.id === 'unfinished') ?? null
+}
+
+/**
+ * Ch.E1 評估：根據探索結果決定結局軌道
+ * @param {object} state  GameState
+ * @returns {{ track: string, dominantDemonId: string|null, interferenceFlags: string[] }}
+ *   track: 'solo' | 'crisis' | 'romance_he' | 'romance_de' | 'conflict'
+ */
+export function evaluateFinalTrack(state) {
+  const demonIds = ['demon_a', 'demon_b', 'demon_c']
+
+  // 計算各惡魔積分（affection + trust）
+  const demonScores = Object.fromEntries(
+    demonIds.map(id => [id, (state.demons[id]?.affection ?? 0) + (state.demons[id]?.trust ?? 0)])
+  )
+
+  // 主導惡魔 = affection + trust 合計最高
+  const dominantDemonId = getDominantDemon(state)
+
+  // 跨線干擾旗標
+  const interferenceFlags = state.flags?.interference_triggered ?? []
+
+  // 路線一：solo（independence ≥ 60 且所有惡魔積分皆 < 30）
+  const allLowScore = demonIds.every(id => demonScores[id] < 30)
+  if (state.heroine.independence >= 60 && allLowScore) {
+    return { track: 'solo', dominantDemonId: null, interferenceFlags }
+  }
+
+  if (!dominantDemonId) {
+    return { track: 'conflict', dominantDemonId: null, interferenceFlags }
+  }
+
+  const dominant = state.demons[dominantDemonId]
+
+  // 路線二：crisis（BE）demon_axis ≥ 80
+  if ((dominant.demon_axis ?? 0) >= 80) {
+    return { track: 'crisis', dominantDemonId, interferenceFlags }
+  }
+
+  // 路線三：romance_he（HE）heroine_axis ≥ 70
+  if ((dominant.heroine_axis ?? 0) >= 70) {
+    return { track: 'romance_he', dominantDemonId, interferenceFlags }
+  }
+
+  // 路線四：romance_de（HE/BE）heroine_axis ≥ 50
+  if ((dominant.heroine_axis ?? 0) >= 50) {
+    return { track: 'romance_de', dominantDemonId, interferenceFlags }
+  }
+
+  // 路線五：conflict（NE）其他
+  return { track: 'conflict', dominantDemonId, interferenceFlags }
 }
 
 /**

@@ -35,7 +35,7 @@ import {
 import { getSkillData } from './engine/SkillDB.js'
 import { rollSkillReward } from './engine/SkillRewardSystem.js'
 import { getMonsterData } from './engine/MonsterDB.js'
-import { resolveDesOverflowEnding } from './engine/EndingResolver.js'
+import { resolveDesOverflowEnding, evaluateFinalTrack } from './engine/EndingResolver.js'
 import { useSceneLoader } from './hooks/useSceneLoader.js'
 import { useAISettings } from './hooks/useAISettings.js'
 
@@ -291,7 +291,7 @@ export default function App() {
   useEffect(() => {
     if (state.heroine.DES < 200) return
     if (state.flags.des_overflow_triggered) return
-    if (state.phase === 'title' || state.phase === 'ending') return
+    if (['title', 'ending', 'map', 'final_eval'].includes(state.phase)) return
     dispatch({ type: ACTION.SET_FLAG, flag: 'des_overflow_triggered', value: true })
     const ending = resolveDesOverflowEnding(state)
     dispatch({ type: ACTION.TRIGGER_ENDING, ending })
@@ -301,7 +301,7 @@ export default function App() {
   // ── demon_axis 鎖定監測：任一惡魔 demon_axis = 100 → 鎖定 ────
   useEffect(() => {
     if (state.flags.demon_locked) return
-    if (state.phase === 'title' || state.phase === 'ending') return
+    if (['title', 'ending', 'map', 'final_eval'].includes(state.phase)) return
     const demonIds = ['demon_a', 'demon_b', 'demon_c']
     for (const demonId of demonIds) {
       if ((state.demons[demonId]?.demon_axis ?? 0) >= 100) {
@@ -1177,6 +1177,48 @@ export default function App() {
           }}
           onClose={() => setShowSkillManage(false)}
         />
+      )}
+
+      {/* ── 地圖探索 ── */}
+      {state.phase === 'map' && (
+        <div className="relative w-screen h-screen overflow-hidden bg-game-dark flex flex-col items-center justify-center">
+          <BackgroundLayer background="dungeon_map" />
+          <div className="z-10 text-center">
+            <div className="text-game-accent text-lg font-semibold mb-2">
+              {state.exploration?.currentLayer}-{state.exploration?.currentSubLayer} 探索中
+            </div>
+            <div className="text-gray-400 text-sm">（地圖畫面施工中）</div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Ch.E1 最終評估 ── */}
+      {state.phase === 'final_eval' && (
+        <div className="relative w-screen h-screen overflow-hidden bg-game-dark flex flex-col items-center justify-center gap-6">
+          <BackgroundLayer background="rift_core" />
+          <div className="z-10 text-center max-w-sm">
+            <div className="text-game-accent text-xl font-bold mb-4">Ch.E1 — 命運的交叉口</div>
+            {(() => {
+              const result = evaluateFinalTrack(state)
+              return (
+                <>
+                  <div className="text-gray-300 text-sm mb-2">
+                    軌道：<span className="text-purple-300 font-semibold">{result.track}</span>
+                  </div>
+                  {result.dominantDemonId && (
+                    <div className="text-gray-400 text-xs mb-4">主導惡魔：{result.dominantDemonId}</div>
+                  )}
+                  <button
+                    className="px-6 py-2 bg-game-accent/20 border border-game-accent text-game-accent rounded hover:bg-game-accent/40 text-sm transition-colors"
+                    onClick={() => dispatch({ type: ACTION.APPLY_FINAL_EVAL_RESULT, result })}
+                  >
+                    進入結局
+                  </button>
+                </>
+              )
+            })()}
+          </div>
+        </div>
       )}
 
       {/* ── 結局 ── */}

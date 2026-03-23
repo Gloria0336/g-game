@@ -26,6 +26,8 @@ export const PHASES = {
   SKILL_REWARD:   'skill_reward',
   ENDING:         'ending',
   SAVE_LOAD:      'save_load',
+  MAP:            'map',         // 五層地牢地點選擇介面
+  FINAL_EVAL:     'final_eval',  // Ch.E1 評估畫面
 }
 
 // ─── 初始戰鬥狀態 ──────────────────────────────────────────────
@@ -83,6 +85,23 @@ export const INITIAL_STATE = {
 
   // 當前戰鬥
   combat: { ...INITIAL_COMBAT },
+
+  // 五層地牢探索狀態
+  exploration: {
+    currentLayer: 1,
+    currentSubLayer: 1,
+    visitedSubLayers: [],
+    currentSubLayerLocations: [],
+    completedLocations: [],
+    completedEvents: [],
+    restUsedInSubLayer: false,
+    layerBattleCount: 0,
+    tierCKillCount: 0,
+    subLayerUnlocked: false,
+    town_outskirts_visited: false,
+    // Ch.E1 評估結果（evaluateFinalTrack 寫入）
+    finalTrack: null,
+  },
 }
 
 // ─── Action Types ──────────────────────────────────────────────
@@ -144,6 +163,19 @@ export const ACTION = {
   RELIC_INTERACT: 'RELIC_INTERACT', // 遺物調查：指定惡魔 demon_axis +8
   REST:           'REST',           // 休息：DES −20、HP +10、主選惡魔 demon_axis −5
   USE_ITEM:       'USE_ITEM',       // 使用道具（shroud_balm / bait_bell）
+
+  // 探索系統
+  ENTER_MAP:               'ENTER_MAP',               // 進入地圖介面
+  SET_SUBLAYER_LOCATIONS:  'SET_SUBLAYER_LOCATIONS',  // 設定子層地點清單
+  COMPLETE_LOCATION:       'COMPLETE_LOCATION',       // 標記地點已探索（index）
+  COMPLETE_EVENT:          'COMPLETE_EVENT',          // 標記事件已完成（eventId）
+  ADVANCE_SUBLAYER:        'ADVANCE_SUBLAYER',        // 推進至下一子層（或下一層）
+  RECORD_BATTLE:           'RECORD_BATTLE',           // 記錄戰鬥完成（含是否擊殺TierC）
+  MARK_TOWN_OUTSKIRTS:     'MARK_TOWN_OUTSKIRTS',     // 標記小鎮外圍已訪問
+  USE_REST_IN_SUBLAYER:    'USE_REST_IN_SUBLAYER',    // 標記本子層休息已使用
+  MARK_PRIVATE_MOMENT:     'MARK_PRIVATE_MOMENT',     // 標記惡魔私下互動已觸發
+  TRIGGER_FINAL_EVAL:      'TRIGGER_FINAL_EVAL',      // 進入 Ch.E1 評估
+  APPLY_FINAL_EVAL_RESULT: 'APPLY_FINAL_EVAL_RESULT', // 寫入 finalTrack 並進入 Ch.E2
 }
 
 // ─── Reducer ──────────────────────────────────────────────────
@@ -665,6 +697,135 @@ export function gameReducer(state, action) {
     // ── 回主選單 ─────────────────────────────────────────────────
     case ACTION.RETURN_TO_TITLE:
       return { ...INITIAL_STATE }
+
+    // ══════════════════════════════════════════════════════════
+    // 探索系統
+    // ══════════════════════════════════════════════════════════
+
+    // 進入地圖介面
+    case ACTION.ENTER_MAP:
+      return { ...state, phase: 'map' }
+
+    // 設定子層地點清單（子層開始時由 App 呼叫）
+    case ACTION.SET_SUBLAYER_LOCATIONS:
+      return {
+        ...state,
+        exploration: {
+          ...state.exploration,
+          currentSubLayerLocations: action.locations,
+          completedLocations: [],
+          restUsedInSubLayer: false,
+          subLayerUnlocked: false,
+        },
+      }
+
+    // 標記地點已探索
+    case ACTION.COMPLETE_LOCATION: {
+      const { index } = action
+      const expl = state.exploration
+      if (expl.completedLocations.includes(index)) return state
+
+      const newCompleted = [...expl.completedLocations, index]
+      const townVisited = expl.town_outskirts_visited ||
+        (expl.currentSubLayerLocations[index] === 'town_outskirts')
+
+      return {
+        ...state,
+        exploration: {
+          ...expl,
+          completedLocations: newCompleted,
+          town_outskirts_visited: townVisited,
+        },
+      }
+    }
+
+    // 標記事件已完成（全域防重複）
+    case ACTION.COMPLETE_EVENT: {
+      const { eventId } = action
+      if (state.exploration.completedEvents.includes(eventId)) return state
+      return {
+        ...state,
+        exploration: {
+          ...state.exploration,
+          completedEvents: [...state.exploration.completedEvents, eventId],
+        },
+      }
+    }
+
+    // 推進至下一子層或下一層
+    case ACTION.ADVANCE_SUBLAYER: {
+      // 由 App 呼叫 MapEngine.advanceToNextSubLayer() 計算後傳入 newExploration
+      const { newExploration } = action
+      return { ...state, exploration: newExploration, phase: 'map' }
+    }
+
+    // 記錄戰鬥完成
+    case ACTION.RECORD_BATTLE: {
+      const { tierC = false } = action
+      const expl = state.exploration
+      return {
+        ...state,
+        exploration: {
+          ...expl,
+          layerBattleCount: expl.layerBattleCount + 1,
+          tierCKillCount: tierC ? expl.tierCKillCount + 1 : expl.tierCKillCount,
+        },
+      }
+    }
+
+    // 標記小鎮外圍已訪問
+    case ACTION.MARK_TOWN_OUTSKIRTS:
+      return {
+        ...state,
+        exploration: { ...state.exploration, town_outskirts_visited: true },
+      }
+
+    // 標記本子層休息已使用
+    case ACTION.USE_REST_IN_SUBLAYER:
+      return {
+        ...state,
+        exploration: { ...state.exploration, restUsedInSubLayer: true },
+      }
+
+    // 標記惡魔私下互動已觸發（key = `${demonId}_${locationTypeId}`）
+    case ACTION.MARK_PRIVATE_MOMENT: {
+      const { demonId, key } = action
+      const demon = state.demons[demonId]
+      if (!demon || demon.private_moments_triggered.includes(key)) return state
+      return {
+        ...state,
+        demons: {
+          ...state.demons,
+          [demonId]: {
+            ...demon,
+            private_moments_triggered: [...demon.private_moments_triggered, key],
+          },
+        },
+      }
+    }
+
+    // 進入 Ch.E1 評估畫面
+    case ACTION.TRIGGER_FINAL_EVAL:
+      return { ...state, phase: 'final_eval' }
+
+    // 寫入最終路線判定結果，進入 Ch.E2（dialogue phase）
+    case ACTION.APPLY_FINAL_EVAL_RESULT: {
+      const { route, endingTrack, interferenceTriggered } = action
+      return {
+        ...state,
+        mainRoute: route,
+        phase: 'dialogue',
+        flags: {
+          ...state.flags,
+          ending_track: endingTrack,
+          interference_triggered: interferenceTriggered ?? [],
+        },
+        exploration: {
+          ...state.exploration,
+          finalTrack: { route, endingTrack, interferenceTriggered },
+        },
+      }
+    }
 
     default:
       return state

@@ -48,6 +48,9 @@ export const INITIAL_DEMON = {
   demon_axis: 0,
   contract_status: 'active',
   summon_count: 0,
+  // 探索系統欄位
+  warmed_up_count: 0,             // 累積召喚次數（探索期間）
+  private_moments_triggered: [],  // 已觸發的私下互動 key（`${demonId}_${locationTypeId}`）
 }
 
 export const INITIAL_DEMONS = {
@@ -330,7 +333,7 @@ export function spHitBonus(heroine) {
 // ─── 契約狀態判定 ─────────────────────────────────────────────
 
 /**
- * 每章章末執行，更新各惡魔的 contract_status
+ * 每次離開地點後執行（exitLocation 事件），更新各惡魔的 contract_status
  */
 export function evaluateContractStatus(state) {
   const newDemons = { ...state.demons }

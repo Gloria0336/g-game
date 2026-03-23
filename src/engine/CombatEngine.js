@@ -534,6 +534,29 @@ export function executeEnemyAttack(heroine, combat) {
     }
   }
 
+  // 精神型技能：耐久傷害
+  if (useSkill?.durabilityDamage && useSkill.durabilityDamage.amount > 0) {
+    const slot = Math.random() < 0.5 ? 'upper' : 'lower'
+    const equip = newHeroine.equipment?.[slot]
+    if (equip) {
+      const prev = equip.durability
+      const next = Math.max(0, prev - useSkill.durabilityDamage.amount)
+      newHeroine = {
+        ...newHeroine,
+        equipment: { ...newHeroine.equipment, [slot]: { ...equip, durability: next } }
+      }
+      if (prev >= 60 && next < 60) newHeroine.DES = Math.min(200, newHeroine.DES + 5)
+      if (prev >= 30 && next < 30) newHeroine.DES = Math.min(200, newHeroine.DES + 10)
+      logs.push(`${useSkill.name} 腐蝕裝備耐久 -${prev - next}！`)
+    }
+  }
+
+  // 精神型技能：心靈侵蝕（DES 上升）
+  if (useSkill?.desDrain) {
+    newHeroine = { ...newHeroine, DES: Math.min(200, newHeroine.DES + useSkill.desDrain) }
+    logs.push(`${useSkill.name} 侵蝕心靈契約！DES +${useSkill.desDrain}`)
+  }
+
   // HP < 30% → DES +8
   if (newHeroine.HP / newHeroine.maxHP < 0.3 && heroine.HP / heroine.maxHP >= 0.3) {
     newHeroine.DES = Math.min(200, newHeroine.DES + 8)

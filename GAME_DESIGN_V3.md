@@ -17,12 +17,14 @@
 7. [技能庫系統](#7-技能庫系統)
 8. [情感數值與分歧系統](#8-情感數值與分歧系統)
 9. [章節結構與路線](#9-章節結構與路線)
-10. [結局矩陣](#10-結局矩陣)
-11. [技術架構](#11-技術架構)
-12. [AI 整合策略](#12-ai-整合策略)
-13. [資料結構規格](#13-資料結構規格)
-14. [實作路線圖](#14-實作路線圖)
-15. [命名規範與檔案結構](#15-命名規範與檔案結構)
+10. [自由探索地圖系統](#10-自由探索地圖系統)
+11. [探索事件系統](#11-探索事件系統)
+12. [結局矩陣](#12-結局矩陣)
+13. [技術架構](#13-技術架構)
+14. [AI 整合策略](#14-ai-整合策略)
+15. [資料結構規格](#15-資料結構規格)
+16. [實作路線圖](#16-實作路線圖)
+17. [命名規範與檔案結構](#17-命名規範與檔案結構)
 
 ---
 
@@ -357,9 +359,9 @@ DES 上限：200
 
 | Tier | 名稱 | 掉落章節 | 技能數 |
 |------|------|---------|-------|
-| **Tier I** | 初階技能 | 第 1–3 章 | 18 個 |
-| **Tier II** | 中階技能 | 第 4–7 章 | 17 個 |
-| **Tier III** | 高階技能 | 第 8–10 章 / 惡魔贈與 | 10 個 |
+| **Tier I** | 初階技能 | 第一層地點戰鬥 / Ch1 教學戰鬥 | 18 個 |
+| **Tier II** | 中階技能 | 第二層地點戰鬥掉落 | 17 個 |
+| **Tier III** | 高階技能 | 第三～五層地點 / 惡魔 trust ≥ 70 私下互動贈與 / Ch.E1 場景 | 10 個 |
 
 ### 7.3 Tier I 技能（初階・第 1–3 章）
 
@@ -507,31 +509,52 @@ DES 升高    → 主線惡魔 lust 緩慢上升（DES 每 +30 → lust +5）
 ### 8.4 契約狀態判定時機
 
 ```
-每章章末執行 evaluateContractStatus()：
+每次離開地點後執行 evaluateContractStatus()（exitLocation 事件觸發）：
   heroine_axis ≤ −30          → 'hostile'
   demon_axis ≥ 90 + |heroine_axis| ≤ 10 → 'betrayal_warning'
   否則                         → 'active'
+```
+
+### 8.5 探索期間數值累積補充規則
+
+```
+同伴召喚（戰鬥中召喚惡魔，依現有 DemonSystem 機制）：
+  warmed_up_count + 1（每次召喚）
+
+完成地點戰鬥（全程未召喚任何惡魔且勝利）：
+  independence + 2
+
+完成私下互動（demon_private_moment）：
+  heroine_axis ±5–15（依玩家選項）
+  demon_axis ±5–10
+  lust ±0–10
+
+跨惡魔干擾（整合至探索期間，見第 11 節事件系統）：
+  非主導惡魔在特定地點觸發干擾事件後，設置相同的 interference_triggered 旗標
+  EndingResolver 判定邏輯不變（見第 12 節）
 ```
 
 ---
 
 ## 9. 章節結構與路線
 
-### 9.1 整體路線架構
+### 9.1 整體流程架構
 
 ```
 序章（共通）：「裂隙之夜」
     ↓
-第一章（共通）：「三個名字」
+第一章（共通）：「三個名字」（三惡魔依序登場）
     ↓
-第二章（分歧點）：「你選誰」
+【自由探索階段】五層地牢地圖
+  玩家自由推進五層，無固定路線
+  與三惡魔在戰鬥中互動，關係數值自然累積
+  探索期間 DES 溢出仍可觸發提前壞結局
+    ↓ 完成第五層 5-3 後自動觸發
+Ch.E1「裂隙最深處」（評估階段）
+  依累積數值動態判定主導路線與結局軌道（四向分歧）
     ↓
-    ┌──────────────┬──────────────┬──────────────┬──────────────┐
-    ↓              ↓              ↓              ↓
-瑠夜路線        颯牙路線        玄冥路線        獨行路線
-（Ch.3–10）    （Ch.3–10）    （Ch.3–10）    （Ch.3–10）
-    ↓              ↓              ↓              ↓
-依四向分歧系統決定結局走向（各 4 種結局）
+Ch.E2「契約空間」（結局演出）
+  EndingResolver → 23 種結局
 ```
 
 ### 9.2 共通章節
@@ -557,93 +580,36 @@ DES 升高    → 主線惡魔 lust 緩慢上升（DES 每 +30 → lust +5）
      - 偏好路線：heroine_axis 合計 +14~+16
      - 中立好奇：heroine_axis 合計 +6~+8
      - 明顯排斥：heroine_axis 合計 −12~−16
-收章：scene_1_11「三個名字」— 三人同框台詞，為第二章分歧鋪路
+收章：scene_1_11「三個名字」— 三人同框台詞，進入自由探索階段（第一層小鎮）
 技能：戰鬥掉落 Tier I
 教學戰 JSON 欄位：isTutorialSummon: true / tutorialDemon: "demon_a|b|c"
 ```
 
-#### 第二章「你選誰」（路線分歧點）
-```
-場景數：4
-戰鬥：1 場（Tier B 魔物）
-內容：三個惡魔同時在場，玩家選擇召喚哪個觸發主線分歧
-特殊：
-  - 未選擇的兩個惡魔進入「休眠關係」（後期劇情不同）
-  - 選擇「不召喚」且 independence ≥ 40 → 觸發獨行路線
-技能：戰鬥掉落 Tier I
-```
+### 9.3 Ch.E1 評估階段
 
-### 9.3 個別路線主體（第 3–8 章）—樹枝狀推進
+完成第五層 5-3 後自動觸發，執行 `evaluateFinalTrack(state)`：
 
-#### 推進總覽（以瑠夜路線為例）
-
-```
-Ch3「第一次獨處」（各路線共通入口）
-    ↓ 隱性分歧選項影響 heroine_axis 初始值
-    ↓
-[Ch4 章節閘口：heroine_axis 評估]
-    ┌──────────────┬──────────────┐
-親密軌（≥50）   搖擺軌（10–49）  對峙軌（≤−20）
-「惡魔的私域」  「沉默的契約」  「蓄意挑釁」
-    └──────────────┴──────────────┘
-            ↓（Ch5 共通：中途危機）
-          可能觸發：跨路線干擾檢查點
-            ↓
-[Ch6 章節閘口：heroine_axis × demon_axis 雙軸評估]
-    ┌──────────────┬──────────────┐
-浪漫軌          衝突軌          危機軌（demon_axis≥80）
-「愛的深淵」    「枷鎖鬆動」    「徹底佔有」
-    └──────────────┴──────────────┘
-            ↓
-        Ch7-8：各結局軌道專屬場景
-            ↓
-  Ch9 結局解鎖（軌跡 + 最終數值 → EndingResolver）
+```javascript
+evaluateFinalTrack(state):
+  // 1. 主導惡魔 = affection + trust 合計最高的惡魔
+  // 2. 若 independence ≥ 60 且所有惡魔積分 < 30 → solo 路線
+  // 3. 依主導惡魔數值判定四向軌道：
+  //    demon_axis ≥ 80           → crisis（BE）
+  //    heroine_axis ≥ 70         → romance_he（HE）
+  //    heroine_axis ≥ 50         → romance_de（HE/BE）
+  //    其他                       → conflict（NE）
+  // 4. 跨線干擾旗標讀取（interference_triggered）→ 子結局判定
+  // 輸出格式與 resolveEnding() 輸入完全相容
 ```
 
-#### 各章說明
+評估結果顯示於 `FinalEvalScreen.jsx`，玩家確認後進入 Ch.E2。
 
-**Ch3（各路線）— 共通入口，不變**
-確立世界觀與惡魔個性。新增一個「隱性分歧選項」（玩家可見，效果描述模糊），
-根據選擇為 heroine_axis 設定初始偏向值，供 Ch4 閘口使用。
+### 9.4 Ch.E2 結局演出
 
-**Ch4（各路線）— 三條子路徑**
+依 Ch.E1 判定的路線 × 結局軌道，由 `EndingResolver.js` 輸出最終結局 ID，
+進入 `EndingScreen.jsx` 演出（AI 生成個性化結局敘事）。
 
-| 子路徑 | 進入條件 | 專屬場景主題 |
-|--------|---------|------------|
-| 親密軌 | heroine_axis ≥ 50 | 「惡魔的私域」——惡魔展現溫柔/保護一面 |
-| 搖擺軌 | heroine_axis 10–49 | 「沉默的契約」——曖昧不明、各有盤算 |
-| 對峙軌 | heroine_axis ≤ −20 | 「蓄意挑釁」——摩擦與張力升溫 |
-
-每條子路徑有 1–2 個專屬場景，Ch5 開頭重新收束回主線。
-
-**Ch5（各路線）— 收束 + 跨路線干擾節點**
-所有 Ch4 子路徑在此章開頭進入共通主線事件（中途危機）。
-章節中段設置跨路線干擾觸發檢查點（見 9.6 節）。
-
-**Ch6（各路線）— 結局軌道分岐（主閘口）**
-
-| 結局軌道 | 進入條件 | Ch7–8 主題 |
-|---------|---------|----------|
-| 浪漫軌 | heroine_axis ≥ 50 | 愛的確認與代價 |
-| 衝突軌 | heroine_axis 10–49 或無法觸發浪漫軌 | 對峙後的理解 |
-| 危機軌 | demon_axis ≥ 80（不論 heroine_axis 為何，優先覆蓋） | 失控的執念／佔有 |
-
-一旦確立結局軌道，Ch7–8 場景與對話完全不同，此為第二個不可逆點。
-
-**Ch7–8（各路線）— 軌道專屬場景**
-每條結局軌道有 2–3 個專屬場景，取代原本線性固定場景。
-Ch8 末設 `isChapterEnd: true`，進入 EndingResolver 結局判定。
-
-**情感里程碑（更新）：**
-
-| 時機 | 事件 |
-|------|------|
-| Ch4 末 | **閘口 1**：heroine_axis 決定 Ch4 子路徑 |
-| Ch5 中段 | **干擾檢查點**：非主選惡魔數值觸發跨路線干擾 |
-| Ch6 末 | **閘口 2**：heroine_axis × demon_axis 決定結局軌道 |
-| Ch8 末 | **不可逆點**：路線鎖定，進入 EndingResolver |
-
-**各路線主題：**
+**各路線主題（仍為核心敘事驅動，散布於探索期間私下互動場景中）：**
 
 | 路線 | 主題 | 核心衝突 |
 |------|------|---------|
@@ -652,78 +618,255 @@ Ch8 末設 `isChapterEnd: true`，進入 EndingResolver 結局判定。
 | **玄冥路線**「詛咒的另一面」 | 一個從不期待被記得的惡魔被某人記住了 | 玄冥的力量來自傷痛，她越了解他，他的力量越不穩定 |
 | **獨行路線**「不需要你」 | 人類的力量能否真的抵禦惡魔 | 女主角獨力作戰，三個惡魔以不同方式試圖介入——但她拒絕了 |
 
-### 9.4 結局章（第 9–10 章）
+### 9.5 跨路線干擾（整合至探索期間）
 
-```
-第 9 章：結局前置
-  - 高強度戰鬥（Tier III 魔物 / 惡魔）
-  - 最終情感決策（不可逆）
+非主導惡魔在探索特定地點時可觸發干擾事件（替代原 Ch5 硬性時間點）。
+同一存檔每個惡魔最多觸發一次，記錄寫入 `state.flags.interference_triggered`。
 
-第 10 章：結局演出
-  - 依路線 × 四向分歧，共 16+ 種結局
-  - AI 生成個性化結局敘事
-```
-
-### 9.5 章節閘口規格
-
-閘口在 `evaluateContractStatus()` 完成後執行，將判定結果寫入 `state.flags`，
-場景 JSON 的 `nextScene` 欄位依 flag 值動態解析（而非硬寫固定 ID）。
-
-#### Ch4 閘口（`gate_ch4`）
-
-| heroine_axis 範圍 | 寫入 flag | 對應場景 ID 格式 |
-|------------------|-----------|----------------|
-| ≥ 50 | `ch4_track: 'intimate'` | `{route}-4-intimate` |
-| 10–49 | `ch4_track: 'wavering'` | `{route}-4-wavering` |
-| −19–9（無明確偏向） | `ch4_track: 'wavering'`（預設） | `{route}-4-wavering` |
-| ≤ −20 | `ch4_track: 'hostile'` | `{route}-4-hostile` |
-
-> `{route}` 為主路線代號：`ruya` / `soga` / `xuanming` / `solo`
-
-#### Ch6 閘口（`gate_ch6`）
-
-優先評估 `demon_axis`（危機軌條件覆蓋所有其他判斷）：
-
-| 優先順序 | 觸發條件 | 寫入 flag | 對應場景 ID 格式 |
-|--------|---------|-----------|----------------|
-| 1（最高） | demon_axis ≥ 80 | `ending_track: 'crisis'` | `{route}-6-crisis` |
-| 2 | heroine_axis ≥ 70 | `ending_track: 'romance_he'` | `{route}-6-romance` |
-| 3 | heroine_axis 50–69 | `ending_track: 'romance_de'` | `{route}-6-romance` |
-| 4（預設） | 其餘 | `ending_track: 'conflict'` | `{route}-6-conflict` |
-
-> `romance_he`（heroine_axis ≥ 70）→ 傾心 HE 路徑
-> `romance_de`（heroine_axis 50–69）→ 惡魔傾心 HE/BE 路徑
-> 兩者共用相同場景 JSON，但 EndingResolver 依 flag 值決定最終結局名稱。
-
-#### 閘口執行時序
-
-```
-章節末對話結束
-  → evaluateContractStatus()      ← 更新 contract_status
-  → evaluateChapterGate(chapter)  ← 寫入 ch4_track / ending_track
-  → goToScene(resolveNextScene())  ← 依 flag 決定下一場景 ID
-```
+| 非主導惡魔條件 | 觸發時機 | 干擾內容 | 數值效果 |
+|-------------|---------|---------|---------|
+| affection ≥ 30（任一非主導） | 探索特定地點時 | 插入「第三者出現」對話（1 段） | 主導惡魔 heroine_axis ±5（依玩家回應） |
+| heroine_axis ≤ −25（任一非主導） | 探索特定地點時 | 非主導惡魔作為臨時盟友介入戰鬥 | 該非主導惡魔 trust +8 |
+| demon_axis ≥ 70（任一非主導）且 warmed_up_count = 0 | 探索特定地點時 | 該惡魔主動現身，強制對話 | 該惡魔 contract_status → `betrayal_warning` |
 
 ---
 
-### 9.6 跨路線干擾規格
+---
 
-非主選惡魔（non-main demons）若在 Ch1 期間累積了特定數值，
-可在 Ch5 中段的干擾檢查點插入劇情。同一存檔每個惡魔最多觸發一次。
-觸發記錄寫入 `state.flags.interference_triggered: ['demon_a', ...]`。
+## 10. 自由探索地圖系統
 
-| 非主選惡魔條件 | 觸發時機 | 干擾內容 | 後續數值效果 |
-|-------------|---------|---------|------------|
-| affection ≥ 30（任一非主選） | Ch5 共通場景後 | 插入「第三者出現」對話（1 段） | 主選惡魔 heroine_axis ±5（依玩家回應） |
-| heroine_axis ≤ −25（任一非主選） | Ch6 對峙軌場景後 | 非主選惡魔作為臨時盟友介入戰鬥（1 場） | 該非主選惡魔 trust +8 |
-| demon_axis ≥ 70（任一非主選）且 summon_count = 0 | Ch5 任意軌 | 該惡魔主動現身，強制對話 | 該惡魔 contract_status → `betrayal_warning` |
+### 10.1 地圖設計哲學
 
-> 干擾場景 ID 格式：`interference-{demon_id}-ch5`，為獨立 JSON 檔案。
-> 執行後透過 `_pendingNextScene` 回歸原主線場景，不中斷 nextScene 鏈。
+地圖不是「關卡」，而是「關係累積的容器」。玩家在五層地牢中自由推進，
+每個地點都提供機會讓關係數值自然累積，無強制主軸路線。
+地牢式規則：**無法返回上一層**，每層通關後鎖定。
+
+### 10.2 預設子層解鎖規則
+
+> 除特殊定義外，**所有子層預設解鎖方式為：在當前子層經歷完 3 個地點後，第 3 個地點自動解鎖下一子層入口。**
+
+### 10.3 五層地圖規格
+
+#### 第一層：小鎮（Town）
+```
+魔物等級：Tier A
+地點結構：固定（Ch0/Ch1 場景延伸，非隨機）
+推進至第二層：進入 town_outskirts（小鎮外圍）後自動解鎖
+```
+
+#### 第二層：裂隙外圍（Rift Outskirts）
+```
+魔物等級：Tier A 為主 + 少量 Tier B
+子層數：5 個，每子層隨機生成 4 個地點
+
+子層解鎖條件：
+  2-1：由小鎮外圍自動解鎖進入
+  2-2 ~ 2-5：預設（完成前一子層 3 個地點）
+
+推進至第三層：至少完成 3 場戰鬥後，在 2-5 解鎖第三層入口
+```
+
+#### 第三層：裂隙入口（Rift Entrance）
+```
+魔物等級：Tier B
+子層數：5 個，每子層隨機生成 4 個地點
+
+子層解鎖條件：
+  3-1：由第二層推進後自動進入
+  3-2 ~ 3-5：預設
+
+推進至第四層：至少完成 3 場戰鬥後，在 3-5 解鎖第四層入口
+```
+
+#### 第四層：深入裂隙（Deep Rift）
+```
+魔物等級：Tier B 為主 + 少量 Tier C
+子層數：5 個，每子層隨機生成 4 個地點
+
+子層解鎖條件：
+  4-1：由第三層推進後自動進入
+  4-2 ~ 4-5：預設
+
+推進至第五層：至少完成 3 場戰鬥且至少擊殺 1 名 Tier C 魔物後，在 4-5 解鎖第五層入口
+```
+
+#### 第五層：裂隙最深處（Deepest Rift）
+```
+魔物等級：Tier B + Tier C
+子層數：3 個，每子層隨機生成 4 個地點
+
+子層解鎖條件：
+  5-1：由第四層推進後自動進入
+  5-2 ~ 5-3：預設
+
+完成 5-3：自動觸發 Ch.E1
+```
+
+### 10.4 地點庫（LocationDB）規格
+
+完整定義見 `src/engine/LocationDB.js`。每個地點類型（LocationType）包含：
+
+```javascript
+{
+  typeId: String,           // 地點類型 ID
+  name: String,             // 地點名稱
+  layer: Number,            // 所屬層數（1–5）
+  description: String,      // 固定場景描寫文本
+  aiPromptHint: String,     // AI 生成場景描寫的提示詞指引
+  eventPool: [              // 可能發生的事件列表
+    {
+      eventTypeId: String,           // EventDB 中的事件類型或子類型 ID
+      triggerChance: Number | null,  // 機率 0–1；null = 條件觸發
+      triggerCondition: Object | null,
+      weight: Number,
+    }
+  ]
+}
+```
+
+#### 地點類型清單
+
+**第一層（小鎮）：**
+| typeId | 名稱 | 主要事件類型 |
+|--------|------|------------|
+| `town_market` | 廢棄集市 | rest_recovery、item_discovery、npc_encounter |
+| `town_shelter` | 臨時避難所 | rest_recovery、npc_encounter、demon_private_moment |
+| `town_outskirts` | 小鎮外圍 | investigation、rift_anomaly、npc_encounter、crisis_rescue |
+
+**第二層（裂隙外圍）：**
+| typeId | 名稱 | 主要事件類型 |
+|--------|------|------------|
+| `outskirts_ruins` | 廢棄建築群 | investigation、item_discovery、trap、crisis_rescue |
+| `outskirts_field` | 荒廢曠野 | encounter_combat、rift_anomaly、crisis_rescue |
+| `outskirts_camp` | 廢棄紮營地 | rest_recovery、item_discovery、npc_encounter |
+| `outskirts_watchtower` | 崩塌瞭望台 | investigation、demon_private_moment、crisis_rescue |
+| `outskirts_road` | 破碎公路 | encounter_combat、npc_encounter、crisis_rescue |
+
+**第三層（裂隙入口）：**
+| typeId | 名稱 | 主要事件類型 |
+|--------|------|------------|
+| `rift_boundary` | 裂隙邊界 | rift_anomaly、encounter_combat、investigation |
+| `rift_forest` | 腐化森林 | encounter_combat、trap、demon_private_moment、item_discovery |
+| `rift_nest` | 魔物聚集地 | encounter_combat（極高）、item_discovery、crisis_rescue |
+| `rift_ruins` | 古代遺跡 | investigation、item_discovery、trap、crisis_rescue |
+| `rift_gate` | 封印殘跡 | rift_anomaly、investigation、demon_private_moment |
+
+**第四層（深入裂隙）：**
+| typeId | 名稱 | 主要事件類型 |
+|--------|------|------------|
+| `deep_interior` | 裂隙內部 | rift_anomaly、encounter_combat、investigation |
+| `deep_lair` | 魔物巢穴 | encounter_combat（極高）、item_discovery、trap |
+| `deep_shrine` | 腐化祭壇 | investigation、rift_anomaly、demon_private_moment、trap |
+| `deep_vortex` | 能量漩渦 | rift_anomaly（極高）、encounter_combat、crisis_rescue |
+| `deep_corridor` | 崩塌通道 | encounter_combat、trap、item_discovery |
+
+**第五層（裂隙最深處）：**
+| typeId | 名稱 | 主要事件類型 |
+|--------|------|------------|
+| `core_chamber` | 核心腔室 | rift_anomaly（極高）、encounter_combat、demon_private_moment |
+| `demon_territory` | 異界領域 | encounter_combat（極高）、demon_private_moment、investigation |
+| `core_threshold` | 裂隙源點入口 | investigation、rift_anomaly、crisis_rescue（高） |
 
 ---
 
-## 10. 結局矩陣
+## 11. 探索事件系統
+
+### 11.1 惡魔召喚規則（探索期間）
+
+**維持現有觸發條件**（HP≤30% 或 DES≥80），戰鬥中可召喚三者之一。
+召喚後數值變化依現有 `DemonSystem.js` 機制（warmed_up_count 追蹤召喚次數）。
+
+- 全程未召喚任何惡魔且勝利 → `independence + 2`
+- 私下互動（demon_private_moment）：進入地點時系統依條件判定觸發，與戰鬥召喚無關
+
+### 11.2 事件類型庫（EventDB）規格
+
+完整定義見 `src/engine/EventDB.js`。
+
+#### `encounter_combat` — 遭遇戰
+
+| 欄位 | 內容 |
+|------|------|
+| 觸發 | 地點事件池抽取（依 triggerChance / weight） |
+| 流程 | 觸發 COMBAT phase，魔物等級依所在層決定 |
+| 前置 | 依地點類型生成不同遭遇旁白（AI 生成） |
+| 獎勵 | 技能掉落（SkillRewardSystem）＋隨機機率掉落隨機裝備（依 Tier）＋固定隨機數值加成（ATK / MaxHP / MaxSP / AGI / WIL） |
+| 懲罰 | 依戰鬥結果結算（無固定懲罰） |
+| 特殊 | 全程未召喚惡魔且勝利 → independence +2 |
+
+#### `investigation` — 調查事件
+
+| 欄位 | 內容 |
+|------|------|
+| 流程 | 依地點類型呈現不同調查描述 → 2–3 選項 → DICE phase（insight 每 10 點 → 骰點+5） |
+| 成功 | 隱藏信息 flags、偶發技能獎勵、觸發 item_discovery |
+| 失敗 | 旁白描述，無數值懲罰 |
+| 特殊 | 特定地點成功 → 解鎖對應惡魔私下互動條件 |
+
+#### `crisis_rescue` — 危機救援（依地點分類為子類型）
+
+共通規則：不介入 → independence +1；介入 → 依子類型展開
+
+| 子類型 | 觸發地點 | 介入流程 | 成功獎勵 | 失敗結果 |
+|--------|---------|---------|---------|---------|
+| `rescue.town_outskirts` | 小鎮外圍 | 強制 encounter_combat | heart +3、npc_favor 旗標 | 救援失敗，DES +10 |
+| `rescue.outskirts_ruins` | 廢棄建築群 | WIL+AGI 骰點 | heart +2、item_discovery | HP -10%、裝備耐久 -2 |
+| `rescue.outskirts_field` | 荒廢曠野 | 強制 encounter_combat | heart +3、npc_favor 旗標 | 救援失敗，DES +10 |
+| `rescue.outskirts_watchtower` | 崩塌瞭望台 | AGI 骰點 | heart +2、independence +1 | 觸發 encounter_combat |
+| `rescue.outskirts_road` | 破碎公路 | 強制 encounter_combat | heart +3 | 救援失敗 |
+| `rescue.rift_nest` | 魔物聚集地 | 強制 encounter_combat（敵方+1） | heart +3、item_discovery | 救援失敗，DES +15 |
+| `rescue.rift_ruins` | 古代遺跡 | insight 骰點 | heart +2、investigation | trap.seal 觸發（雙方） |
+| `rescue.deep_vortex` | 能量漩渦 | WIL 骰點 OR 惡魔協助 | heart +3、insight +2 | DES +20 |
+| `rescue.core_threshold` | 裂隙源點入口 | 三選一（拉回/自選/放棄） | heart +5、independence +3 | DES +25、HP -15% |
+
+#### `rift_anomaly` — 裂隙異變（子類型）
+
+| 子類型 | 現象 | 應對選項 | 效果 |
+|--------|------|---------|------|
+| `anomaly.spatial` | 空間扭曲 | ①惡魔定向 ②獨自直覺 ③撤退 | ①DES+5、demon_axis+3 ②WIL骰點→成功independence+3/失敗DES+12、HP-5% |
+| `anomaly.surge` | 能量衝擊 | ①抵抗 ②順流 ③撤退 | ①WIL骰點→成功DES+5/失敗DES+20 ②DES+10、insight+3 |
+| `anomaly.swarm` | 魔物湧現 | ①迎戰 ②惡魔壓制 ③撤退 | ①強制 encounter_combat（敵方+1）②demon_axis+5、DES+8 |
+| `anomaly.vision` | 幻覺侵蝕 | ①對抗 ②沉溺 ③撤退 | ①insight骰點→成功insight+3/失敗heroine_axis-5 ②DES+15、lust+5 |
+| `anomaly.seal` | 封印崩潰 | ①研究 ②強化 ③撤退 | ①investigation觸發 ②WIL骰點→成功封印flags/失敗DES+8、HP-10% |
+
+#### `trap` — 陷阱（子類型）
+
+| 子類型 | 規避判定 | 完整觸發效果 | 半規避效果 |
+|--------|---------|------------|----------|
+| `trap.physical` | AGI | HP-20%、裝備耐久-10 | HP-10%、裝備耐久-2 |
+| `trap.magical` | WIL | SP-30%、下場戰鬥骰點-10 | SP-15% |
+| `trap.mental` | insight | DES+20、heroine_axis+5（對最高affection惡魔） | DES+10 |
+| `trap.ambush` | AGI（先制） | 強制 encounter_combat，敵方先攻一回合 | 正常 encounter_combat |
+| `trap.seal` | WIL | 隨機封印一項能力（ATK/AGI/WIL/DES任一），數值隨機減少，持續本子層 | 封印效果減半 |
+
+> 召喚惡魔同行時（warmed_up_count > 0）：可能提前察覺陷阱（骰點+10）
+
+#### `rest_recovery` — 休息/補給
+
+| 選擇 | 效果 |
+|------|------|
+| 獨自休息 | HP+20%、SP+20%、DES-10、independence+1 |
+| 惡魔陪伴 | HP+30%、SP+30%、DES-15、affection+2、trust+1；附帶短對話 |
+| 限制 | 每個子層最多休息 1 次 |
+
+#### `item_discovery` — 物品發現
+
+物品類型：回復道具（HP/SP/DES）、裝備耐久修復材料、技能碎片。
+稀有度依層數決定品質。特定物品觸發召喚惡魔評論短對話（warmed_up_count > 0）。
+
+#### `demon_private_moment` — 惡魔私下互動
+
+替代原 Ch3-Ch8 線性感情推進場景。各惡魔×地點組合設定觸發條件（affection 門檻 + warmed_up_count 門檻），每組合只觸發一次。
+獎勵：heroine_axis ±5–15、demon_axis ±5–10、lust ±0–10（依選項）。
+
+#### `npc_encounter` — NPC 遭遇
+
+遭遇倖存者或其他契約者 → 對話選擇 → 結果包含：情報 flags、物品交換、觸發 crisis_rescue。
+部分 NPC 已魔物化，揭露後觸發強制 encounter_combat。
+
+---
+
+## 12. 結局矩陣
 
 ### 10.1 主結局矩陣（4 × 4）
 
@@ -756,9 +899,9 @@ Ch8 末設 `isChapterEnd: true`，進入 EndingResolver 結局判定。
 
 ---
 
-## 11. 技術架構
+## 13. 技術架構
 
-### 11.1 技術棧
+### 13.1 技術棧
 
 ```
 框架：    React 18 + Vite 6
@@ -770,29 +913,34 @@ AI：      OpenRouter API（Gemini 2.5 Flash / Grok 4 Fast）
 場景資料：動態 import() 載入 JSON（Vite 自動 code-split）
 ```
 
-### 11.2 引擎模組
+### 13.2 引擎模組
 
 ```
 src/engine/
 ├── GameEngine.js          useReducer reducer + ACTION types
 │                          phases: title / awakening / dialogue / choice /
 │                                  dice / combat / demon_summon / combat_end /
-│                                  demon_dialogue / skill_reward / ending
+│                                  demon_dialogue / skill_reward / ending /
+│                                  map / final_eval
 ├── StatsManager.js        數值計算、applyEffects、applyAwakening、evaluateContractStatus
-├── CombatEngine.js        [移植 Dungen] 傷害公式、DR 計算、耐久傷害
-├── DiceEngine.js          [移植 Dungen] D100 + 命中 / 迴避判定（保留 D20 供 VN 場景）
-├── DemonSystem.js         [新增] 召喚觸發、停留計算、戰後互動、分歧判定
-├── SkillDB.js             [新增] 45 技能完整資料庫（含 tier 分配、掉落池）
-├── SkillRewardSystem.js   [新增] 戰後抽取邏輯、庫存管理
-├── MonsterDB.js           [改寫 Dungen] 魔物資料庫（移除地牢語境）
-├── EquipmentDB.js         [移植 Dungen] 裝備資料庫（新增起始裝備）
+├── CombatEngine.js        傷害公式、DR 計算、耐久傷害
+├── DiceEngine.js          D100 + 命中/迴避判定（保留 D20 供 VN 場景）
+├── DemonSystem.js         召喚觸發、停留計算、戰後互動、分歧判定
+├── SkillDB.js             45 技能完整資料庫（含 Tier 分配、掉落池）
+├── SkillRewardSystem.js   戰後抽取邏輯、庫存管理
+├── MonsterDB.js           魔物資料庫（Tier A/B/C）
+├── EquipmentDB.js         裝備資料庫（含起始裝備）
 ├── ChoiceResolver.js      選項過濾、VN 場景骰點
-├── EndingResolver.js      結局判定（含惡魔四向分歧條件）
+├── EndingResolver.js      結局判定（含 evaluateFinalTrack）
 ├── AIWriter.js            OpenRouter 整合（場景生成 + 戰鬥敘事 + 惡魔對話）
-└── SaveSystem.js          localStorage 存讀（擴充技能與惡魔狀態欄位）
+├── SaveSystem.js          localStorage 存讀
+├── MapEngine.js           [新增] 子層生成、地點隨機抽取、解鎖條件判定
+├── ExplorationSystem.js   [新增] 事件池解析、觸發判定、私下互動條件判定
+├── LocationDB.js          [新增] 所有地點類型定義（typeId/name/layer/description/aiPromptHint/eventPool）
+└── EventDB.js             [新增] 所有事件類型及子類型定義（流程/獎懲/特殊規則）
 ```
 
-### 11.3 UI 元件
+### 13.3 UI 元件
 
 ```
 src/components/
@@ -811,10 +959,12 @@ src/components/
 ├── DemonSummonModal.jsx     [新增] 召喚選擇畫面（3 個惡魔 + 不召喚）
 ├── DemonDialogueOverlay.jsx [新增] 戰後惡魔對話（疊加在戰鬥背景的 VN 模式）
 ├── SkillRewardScreen.jsx    [新增] 戰後技能選擇畫面（3 選 1 卡片）
-└── SkillManageScreen.jsx    [新增] 技能槽管理（據點 / 章節間）
+├── SkillManageScreen.jsx    [新增] 技能槽管理（據點 / 章節間）
+├── WorldMapScreen.jsx       [新增] 五層地牢子層地點節點選擇 UI
+└── FinalEvalScreen.jsx      [新增] Ch.E1 評估結果顯示（主導惡魔 + 結局軌道）
 ```
 
-### 11.4 Phase 狀態機（完整）
+### 13.4 Phase 狀態機（完整）
 
 ```javascript
 // GameEngine.js 中定義
@@ -830,12 +980,14 @@ const PHASES = {
   DEMON_DIALOGUE:  'demon_dialogue',  // 惡魔停留對話
   SKILL_REWARD:    'skill_reward',    // 技能選擇畫面
   ENDING:          'ending',          // 結局演出
+  MAP:             'map',             // 五層地牢地點選擇介面
+  FINAL_EVAL:      'final_eval',      // Ch.E1 評估畫面
 }
 ```
 
 ---
 
-## 12. AI 整合策略
+## 14. AI 整合策略
 
 ### 12.1 AIWriter.js 功能架構
 
@@ -882,9 +1034,9 @@ const CHAR_PROFILES = {
 
 ---
 
-## 13. 資料結構規格
+## 15. 資料結構規格
 
-### 13.1 完整 GameState
+### 15.1 完整 GameState
 
 ```javascript
 {
@@ -920,9 +1072,23 @@ const CHAR_PROFILES = {
 
   // 各惡魔關係
   demons: {
-    demon_a: { affection: 0, trust: 0, heroine_axis: 0, demon_axis: 0, lust: 0, contract_status: 'active', summon_count: 0 },
-    demon_b: { affection: 0, trust: 0, heroine_axis: 0, demon_axis: 0, lust: 0, contract_status: 'active', summon_count: 0 },
-    demon_c: { affection: 0, trust: 0, heroine_axis: 0, demon_axis: 0, lust: 0, contract_status: 'active', summon_count: 0 },
+    demon_a: { affection: 0, trust: 0, heroine_axis: 0, demon_axis: 0, lust: 0, contract_status: 'active', summon_count: 0, warmed_up_count: 0, private_moments_triggered: [] },
+    demon_b: { affection: 0, trust: 0, heroine_axis: 0, demon_axis: 0, lust: 0, contract_status: 'active', summon_count: 0, warmed_up_count: 0, private_moments_triggered: [] },
+    demon_c: { affection: 0, trust: 0, heroine_axis: 0, demon_axis: 0, lust: 0, contract_status: 'active', summon_count: 0, warmed_up_count: 0, private_moments_triggered: [] },
+  },
+
+  // 探索狀態
+  exploration: {
+    currentLayer: 1,
+    currentSubLayer: 1,
+    visitedSubLayers: [],            // 已完成的子層 ['2-1', '2-2', ...]
+    currentSubLayerLocations: [],    // 當前子層的 4 個 LocationType IDs（隨機生成）
+    completedLocations: [],          // 本子層已探索完畢的地點索引
+    completedEvents: [],             // 全域已完成事件 ID（防重複觸發）
+    restUsedInSubLayer: false,       // 本子層是否已使用休息
+    layerBattleCount: 0,             // 當前層累積戰鬥場數（用於層間解鎖判定）
+    tierCKillCount: 0,               // 當前層擊殺 Tier C 數（用於 4→5 解鎖）
+    subLayerUnlocked: false,         // 當前子層是否已滿足推進條件
   },
 
   // 當前戰鬥狀態（phase === 'combat' 時有效）
@@ -947,7 +1113,7 @@ const CHAR_PROFILES = {
 }
 ```
 
-### 13.2 場景 JSON 格式
+### 15.2 場景 JSON 格式
 
 #### VN 場景（type: 'narrative'）
 ```json
@@ -984,7 +1150,7 @@ const CHAR_PROFILES = {
 }
 ```
 
-### 13.3 技能資料格式
+### 15.3 技能資料格式
 
 ```javascript
 // SkillDB.js 中每個技能的結構
@@ -1005,7 +1171,7 @@ const CHAR_PROFILES = {
 
 ---
 
-## 14. 實作路線圖
+## 16. 實作路線圖
 
 ### Phase A — 基礎框架（優先）
 
@@ -1035,34 +1201,42 @@ const CHAR_PROFILES = {
 | 覺醒演出台詞生成 | `AIWriter.js` 擴充 |
 | DES 語氣映射實作 | prompt 模板調整 |
 
-### Phase D — 第一條完整路線
+### Phase D — 自由探索系統（★核心重構）
 
-| 任務 | 備注 |
-|------|------|
-| 第二章分歧場景 | 路線選擇觸發 |
-| 瑠夜路線 Ch.3–10 | 場景 JSON + 情感里程碑 |
-| 四向分歧結局觸發 | `EndingResolver.js` 擴充 |
-| `EndingScreen.jsx` 更新 | 支援新結局矩陣 |
+| 任務 | 模組 | 備注 |
+|------|------|------|
+| 地圖狀態管理 | `MapEngine.js`（新建）| 子層生成、地點隨機抽取、解鎖條件判定 |
+| 事件邏輯 | `ExplorationSystem.js`（新建）| 事件池解析、觸發判定、私下互動條件 |
+| 地點資料庫 | `LocationDB.js`（新建）| 所有地點類型定義 |
+| 事件資料庫 | `EventDB.js`（新建）| 所有事件類型及子類型定義 |
+| 地圖 UI | `WorldMapScreen.jsx`（新建）| 子層地點節點選擇 |
+| Ch.E1 UI | `FinalEvalScreen.jsx`（新建）| 評估結果顯示 |
+| GameEngine 更新 | `GameEngine.js` | 新增 map/final_eval phase + exploration 初始狀態 + 探索 actions |
+| StatsManager 更新 | `StatsManager.js` | INITIAL_DEMON 加入 warmed_up_count、private_moments_triggered |
+| EndingResolver 更新 | `EndingResolver.js` | 新增 evaluateFinalTrack() |
+| App.jsx 更新 | `App.jsx` | 串接 map/final_eval phase，移除 Ch2-Ch8 跳轉邏輯 |
+| GAME_DESIGN_V3.md | 本文件 | 重構第9節，新增第10-11節 ✓ |
 
-### Phase E — 完整內容（長期）
+### Phase E — 探索內容（長期）
 
-- 颯牙路線 / 玄冥路線 / 獨行路線
+- 各地點私下互動場景（demon_private_moment）— 替代原 Ch3-Ch8 路線敘事
+- 各地點探索事件腳本
 - 立繪、背景圖、UI 素材
 - 音效、BGM
 - CG 回廊
 
 ---
 
-## 15. 命名規範與檔案結構
+## 17. 命名規範與檔案結構
 
-### 15.1 場景 ID 命名
+### 17.1 場景 ID 命名
 
 ```
 sceneId '0-1'    → 檔案 scene_0_1.json    （序章第 1 場景）
 sceneId '1-2-a'  → 檔案 scene_1_2_a.json （第一章第 2 場景，分支 a）
 ```
 
-### 15.2 惡魔 ID
+### 17.2 惡魔 ID
 
 ```
 demon_a  →  瑠夜（Ruya）
@@ -1070,7 +1244,7 @@ demon_b  →  颯牙（Sōga）
 demon_c  →  玄冥（Xuán Míng）
 ```
 
-### 15.3 技能 ID
+### 17.3 技能 ID
 
 ```
 T1_XX  → Tier I 技能（XX 為 01–18）
@@ -1078,7 +1252,7 @@ T2_XX  → Tier II 技能（XX 為 01–17）
 T3_XX  → Tier III 技能（XX 為 01–10）
 ```
 
-### 15.4 完整目錄結構
+### 17.4 完整目錄結構
 
 ```
 g-game/
@@ -1093,17 +1267,21 @@ g-game/
 │   ├── engine/
 │   │   ├── GameEngine.js
 │   │   ├── StatsManager.js
-│   │   ├── CombatEngine.js      
-│   │   ├── DiceEngine.js       
-│   │   ├── DemonSystem.js      
-│   │   ├── SkillDB.js           
-│   │   ├── SkillRewardSystem.js 
-│   │   ├── MonsterDB.js        
-│   │   ├── EquipmentDB.js       
+│   │   ├── CombatEngine.js
+│   │   ├── DiceEngine.js
+│   │   ├── DemonSystem.js
+│   │   ├── SkillDB.js
+│   │   ├── SkillRewardSystem.js
+│   │   ├── MonsterDB.js
+│   │   ├── EquipmentDB.js
 │   │   ├── AIWriter.js
 │   │   ├── ChoiceResolver.js
 │   │   ├── EndingResolver.js
-│   │   └── SaveSystem.js
+│   │   ├── SaveSystem.js
+│   │   ├── MapEngine.js             [新增] 五層地牢地圖狀態管理
+│   │   ├── ExplorationSystem.js     [新增] 探索事件邏輯
+│   │   ├── LocationDB.js            [新增] 地點類型資料庫
+│   │   └── EventDB.js               [新增] 事件類型資料庫
 │   ├── components/
 │   │   ├── TitleScreen.jsx
 │   │   ├── BackgroundLayer.jsx
@@ -1115,12 +1293,14 @@ g-game/
 │   │   ├── SaveLoadMenu.jsx
 │   │   ├── EndingScreen.jsx
 │   │   ├── AISettingsPanel.jsx
-│   │   ├── CombatScreen.jsx         
-│   │   ├── CombatLog.jsx            
-│   │   ├── DemonSummonModal.jsx     
-│   │   ├── DemonDialogueOverlay.jsx 
-│   │   ├── SkillRewardScreen.jsx    
-│   │   └── SkillManageScreen.jsx    
+│   │   ├── CombatScreen.jsx
+│   │   ├── CombatLog.jsx
+│   │   ├── DemonSummonModal.jsx
+│   │   ├── DemonDialogueOverlay.jsx
+│   │   ├── SkillRewardScreen.jsx
+│   │   ├── SkillManageScreen.jsx
+│   │   ├── WorldMapScreen.jsx       [新增] 五層地牢地點選擇 UI
+│   │   └── FinalEvalScreen.jsx      [新增] Ch.E1 評估顯示
 │   ├── hooks/
 │   │   ├── useSceneLoader.js
 │   │   └── useAISettings.js
@@ -1141,5 +1321,5 @@ g-game/
 
 ---
 
-*最後更新：V3.0 整合版*
-*下一步：Phase A 實作 — 建議從 `CombatEngine.js` 移植開始*
+*最後更新：V3.1 自由探索架構重構版*
+*下一步：Phase D 實作 — 建議從 `MapEngine.js` + `LocationDB.js` 開始*
