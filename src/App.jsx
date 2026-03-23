@@ -1101,7 +1101,7 @@ export default function App() {
             onFlee={handleFlee}
             isPlayerTurn={isPlayerTurn && state.phase === 'combat'}
             isProcessing={isProcessing}
-            allowSummon={!state.currentScene?.startsWith('0-')}
+            allowSummon={!state.currentScene?.startsWith('0-') && !state.sceneData?.isTutorialSummon}
           />
 
           {state.phase === 'demon_summon' && (
