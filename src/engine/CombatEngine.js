@@ -454,11 +454,19 @@ export function executeSkill(heroine, skillData, combat) {
 
     case 'attack_heal': {
       // 攻擊 + 回血（如消耗汲取）
-      const { hit: h2 } = rollHit(70)
+      const blindStatus = (combat.heroineStatuses ?? []).find(s => s.type === 'blind')
+      const blindPenalty = blindStatus ? (blindStatus.hitPenalty ?? 25) : 0
+      const { hit: h2 } = rollHit(70 - blindPenalty + (effect.hitBonus ?? 0))
       hit = h2
       if (h2) {
+        const atkUpStatus = (combat.heroineStatuses ?? []).find(s => s.type === 'atk_up')
+        const atkUp = atkUpStatus ? (atkUpStatus.value ?? 5) : 0
+        const weakenStatus = (combat.heroineStatuses ?? []).find(s => s.type === 'weaken')
+        const weakenReduction = weakenStatus ? (weakenStatus.atkReduction ?? 25) : 0
+        const effectiveATK = (newHeroine.ATK + atkUp) * (1 - weakenReduction / 100)
+        
         const dmg = calcDamage({
-          atk: newHeroine.ATK,
+          atk: effectiveATK,
           ampPercent: effect.ampPercent ?? 0,
           drPercent: combat.enemyDR ?? 0,
         })
@@ -473,11 +481,19 @@ export function executeSkill(heroine, skillData, combat) {
 
     case 'attack_heal_sp': {
       // 攻擊 + 回靈（如契約脈衝）
-      const { hit: h3 } = rollHit(70)
+      const blindStatus = (combat.heroineStatuses ?? []).find(s => s.type === 'blind')
+      const blindPenalty = blindStatus ? (blindStatus.hitPenalty ?? 25) : 0
+      const { hit: h3 } = rollHit(70 - blindPenalty + (effect.hitBonus ?? 0))
       hit = h3
       if (h3) {
+        const atkUpStatus = (combat.heroineStatuses ?? []).find(s => s.type === 'atk_up')
+        const atkUp = atkUpStatus ? (atkUpStatus.value ?? 5) : 0
+        const weakenStatus = (combat.heroineStatuses ?? []).find(s => s.type === 'weaken')
+        const weakenReduction = weakenStatus ? (weakenStatus.atkReduction ?? 25) : 0
+        const effectiveATK = (newHeroine.ATK + atkUp) * (1 - weakenReduction / 100)
+
         const dmg = calcDamage({
-          atk: newHeroine.ATK,
+          atk: effectiveATK,
           ampPercent: effect.ampPercent ?? 0,
           drPercent: combat.enemyDR ?? 0,
         })
@@ -499,8 +515,39 @@ export function executeSkill(heroine, skillData, combat) {
       break
     }
 
+    case 'ultimate': {
+      // 契約覺醒等終極技能
+      const atkBuffValue = Math.floor(newHeroine.ATK * ((effect.atkMultiplier ?? 2) - 1))
+      const agiBuffValue = Math.floor(newHeroine.AGI * ((effect.agiMultiplier ?? 2) - 1))
+      
+      let statuses = combatUpdate.heroineStatuses || combat.heroineStatuses || []
+      statuses = statuses.filter(s => s.type !== 'atk_up' && s.type !== 'agi_up')
+      statuses.push({ type: 'atk_up', duration: effect.duration ?? 2, value: atkBuffValue })
+      statuses.push({ type: 'agi_up', duration: effect.duration ?? 2, value: agiBuffValue })
+      combatUpdate.heroineStatuses = statuses
+      
+      logs.push(`${skillData.name}：契約覺醒！獲得強大力量`)
+      
+      if (effect.demonAssist && Array.isArray(effect.demonAssist)) {
+        const assistDmg = effect.demonAssist.length * 50
+        damage = assistDmg
+        combatUpdate.enemyHP = Math.max(0, combat.enemyHP - assistDmg)
+        logs.push(`三惡魔聯合追擊，造成 ${assistDmg} 無視防禦傷害！`)
+      }
+      break
+    }
+
     default:
       logs.push(`${skillData.name}：已使用`)
+  }
+
+  // 自我懲罰 (如衝刺突擊)
+  if (effect.selfPenalty) {
+    combatUpdate.heroineStatuses = [
+      ...(combatUpdate.heroineStatuses || combat.heroineStatuses || []),
+      effect.selfPenalty
+    ]
+    logs.push(`${skillData.name}：自身承受副作用（${effect.selfPenalty.type}）`)
   }
 
   // 耐久傷害
@@ -549,12 +596,17 @@ export function executeEnemyAttack(heroine, combat) {
   }
 
   const enemyHitRate = useSkill ? (useSkill.hitRate ?? 65) : 65
+  const blindStatus = (combat.enemyStatuses ?? []).find(s => s.type === 'blind')
+  const blindPenalty = blindStatus ? (blindStatus.hitPenalty ?? 25) : 0
 
-  const { hit } = rollHit(enemyHitRate)
+  const { hit } = rollHit(enemyHitRate - blindPenalty)
 
   // 迴避判定
+  const entangleStatus = currentHeroineStatuses.find(s => s.type === 'entangle')
+  const entanglePenalty = entangleStatus ? (entangleStatus.evadePenalty ?? 30) : 0
+  
   const evasionStatus = currentHeroineStatuses.find(s => s.type === 'evasion')
-  const evadeRate = (evasionStatus ? evasionStatus.value : 0) + (heroine.dodge ?? 0)
+  const evadeRate = Math.max(0, (evasionStatus ? evasionStatus.value : 0) + (heroine.dodge ?? 0) - entanglePenalty)
   const { evaded } = rollEvade(evadeRate)
 
   if (!hit) {
@@ -582,15 +634,59 @@ export function executeEnemyAttack(heroine, combat) {
     logs.push('防禦生效！傷害大幅降低')
   }
 
-  const damage = calcDamage({
-    atk: combat.enemyATK ?? 10,
+  const weakenStatus = (combat.enemyStatuses ?? []).find(s => s.type === 'weaken')
+  const weakenReduction = weakenStatus ? (weakenStatus.atkReduction ?? 25) : 0
+  const baseEnemyATK = (combat.enemyATK ?? 10) * (1 - weakenReduction / 100)
+
+  let damage = calcDamage({
+    atk: baseEnemyATK,
     ampPercent: useSkill ? (useSkill.ampPercent ?? 0) : 0,
     drPercent,
     skillDR,
     flatDR,
   })
 
+  // 護盾與反傷/不死判定
+  const absorbShield = currentHeroineStatuses.find(s => s.type === 'absorb_shield')
+  if (absorbShield) {
+    const blockValue = absorbShield.value || Infinity
+    if (damage <= blockValue) {
+      damage = 0
+      logs.push(`靈盾抵消了敵方傷害！`)
+      if (blockValue === Infinity) currentHeroineStatuses = currentHeroineStatuses.filter(s => s.type !== 'absorb_shield')
+    } else {
+      damage -= blockValue
+      logs.push(`靈盾承受不住，剩餘 ${damage} 傷害！`)
+      currentHeroineStatuses = currentHeroineStatuses.filter(s => s.type !== 'absorb_shield')
+    }
+  }
+
+  const perfectShield = currentHeroineStatuses.find(s => s.type === 'perfect_shield')
+  if (perfectShield) {
+    damage = 0
+    logs.push(`完全壁障發動！無視任何傷害！`)
+    currentHeroineStatuses = currentHeroineStatuses.filter(s => s.type !== 'perfect_shield')
+  }
+
+  const counterStatus = currentHeroineStatuses.find(s => s.type === 'counter')
+  let reflectDmgToEnemy = 0
+  if (counterStatus && damage > 0) {
+    reflectDmgToEnemy = Math.max(1, Math.floor(damage * (counterStatus.value ?? 1.5)))
+    logs.push(`反制發動！反射 ${reflectDmgToEnemy} 傷害回敬敵人！`)
+    currentHeroineStatuses = currentHeroineStatuses.filter(s => s.type !== 'counter')
+  }
+
   let newHeroine = { ...heroine, HP: Math.max(0, heroine.HP - damage) }
+
+  // 不死狀態 (undying)
+  if (newHeroine.HP <= 0) {
+    const undyingStatus = currentHeroineStatuses.find(s => s.type === 'undying')
+    if (undyingStatus) {
+      newHeroine.HP = Math.floor(heroine.maxHP * (undyingStatus.hpRestorePercent ?? 0.25))
+      logs.push(`不死領域發揮作用！將致命傷轉化，HP 恢復！`)
+      currentHeroineStatuses = currentHeroineStatuses.filter(s => s.type !== 'undying')
+    }
+  }
 
   // 裝備耐久被動損耗（敵人攻擊有 30% 機率各損耗 1 點）
   if (Math.random() < 0.3) {
@@ -648,8 +744,12 @@ export function executeEnemyAttack(heroine, combat) {
   let newEnemyHP = combat.enemyHP
   if (reflectStatus && damage > 0) {
     const reflectDmg = Math.max(1, Math.floor(damage * (reflectStatus.value ?? 10) / 100))
-    newEnemyHP = Math.max(0, combat.enemyHP - reflectDmg)
-    logs.push(`反傷：${reflectDmg} 傷害反射回敵人！`)
+    reflectDmgToEnemy += reflectDmg
+  }
+  
+  if (reflectDmgToEnemy > 0) {
+    newEnemyHP = Math.max(0, combat.enemyHP - reflectDmgToEnemy)
+    if (!counterStatus) logs.push(`反傷：${reflectDmgToEnemy} 傷害反射回敵人！`)
   }
 
   return {
