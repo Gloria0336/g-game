@@ -76,6 +76,7 @@ function buildPrompt(sceneData, gameState) {
           ci,
           choiceType: c.type,
           textRef: c.text ?? '',
+          responseRef: c.response ?? '',
         })),
       }
     }
@@ -113,7 +114,8 @@ ${JSON.stringify(skeleton)}
 ## 輸出格式
 輸出一個 JSON 陣列，每個元素對應一條對話：
 - 普通對話：{"i": 數字, "text": "生成文字"}
-- 選項行：{"i": 數字, "prompt": "場景提示語", "choices": [{"ci": 數字, "text": "選項文字"}, ...]}`
+- 選項行：{"i": 數字, "prompt": "場景提示語", "choices": [{"ci": 數字, "text": "選項文字", "response": "惡魔角色對該選項的簡短回應台詞（10–40字，依角色聲音）"}, ...]}
+注意：每個選項都必須生成 response，這是玩家選完後惡魔說的話。`
 }
 
 // ─── API 呼叫 ─────────────────────────────────────────────────
@@ -192,7 +194,12 @@ function mergeAIText(sceneData, aiRaw) {
     if (d.type === 'choice') {
       const choices = d.choices.map((c, ci) => {
         const aiC = ai.choices?.find(x => x.ci === ci)
-        return aiC?.text ? { ...c, text: aiC.text } : c
+        if (!aiC) return c
+        return {
+          ...c,
+          ...(aiC.text     ? { text: aiC.text }         : {}),
+          ...(aiC.response ? { response: aiC.response } : {}),
+        }
       })
       return {
         ...d,
@@ -207,6 +214,79 @@ function mergeAIText(sceneData, aiRaw) {
   return { ...sceneData, dialogues }
 }
 
+// ─── Scene-1 Fallback 台詞 ────────────────────────────────────
+
+/**
+ * 每個含選擇場景的 static fallback choices response
+ * key = sceneId，value = choices_fallback[]（按 ci 順序排列）
+ * AI 失效時注入，避免顯示原始 JSON（但保留 choice text 與其他 dialogues 不變）
+ */
+const SCENE_1_FALLBACK = {
+  '1-4': {
+    choices_fallback: [
+      { response: '利用也好。至少妳還開口了。' },
+      { response: '這句話，比我預期的更甜。' },
+      { response: '一個值得期待的理由。' },
+    ],
+  },
+  '1-4-r2': {
+    choices_fallback: [
+      { response: '有意思。那我就先記著，伺機再近一步。' },
+      { response: '退讓二字，我很珍惜。' },
+      { response: '因為那樣的妳，才最真實。' },
+    ],
+  },
+  '1-7': {
+    choices_fallback: [
+      { response: '那就讓我看見。' },
+      { response: '能活著的人，不需要讓人喜歡。' },
+      { response: '兩個都有。自己挑。' },
+    ],
+  },
+  '1-7-r2': {
+    choices_fallback: [
+      { response: '行。別讓我等太久。' },
+      { response: '哄人費力。這樣省事多了。' },
+      { response: '……少廢話。' },
+    ],
+  },
+  '1-10': {
+    choices_fallback: [
+      { response: '有看見就夠了。' },
+      { response: '下次我會早些。' },
+      { response: '不是幫人。只是順手。' },
+    ],
+  },
+  '1-10-r2': {
+    choices_fallback: [
+      { response: '……那就好。' },
+      { response: '我沒有懂。只是看見。' },
+      { response: '習慣，不代表喜歡。' },
+    ],
+  },
+}
+
+/**
+ * 將 SCENE_1_FALLBACK 注入場景骨架（只覆蓋 choices[].response）
+ * 其餘 text / 選項文字保持 JSON 原文
+ */
+function applyFallback(sceneData) {
+  const fb = SCENE_1_FALLBACK[sceneData.sceneId]
+  if (!fb) return sceneData
+
+  const dialogues = sceneData.dialogues.map(d => {
+    if (d.type !== 'choice') return d
+    const choices = d.choices.map((c, ci) => {
+      const fbChoice = fb.choices_fallback?.[ci]
+      if (!fbChoice) return c
+      return { ...c, response: fbChoice.response }
+    })
+    return { ...d, choices }
+  })
+
+  return { ...sceneData, dialogues }
+}
+
 // ─── 主要對外函式 ─────────────────────────────────────────────
 
 /**
@@ -216,12 +296,17 @@ function mergeAIText(sceneData, aiRaw) {
  * @param {object} gameState   當前 GameState
  * @param {string} apiKey      OpenRouter API Key
  * @param {string} modelId     模型 ID
- * @returns {Promise<object>}  填充後的場景物件（失敗時回傳原始骨架）
+ * @returns {Promise<object>}  填充後的場景物件（失敗時使用 fallback 台詞）
  */
 export async function fillSceneText(sceneData, gameState, apiKey, modelId) {
-  const prompt = buildPrompt(sceneData, gameState)
-  const raw = await callOpenRouter(apiKey, modelId, prompt)
-  return mergeAIText(sceneData, raw)
+  try {
+    const prompt = buildPrompt(sceneData, gameState)
+    const raw = await callOpenRouter(apiKey, modelId, prompt)
+    return mergeAIText(sceneData, raw)
+  } catch (err) {
+    console.warn('[AIWriter] fillSceneText 失敗，使用 fallback 台詞:', err?.message ?? err)
+    return applyFallback(sceneData)
+  }
 }
 
 // ─── DES 語氣映射 ──────────────────────────────────────────

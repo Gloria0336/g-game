@@ -1193,7 +1193,40 @@ export default function App() {
 
       {/* ── 地圖探索 ── */}
       {state.phase === 'map' && (
-        <WorldMapScreen state={state} dispatch={dispatch} />
+        <>
+          {/* HUD 按鈕列（與 VN 畫面相同） */}
+          <div className="absolute top-4 left-4 z-30 flex gap-2">
+            <button
+              className="px-3 py-1 game-panel text-gray-400 hover:text-game-accent text-xs rounded transition-colors"
+              onClick={() => setShowSaveLoad(true)}
+            >
+              ☰ 選單
+            </button>
+            <button
+              className={`px-3 py-1 game-panel text-xs rounded transition-colors ${
+                aiSettings.enabled ? 'text-purple-400 hover:text-purple-300' : 'text-gray-600 hover:text-gray-400'
+              }`}
+              onClick={() => setShowAISettings(true)}
+            >
+              ✦ AI{aiSettings.enabled ? ' ●' : ''}
+            </button>
+            <button
+              className="px-3 py-1 game-panel text-gray-400 hover:text-game-accent text-xs rounded transition-colors"
+              onClick={() => setShowSkillManage(true)}
+            >
+              ⚔ 技能
+            </button>
+            <button
+              className={`px-3 py-1 game-panel text-xs rounded transition-colors ${
+                showInventory ? 'text-amber-300' : 'text-gray-400 hover:text-game-accent'
+              }`}
+              onClick={() => setShowInventory(v => !v)}
+            >
+              🎒 背包
+            </button>
+          </div>
+          <WorldMapScreen state={state} dispatch={dispatch} revealedDemons={revealedDemons} />
+        </>
       )}
 
       {/* ── Ch.E1 最終評估 ── */}

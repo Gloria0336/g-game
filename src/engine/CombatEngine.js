@@ -193,6 +193,22 @@ export function processStatusEffects(heroine, statuses) {
 }
 
 /**
+ * 遞減技能冷卻回合數（通常在回合結束時呼叫）
+ * @param {object} skillCooldowns  { skillId: remainingTurns }
+ * @returns {object} 更新後的冷卻物件
+ */
+export function tickCooldowns(skillCooldowns) {
+  if (!skillCooldowns) return {}
+  const nextCDs = {}
+  for (const [id, cd] of Object.entries(skillCooldowns)) {
+    if (cd > 1) {
+      nextCDs[id] = cd - 1
+    }
+  }
+  return nextCDs
+}
+
+/**
  * 為敵人施加狀態（返回新的 statuses 陣列）
  */
 export function addEnemyStatus(statuses, newStatus) {
@@ -311,6 +327,21 @@ export function executeBasicAttack(heroine, combat) {
  */
 export function executeSkill(heroine, skillData, combat) {
   const logs = []
+  const skillCDs = combat.skillCooldowns ?? {}
+  const skillUses = combat.skillUses ?? {}
+  const skillId = skillData.id
+
+  // 1. 檢查技能冷卻
+  if (skillCDs[skillId] > 0) {
+    logs.push(`${skillData.name}：冷卻中（還剩 ${skillCDs[skillId]} 回合）`)
+    return { damage: 0, hit: false, combatUpdate: { log: logs }, newHeroine: heroine }
+  }
+
+  // 2. 檢查使用次數
+  if (skillData.maxUses && (skillUses[skillId] ?? 0) >= skillData.maxUses) {
+    logs.push(`${skillData.name}：本場戰鬥使用次數已達上限`)
+    return { damage: 0, hit: false, combatUpdate: { log: logs }, newHeroine: heroine }
+  }
 
   // SP 消耗（詛咒狀態額外 +8）
   const cursed = (combat.heroineStatuses ?? []).find(s => s.type === 'curse')
@@ -564,12 +595,28 @@ export function executeSkill(heroine, skillData, combat) {
     }
   }
 
+  // 更新冷卻與次數記錄
+  const newCDs = { ...skillCDs }
+  const newUses = { ...skillUses }
+
+  if (skillData.cd) {
+    newCDs[skillId] = skillData.cd
+  }
+  if (skillData.maxUses) {
+    newUses[skillId] = (newUses[skillId] ?? 0) + 1
+  }
+
   return {
     damage,
     hit,
     newHeroine,
     newEnemyStatuses,
-    combatUpdate: { ...combatUpdate, log: logs },
+    combatUpdate: { 
+      ...combatUpdate, 
+      log: logs,
+      skillCooldowns: newCDs,
+      skillUses: newUses
+    },
   }
 }
 

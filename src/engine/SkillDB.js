@@ -9,7 +9,7 @@ const SKILL_DB = {
   // ══════════════════════════════════════════
 
   T1_01: {
-    id: 'T1_01', tier: 1, name: '弱點標記', spCost: 14,
+    id: 'T1_01', tier: 1, name: '弱點標記', spCost: 14, cd: 2,
     effect: {
       type: 'debuff_hit',
       ampPercent: 25,          // 本回合傷害 +25%
@@ -21,7 +21,7 @@ const SKILL_DB = {
   },
 
   T1_02: {
-    id: 'T1_02', tier: 1, name: '靈壓壓制', spCost: 12,
+    id: 'T1_02', tier: 1, name: '靈壓壓制', spCost: 12, cd: 2,
     effect: {
       type: 'debuff_hit',
       requireWIL: 8,
@@ -55,14 +55,14 @@ const SKILL_DB = {
     effect: {
       type: 'multi_attack',
       hits: 2,
-      ampPercent: -40,         // 各 60% 傷害（+15 基礎，-40）≈ -25
+      ampPercent: -30,         // 各 60% 傷害（+15 基礎，-40）≈ -25
       durabilityDamage: { amount: 0, target: 'none' },
     },
-    description: '攻擊 2 次，各 60% 傷害，命中獨立判定',
+    description: '攻擊 2 次，各 70% 傷害，命中獨立判定',
   },
 
   T1_06: {
-    id: 'T1_06', tier: 1, name: '護盾展開', spCost: 15,
+    id: 'T1_06', tier: 1, name: '護盾展開', spCost: 15, cd: 1,
     effect: {
       type: 'buff_self',
       applyStatus: { type: 'shield', duration: 1, value: 12 },
@@ -81,7 +81,7 @@ const SKILL_DB = {
   },
 
   T1_08: {
-    id: 'T1_08', tier: 1, name: '迴避步法', spCost: 10,
+    id: 'T1_08', tier: 1, name: '迴避步法', spCost: 10, cd: 1,
     noAttack: true,
     effect: {
       type: 'buff_self',
@@ -91,7 +91,7 @@ const SKILL_DB = {
   },
 
   T1_09: {
-    id: 'T1_09', tier: 1, name: '靈力回充', spCost: 0,
+    id: 'T1_09', tier: 1, name: '靈力回充', spCost: 0, cd: 3, maxUses: 2,
     noAttack: true,
     effect: {
       type: 'heal_sp',
@@ -101,7 +101,7 @@ const SKILL_DB = {
   },
 
   T1_10: {
-    id: 'T1_10', tier: 1, name: '震盪拳', spCost: 18,
+    id: 'T1_10', tier: 1, name: '震盪拳', spCost: 18, cd: 2,
     effect: {
       type: 'attack',
       ampPercent: 30,
@@ -111,7 +111,7 @@ const SKILL_DB = {
   },
 
   T1_11: {
-    id: 'T1_11', tier: 1, name: '致盲術', spCost: 14,
+    id: 'T1_11', tier: 1, name: '致盲術', spCost: 14, cd: 2,
     effect: {
       type: 'debuff_hit',
       applyStatus: { type: 'blind', duration: 2, hitPenalty: 25 },
@@ -130,7 +130,7 @@ const SKILL_DB = {
   },
 
   T1_13: {
-    id: 'T1_13', tier: 1, name: '纏縛術', spCost: 16,
+    id: 'T1_13', tier: 1, name: '纏縛術', spCost: 16, cd: 2,
     effect: {
       type: 'debuff_hit',
       applyStatus: { type: 'entangle', duration: 2, evadePenalty: 30 },
@@ -139,7 +139,7 @@ const SKILL_DB = {
   },
 
   T1_14: {
-    id: 'T1_14', tier: 1, name: '輕傷自癒', spCost: 15,
+    id: 'T1_14', tier: 1, name: '輕傷自癒', spCost: 15, cd: 3,
     noAttack: true,
     effect: {
       type: 'heal_hp',
@@ -170,7 +170,7 @@ const SKILL_DB = {
   },
 
   T1_17: {
-    id: 'T1_17', tier: 1, name: '靈盾罩', spCost: 18,
+    id: 'T1_17', tier: 1, name: '靈盾罩', spCost: 25, cd: 3,
     noAttack: true,
     effect: {
       type: 'buff_self',
@@ -195,18 +195,18 @@ const SKILL_DB = {
 
   T2_01: {
     id: 'T2_01', tier: 2, name: '貫穿之刃', spCost: 28,
-    effect: { type: 'attack', ampPercent: 0, ignoreDR: 0.4 },
-    description: '傷害計算無視目標 40% 減傷',
+    effect: { type: 'attack', ampPercent: 0, ignoreDR: 0.5 },
+    description: '傷害計算無視目標 50% 減傷',
   },
 
   T2_02: {
     id: 'T2_02', tier: 2, name: '連鎖術式', spCost: 35,
     effect: { type: 'multi_attack', hits: 3, ampPercent: -40 },
-    description: '攻擊 3 次，各 45% 傷害，命中獨立判定',
+    description: '攻擊 3 次，各 60% 傷害，命中獨立判定',
   },
 
   T2_03: {
-    id: 'T2_03', tier: 2, name: '上位護盾', spCost: 22,
+    id: 'T2_03', tier: 2, name: '上位護盾', spCost: 20, cd: 2,
     effect: {
       type: 'buff_self',
       applyStatus: { type: 'shield', duration: 1, value: 20 },
@@ -216,16 +216,16 @@ const SKILL_DB = {
   },
 
   T2_04: {
-    id: 'T2_04', tier: 2, name: '毒素侵蝕', spCost: 20,
+    id: 'T2_04', tier: 2, name: '毒素侵蝕', spCost: 20, cd: 3,
     effect: {
       type: 'debuff_hit',
-      applyStatus: { type: 'poison', duration: 4, value: 0.08 },
+      applyStatus: { type: 'poison', duration: 4, value: 0.1 },
     },
-    description: '施加「重毒」：每回合損失 8% 現存 HP（4 回合）',
+    description: '施加「重毒」：每回合損失 10% 現存 HP（4 回合）',
   },
 
   T2_05: {
-    id: 'T2_05', tier: 2, name: '意志壓制', spCost: 24,
+    id: 'T2_05', tier: 2, name: '意志壓制', spCost: 24, cd: 4,
     effect: {
       type: 'debuff_hit',
       applyStatus: { type: 'weaken', duration: 3, atkReduction: 25 },
@@ -234,7 +234,7 @@ const SKILL_DB = {
   },
 
   T2_06: {
-    id: 'T2_06', tier: 2, name: '反制之術', spCost: 20,
+    id: 'T2_06', tier: 2, name: '反制之術', spCost: 24, cd: 3,
     noAttack: true,
     effect: {
       type: 'buff_self',
@@ -253,21 +253,21 @@ const SKILL_DB = {
     id: 'T2_08', tier: 2, name: '迴旋斬', spCost: 30,
     effect: {
       type: 'attack',
-      ampPercent: 40,
+      ampPercent: 120,
       durabilityDamage: { amount: 4, target: 'both' },
     },
-    description: '傷害倍率 ×1.4，目標上下裝耐久各 −4',
+    description: '傷害倍率 ×2.2，目標上下裝耐久各 −4',
   },
 
   T2_09: {
-    id: 'T2_09', tier: 2, name: '中位自癒', spCost: 18,
+    id: 'T2_09', tier: 2, name: '中位自癒', spCost: 25, cd: 5,
     noAttack: true,
-    effect: { type: 'heal_hp', percent: 0.30 },
-    description: '回復 30% 最大生命值P',
+    effect: { type: 'heal_hp', percent: 0.35 },
+    description: '回復 35% 最大生命值P',
   },
 
   T2_10: {
-    id: 'T2_10', tier: 2, name: '時間延遲', spCost: 25,
+    id: 'T2_10', tier: 2, name: '時間延遲', spCost: 25, cd: 4,
     effect: {
       type: 'debuff_hit',
       applyStatus: { type: 'delay', duration: 2, value: 0 },
@@ -276,7 +276,7 @@ const SKILL_DB = {
   },
 
   T2_11: {
-    id: 'T2_11', tier: 2, name: '屬性強化', spCost: 20,
+    id: 'T2_11', tier: 2, name: '屬性強化', spCost: 20, cd: 5,
     noAttack: true,
     effect: {
       type: 'buff_self',
@@ -286,7 +286,7 @@ const SKILL_DB = {
   },
 
   T2_12: {
-    id: 'T2_12', tier: 2, name: '精神滿溢', spCost: 0,
+    id: 'T2_12', tier: 2, name: '精神滿溢', spCost: 0, cd: 4, maxUses: 2,
     noAttack: true,
     effect: {
       type: 'heal_sp',
@@ -297,7 +297,7 @@ const SKILL_DB = {
   },
 
   T2_13: {
-    id: 'T2_13', tier: 2, name: '精準注視', spCost: 22,
+    id: 'T2_13', tier: 2, name: '精準注視', spCost: 22, cd: 3,
     effect: {
       type: 'attack',
       ampPercent: 10,
@@ -310,14 +310,14 @@ const SKILL_DB = {
     id: 'T2_14', tier: 2, name: '破甲衝擊', spCost: 32,
     effect: {
       type: 'attack',
-      ampPercent: 50,
+      ampPercent: 140,
       durabilityDamage: { amount: 8, target: 'both' },
     },
-    description: '傷害倍率 ×1.5，目標上下裝耐久各 −8',
+    description: '傷害倍率 ×2.4，目標上下裝耐久各 −8',
   },
 
   T2_15: {
-    id: 'T2_15', tier: 2, name: '詛咒纏繞', spCost: 28,
+    id: 'T2_15', tier: 2, name: '詛咒纏繞', spCost: 28, cd: 3,
     effect: {
       type: 'debuff_hit',
       applyStatus: { type: 'curse', duration: 3, value: 8 },
@@ -326,7 +326,7 @@ const SKILL_DB = {
   },
 
   T2_16: {
-    id: 'T2_16', tier: 2, name: '鋼鐵意志', spCost: 0,
+    id: 'T2_16', tier: 2, name: '鋼鐵意志', spCost: 0, cd: 2,
     requireHPBelow: 0.3,
     effect: {
       type: 'attack',
@@ -336,7 +336,7 @@ const SKILL_DB = {
   },
 
   T2_17: {
-    id: 'T2_17', tier: 2, name: '身法幻影', spCost: 25,
+    id: 'T2_17', tier: 2, name: '身法幻影', spCost: 25, cd: 2,
     effect: {
       type: 'attack',
       ampPercent: 0,
@@ -352,13 +352,13 @@ const SKILL_DB = {
 
   T3_01: {
     id: 'T3_01', tier: 3, name: '滅世一擊', spCost: 50,
-    effect: { type: 'attack', ampPercent: 100, ignoreDR: 1.0 },
-    description: '傷害倍率 ×2.0，完全無視 DR% 和 FlatDR',
+    effect: { type: 'attack', ampPercent: 200, ignoreDR: 1.0 },
+    description: '傷害倍率 ×3.0，完全無視 DR% 和 FlatDR',
     source: 'drop',
   },
 
   T3_02: {
-    id: 'T3_02', tier: 3, name: '不死之心', spCost: 40,
+    id: 'T3_02', tier: 3, name: '不死之心', spCost: 40, maxUses: 1,
     noAttack: true,
     effect: {
       type: 'buff_self',
@@ -369,17 +369,17 @@ const SKILL_DB = {
   },
 
   T3_03: {
-    id: 'T3_03', tier: 3, name: '時間靜止', spCost: 55,
+    id: 'T3_03', tier: 3, name: '時間靜止', spCost: 75, cd: 8,
     effect: {
       type: 'debuff_hit',
-      applyStatus: { type: 'seal', duration: 2, value: 0 },
+      applyStatus: { type: 'seal', duration: 4, value: 0 },
     },
-    description: '目標跳過下 2 回合行動',
+    description: '目標跳過下 4 回合行動',
     source: 'drop',
   },
 
   T3_04: {
-    id: 'T3_04', tier: 3, name: '完全壁障', spCost: 45,
+    id: 'T3_04', tier: 3, name: '完全壁障', spCost: 45, cd: 5,
     noAttack: true,
     effect: {
       type: 'buff_self',
@@ -390,7 +390,7 @@ const SKILL_DB = {
   },
 
   T3_05: {
-    id: 'T3_05', tier: 3, name: '靈魂共鳴', spCost: 40,
+    id: 'T3_05', tier: 3, name: '靈魂共鳴', spCost: 40, cd: 4,
     noAttack: true,
     effect: {
       type: 'buff_self',
@@ -401,7 +401,7 @@ const SKILL_DB = {
   },
 
   T3_06: {
-    id: 'T3_06', tier: 3, name: '絕命詛咒', spCost: 48,
+    id: 'T3_06', tier: 3, name: '絕命詛咒', spCost: 48, cd: 2,
     effect: {
       type: 'percent_damage',
       percent: 0.35,
@@ -412,32 +412,32 @@ const SKILL_DB = {
   },
 
   T3_07: {
-    id: 'T3_07', tier: 3, name: '束縛之印', spCost: 35,
+    id: 'T3_07', tier: 3, name: '束縛之印', spCost: 40, cd: 5,
     locked: true, lockSource: 'demon_a', trustRequired: 70,
     effect: {
       type: 'debuff_hit',
-      applyStatus: { type: 'seal', duration: 2, value: 0 },
+      applyStatus: { type: 'seal', duration: 3, value: 0 },
       drReduction: 20,
     },
-    description: '封印目標 2 回合 + 目標 減傷 −20%',
+    description: '封印目標 3 回合 + 目標 減傷 −20%',
     source: 'demon_a',
   },
 
   T3_08: {
-    id: 'T3_08', tier: 3, name: '獸神爆裂', spCost: 40,
+    id: 'T3_08', tier: 3, name: '獸神爆裂', spCost: 60, cd: 3,
     locked: true, lockSource: 'demon_b', trustRequired: 70,
     effect: {
       type: 'attack',
-      ampPercent: 80,
+      ampPercent: 300,
       durabilityDamage: { amount: 15, target: 'both' },
       applyStatus: { type: 'delay', duration: 1, value: 0 },
     },
-    description: '傷害倍率 ×1.8，上下裝耐久各 −15，附加延遲行動',
+    description: '傷害倍率 ×4，上下裝耐久各 −15，附加延遲行動',
     source: 'demon_b',
   },
 
   T3_09: {
-    id: 'T3_09', tier: 3, name: '腐蝕詛印', spCost: 38,
+    id: 'T3_09', tier: 3, name: '腐蝕詛印', spCost: 60,
     locked: true, lockSource: 'demon_c', trustRequired: 70,
     effect: {
       type: 'debuff_hit',
@@ -451,7 +451,7 @@ const SKILL_DB = {
   },
 
   T3_10: {
-    id: 'T3_10', tier: 3, name: '契約覺醒', spCost: 60,
+    id: 'T3_10', tier: 3, name: '契約覺醒', spCost: 90, cd: 8, maxUses: 2,
     locked: true, lockSource: 'all', trustRequired: 50,
     effect: {
       type: 'ultimate',
