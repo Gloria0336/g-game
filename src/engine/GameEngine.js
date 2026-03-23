@@ -597,6 +597,8 @@ export function gameReducer(state, action) {
 
     // ── 聖域淨化：所有惡魔 demon_axis −10 ──────────────────────────
     case ACTION.PURIFICATION: {
+      // demon_locked 時封鎖淨化（降軸途徑禁止）
+      if (state.flags.demon_locked) return state
       const demons = {}
       for (const id of Object.keys(state.demons)) {
         demons[id] = {
@@ -628,6 +630,8 @@ export function gameReducer(state, action) {
         DES: Math.max(0, state.heroine.DES - 20),
         HP:  Math.min(state.heroine.maxHP, state.heroine.HP + 10),
       }
+      // demon_locked 時跳過 demon_axis 減少，但 DES 回復與 HP 回復照常執行
+      if (state.flags.demon_locked) return { ...state, heroine }
       const primaryId = getPrimaryDemonId(state.demons)
       const demons = { ...state.demons }
       if (primaryId) {

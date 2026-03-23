@@ -38,6 +38,7 @@ export default function DemonSummonModal({
   onSkip,
   isActiveSummon = false,
   onActiveSummon,
+  lockedDemon = null,
 }) {
   return (
     <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
@@ -68,9 +69,10 @@ export default function DemonSummonModal({
 
             const spInsufficient = isActiveSummon && heroine.SP < 80
             const axisInsufficient = isActiveSummon && (demon.demon_axis ?? 0) < 15
-            const isDisabled = isActiveSummon
+            const isLockedOut = lockedDemon !== null && demonId !== lockedDemon
+            const isDisabled = isLockedOut || (isActiveSummon
               ? (status === 'hostile' || spInsufficient)
-              : status !== 'available'
+              : status !== 'available')
             const isBetray = status === 'betrayed'
 
             const handleClick = () => {
@@ -130,6 +132,12 @@ export default function DemonSummonModal({
                 )}
                 {status === 'hostile' && (
                   <div className="absolute top-2 right-2 text-xs text-red-700">敵對</div>
+                )}
+                {isLockedOut && (
+                  <div className="absolute top-2 right-2 text-xs text-gray-600">🔒 鎖定</div>
+                )}
+                {lockedDemon === demonId && (
+                  <div className="absolute top-2 left-2 text-xs text-purple-400">⚠ 強制</div>
                 )}
               </button>
             )

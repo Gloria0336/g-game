@@ -35,6 +35,7 @@ import {
 import { getSkillData } from './engine/SkillDB.js'
 import { rollSkillReward } from './engine/SkillRewardSystem.js'
 import { getMonsterData } from './engine/MonsterDB.js'
+import { resolveDesOverflowEnding } from './engine/EndingResolver.js'
 import { useSceneLoader } from './hooks/useSceneLoader.js'
 import { useAISettings } from './hooks/useAISettings.js'
 
@@ -285,6 +286,36 @@ export default function App() {
     }
     return () => clearTimeout(aiErrorTimerRef.current)
   }, [aiStatus])
+
+  // ── DES 溢出監測：DES ≥ 200 → 提前壞結局 ─────────────────────
+  useEffect(() => {
+    if (state.heroine.DES < 200) return
+    if (state.flags.des_overflow_triggered) return
+    if (state.phase === 'title' || state.phase === 'ending') return
+    dispatch({ type: ACTION.SET_FLAG, flag: 'des_overflow_triggered', value: true })
+    const ending = resolveDesOverflowEnding(state)
+    dispatch({ type: ACTION.TRIGGER_ENDING, ending })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.heroine.DES, state.flags.des_overflow_triggered])
+
+  // ── demon_axis 鎖定監測：任一惡魔 demon_axis = 100 → 鎖定 ────
+  useEffect(() => {
+    if (state.flags.demon_locked) return
+    if (state.phase === 'title' || state.phase === 'ending') return
+    const demonIds = ['demon_a', 'demon_b', 'demon_c']
+    for (const demonId of demonIds) {
+      if ((state.demons[demonId]?.demon_axis ?? 0) >= 100) {
+        dispatch({ type: ACTION.SET_FLAG, flag: 'demon_locked', value: demonId })
+        break
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    state.demons.demon_a?.demon_axis,
+    state.demons.demon_b?.demon_axis,
+    state.demons.demon_c?.demon_axis,
+    state.flags.demon_locked,
+  ])
 
   // combat_end → AI 戰鬥敘事生成
   useEffect(() => {
@@ -647,7 +678,12 @@ export default function App() {
     if (result.success) {
       dispatch({ type: ACTION.SUMMON_DEMON, demonId })
       dispatch({ type: ACTION.UPDATE_DEMON_AXIS, demonId, heroineAxisDelta: 10 })
-      dispatch({ type: ACTION.COMBAT_APPLY_LOG, heroineUpdate: { DES: (cur.heroine.DES ?? 0) + 5 } })
+      // DES +5（主動召喚固定）；若為鎖定惡魔額外 +40
+      const activeDESGain = cur.flags.demon_locked === demonId ? 45 : 5
+      dispatch({ type: ACTION.COMBAT_APPLY_LOG, heroineUpdate: { DES: Math.min(200, (cur.heroine.DES ?? 0) + activeDESGain) } })
+      if (cur.flags.demon_locked === demonId) {
+        dispatch({ type: ACTION.COMBAT_APPLY_LOG, combatUpdate: { log: ['【契約鎖定】慾念湧上——DES +40'] } })
+      }
 
       dispatch({ type: ACTION.UPDATE_DEMON_RELATION, demonId, trustDelta: 2, affectionDelta: 2, axisDelta: 8 })
       setRevealedDemons(prev => new Set([...prev, demonId]))
@@ -688,6 +724,14 @@ export default function App() {
       type: ACTION.COMBAT_APPLY_LOG,
       combatUpdate: { log: [`【${DEMON_DATA[demonId]?.name ?? demonId}】應召而至！`] },
     })
+    // 鎖定惡魔被動召喚：DES +25
+    if (cur.flags.demon_locked === demonId) {
+      dispatch({
+        type: ACTION.COMBAT_APPLY_LOG,
+        heroineUpdate: { DES: Math.min(200, (cur.heroine.DES ?? 0) + 25) },
+        combatUpdate: { log: ['【契約鎖定】慾念湧上——DES +25'] },
+      })
+    }
 
     dispatch({ type: ACTION.UPDATE_DEMON_RELATION, demonId, trustDelta: 2, affectionDelta: 2, axisDelta: 5 })
     setRevealedDemons(prev => new Set([...prev, demonId]))
@@ -1069,6 +1113,7 @@ export default function App() {
               onSummon={handleSummon}
               onActiveSummon={handleActiveSummon}
               onSkip={handleSkipSummon}
+              lockedDemon={state.flags.demon_locked || null}
             />
           )}
         </>
