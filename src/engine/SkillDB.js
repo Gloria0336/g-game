@@ -152,11 +152,11 @@ const SKILL_DB = {
     id: 'T1_15', tier: 1, name: '虛空碎片射擊', spCost: 20,
     effect: {
       type: 'attack',
-      ampPercent: 10,
+      ampPercent: 40,
       ignoreDR: 0.5,   // 無視 50% 物理 DR（魔法屬性）
       magic: true,
     },
-    description: '從虛空邊界截取破碎的空間碎片作為投射物；碎片無物質形態，因此無視 50% 物理減傷，傷害倍率 ×1.1',
+    description: '從虛空邊界截取破碎的空間碎片作為投射物；碎片無物質形態，因此無視 50% 物理減傷，傷害倍率 ×1.4',
   },
 
   T1_16: {
