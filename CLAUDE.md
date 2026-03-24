@@ -1,10 +1,12 @@
 # 工作流程規則
 
-## 修改前必須預覽
+## 修改前預覽（僅限 Edit Automatically 模式）
 
-**在對任何檔案進行修改之前，必須先以 diff 格式列出所有擬定的變更，並等待使用者明確確認後才可執行。**
+**僅在使用者的權限模式為「Edit Automatically（自動編輯）」時，才需要在修改前以 diff 格式列出所有擬定的變更，並等待使用者明確確認後才可執行。**
 
-格式範例：
+若使用者使用的是「Plan Mode」或「Ask Before Edit」模式，則不需要預先回傳 diff，直接依照該模式的正常流程操作即可。
+
+格式範例（僅 Edit Automatically 模式適用）：
 ```
 📄 src/engine/GameEngine.js
 - 舊的程式碼

@@ -6,7 +6,7 @@
  *         skill_reward / ending / save_load
  */
 
-import { INITIAL_HEROINE, INITIAL_DEMONS, applyEffects, applyAwakening } from './StatsManager.js'
+import { INITIAL_HEROINE, INITIAL_DEMONS, applyEffects, applyAwakening, applyDeathRewind } from './StatsManager.js'
 import { resolveChoices, executeChoice } from './ChoiceResolver.js'
 import { resolveEnding } from './EndingResolver.js'
 import { getPrimaryDemonId, createDemonUnit } from './DemonSystem.js'
@@ -30,6 +30,7 @@ export const PHASES = {
   SAVE_LOAD:      'save_load',
   MAP:            'map',         // 五層地牢地點選擇介面
   FINAL_EVAL:     'final_eval',  // Ch.E1 評估畫面
+  DEATH_REWIND:   'death_rewind', // 死亡回朔通知畫面
 }
 
 // ─── 初始戰鬥狀態 ──────────────────────────────────────────────
@@ -147,6 +148,7 @@ export const ACTION = {
   REMOVE_ACTIVE_DEMON: 'REMOVE_ACTIVE_DEMON', // 惡魔 HP 歸零後移除
   SET_TURN_QUEUE:     'SET_TURN_QUEUE',       // 更新回合佇列（pop 或重建）
   END_COMBAT:         'END_COMBAT',          // 戰鬥結束（victory / defeat / escape）
+  APPLY_DEATH_REWIND: 'APPLY_DEATH_REWIND', // 死亡回朔：套用懲罰並重置位置
   SET_COMBAT_NARRATIVE: 'SET_COMBAT_NARRATIVE', // 儲存 AI 戰鬥敘事
   SET_DEMON_DIALOGUE:   'SET_DEMON_DIALOGUE',   // 儲存 AI 惡魔對話
   SET_AWAKENING_SCENE:  'SET_AWAKENING_SCENE',  // 儲存 AI 覺醒台詞
@@ -507,21 +509,16 @@ export function gameReducer(state, action) {
     // ── 戰鬥結束 ─────────────────────────────────────────────────
     case ACTION.END_COMBAT: {
       const { result } = action   // 'victory' | 'defeat' | 'escape'
-      let newHeroine = { ...state.heroine }
-
-      if (result === 'defeat') {
-        newHeroine.DES = Math.min(200, newHeroine.DES + 30)
-      }
-
       return {
         ...state,
         phase: 'combat_end',
-        heroine: newHeroine,
-        combat: {
-          ...state.combat,
-          result,
-        },
+        combat: { ...state.combat, result },
       }
+    }
+
+    case ACTION.APPLY_DEATH_REWIND: {
+      if (state.sceneData?.isPrologueCombat) return state
+      return applyDeathRewind(state)
     }
 
     // ── 儲存 AI 戰鬥敘事 ────────────────────────────────────────

@@ -637,9 +637,7 @@ export default function WorldMapScreen({ state, dispatch, revealedDemons, aiSett
             /* Mode A：場景選擇 */
             <>
               <p className="text-gray-400 text-sm mb-3 italic">
-                {advanceInfo.canAdvance
-                  ? '已完成足夠探索，可以深入下一層，或繼續探索當前區域。'
-                  : '選擇一個地點進行探索：'}
+                選擇一個地點進行探索：
               </p>
               <div className="flex flex-col gap-2">
                 {(exploration.drawnScenes ?? []).map((typeId) => {
@@ -676,32 +674,25 @@ export default function WorldMapScreen({ state, dispatch, revealedDemons, aiSett
                 })}
 
                 {(exploration.drawnScenes ?? []).length === 0 && (
-                  <div className="text-gray-600 text-sm italic py-2">本回合無可用場景，請深入下一層。</div>
+                  <div className="text-gray-600 text-sm italic py-2">本回合無可用場景。</div>
                 )}
 
-                <div className="border-t border-gray-800 my-1" />
-
-                <button
-                  onClick={handleAdvance}
-                  disabled={!advanceInfo.canAdvance}
-                  className="choice-btn group text-left"
-                  style={!advanceInfo.canAdvance ? { opacity: 0.35, cursor: 'not-allowed' } : {}}
-                >
-                  <div className="flex items-center gap-3">
-                    <span className={`shrink-0 text-xs px-2 py-0.5 rounded border mt-0.5
-                      ${advanceInfo.canAdvance
-                        ? 'border-red-700 text-red-400 group-hover:bg-red-900/40'
-                        : 'border-gray-700 text-gray-600'
-                      }`}>
-                      ▶ 深入
-                    </span>
-                    <span className={advanceInfo.canAdvance ? 'text-gray-100' : 'text-gray-600'}>
-                      {advanceInfo.canAdvance
-                        ? '深入下一層'
-                        : `尚需再探索 ${Math.max(0, LOCATIONS_TO_UNLOCK_NEXT - completedCount)} 個地點...`}
-                    </span>
-                  </div>
-                </button>
+                {advanceInfo.canAdvance && (
+                  <>
+                    <div className="border-t border-gray-800 my-1" />
+                    <button
+                      onClick={handleAdvance}
+                      className="choice-btn group text-left"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="shrink-0 text-xs px-2 py-0.5 rounded border mt-0.5 border-red-700 text-red-400 group-hover:bg-red-900/40">
+                          ▶ 深入
+                        </span>
+                        <span className="text-gray-100">深入下一層</span>
+                      </div>
+                    </button>
+                  </>
+                )}
               </div>
             </>
           )}

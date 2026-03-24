@@ -179,6 +179,10 @@ export function processStatusEffects(heroine, statuses) {
         newHeroine.HP = Math.max(0, newHeroine.HP - poisonDmg)
         logs.push(`重毒：損失 ${poisonDmg} HP`)
         break
+      case 'regen':
+        newHeroine.HP = Math.min(newHeroine.maxHP, newHeroine.HP + status.value)
+        logs.push(`再生：回復 ${status.value} HP`)
+        break
       case 'curse':
         // 詛咒在使用技能時才觸發，此處僅保留持續時間
         break
@@ -774,6 +778,12 @@ export function executeEnemyAttack(heroine, combat) {
     logs.push(`${useSkill.name} 侵蝕心靈契約！DES +${useSkill.desDrain}`)
   }
 
+  // 敵人技能：對女主角施加狀態（封印、毒等）
+  if (useSkill?.applyHeroineStatus) {
+    currentHeroineStatuses = addEnemyStatus(currentHeroineStatuses, useSkill.applyHeroineStatus)
+    logs.push(`${useSkill.name}：附加狀態`)
+  }
+
   // HP < 30% → DES +8
   if (newHeroine.HP / newHeroine.maxHP < 0.3 && heroine.HP / heroine.maxHP >= 0.3) {
     newHeroine.DES = Math.min(200, newHeroine.DES + 8)
@@ -802,6 +812,9 @@ export function executeEnemyAttack(heroine, combat) {
   return {
     damage,
     newHeroine,
+    specialSkillUsed: (useSkill && (useSkill.desDrain > 0 || (useSkill.durabilityDamage?.amount ?? 0) > 0))
+      ? useSkill.name
+      : null,
     combatUpdate: {
       log: logs,
       heroineStatuses: currentHeroineStatuses,

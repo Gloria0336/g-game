@@ -23,7 +23,7 @@ export const INITIAL_HEROINE = {
   AGI: 8,
   WIL: 6,
   DES: 0,
-  hit:   0,
+  hit: 0,
   dodge: 0,
   drPen: 0,
 
@@ -68,12 +68,12 @@ export const INITIAL_DEMONS = {
 // ─── 覺醒加成規格（V3.0 六種覺醒）────────────────────────────
 
 const AWAKENING_BONUS = {
-  slayer: { ATK: +8, AGI: +2, skill: 'T1_03' }, // 本能突刺
-  guardian: { maxHP: +30, WIL: +2, skill: 'T1_06' }, // 護盾展開
-  windwalker: { AGI: +6, insight: +10, skill: 'T1_05' }, // 快速連打
-  seeker: { insight: +25, ATK: +2, skill: 'T1_01' }, // 弱點標記
-  apothecary: { maxSP: +40, WIL: +4, skill: 'T1_09' }, // 靈力回充
-  balanced: { ATK: +2, AGI: +2, WIL: +2, skill: 'T1_04' }, // 契約脈衝
+  slayer: { ATK: +10, AGI: +4, skill: 'T1_03' }, // 本能突刺
+  guardian: { maxHP: +50, WIL: +8, skill: 'T1_06' }, // 護盾展開
+  windwalker: { AGI: +10, insight: +10, skill: 'T1_05' }, // 快速連打
+  seeker: { insight: +30, ATK: +4, skill: 'T1_01' }, // 弱點標記
+  apothecary: { maxSP: +40, WIL: +4, skill: null }, // 靈力回充 (不獲得技能)
+  balanced: { ATK: +5, AGI: +5, WIL: +5, skill: 'T1_04' }, // 契約脈衝
 }
 
 // ─── 邊界函式 ─────────────────────────────────────────────────
@@ -199,9 +199,9 @@ export function applyEffects(state, effects) {
     const shiftSlotBonus = (slot, sign) => {
       const eq = newHeroine.equipment[slot]
       if (!eq) return
-      const data = slot === 'weapon'    ? getWeaponData(eq.id)
-                 : slot === 'accessory' ? getAccessoryData(eq.id)
-                 : null
+      const data = slot === 'weapon' ? getWeaponData(eq.id)
+        : slot === 'accessory' ? getAccessoryData(eq.id)
+          : null
       if (!data) return
       for (const key of EQUIP_STAT_KEYS) {
         if (!data[key]) continue
@@ -381,3 +381,73 @@ export function evaluateContractStatus(state) {
   return { ...state, demons: newDemons }
 }
 
+/**
+ * 死亡回朔：HP歸零時套用複合懲罰並重置位置
+ */
+export function applyDeathRewind(state) {
+  const h = { ...state.heroine }
+
+  // ── 數值懲罰 ──────────────────────────────────────
+  const rand = (min, max) => min + Math.random() * (max - min)
+
+  const newMaxSP = Math.max(1, Math.floor(h.maxSP * 0.85))           // maxSP -15%
+  const newHP    = Math.max(1, Math.floor(h.maxHP * 0.25))           // HP 回復 25%
+  const newDES   = Math.max(0, Math.floor(h.DES * 0.9))              // DES -10%
+  const newATK   = Math.max(1, Math.floor(h.ATK * (1 - rand(0.15, 0.30))))
+  const newAGI   = Math.max(1, Math.floor(h.AGI * (1 - rand(0.15, 0.30))))
+  const newWIL   = Math.max(1, Math.floor(h.WIL * (1 - rand(0.15, 0.30))))
+
+  // ── 裝備重置 ──────────────────────────────────────
+  const newEquipment = {
+    upper:     { id: 'covenant_coat',  durability: 75 },
+    lower:     { id: 'covenant_skirt', durability: 75 },
+    weapon:    null,
+    accessory: null,
+  }
+
+  // ── 技能刪除（3-5 個，從 active+inventory 合併池隨機抽） ──
+  const combined    = [...state.skills.active, ...state.skills.inventory]
+  const deleteCount = Math.min(3 + Math.floor(Math.random() * 3), combined.length)
+  const shuffled    = [...combined].sort(() => Math.random() - 0.5)
+  const surviving   = shuffled.slice(deleteCount)
+  const newActive    = surviving.slice(0, 4)
+  const newInventory = surviving.slice(4)
+
+  // ── 位置重置 ──────────────────────────────────────
+  let newExploration  = state.exploration
+  let newCurrentScene = state.currentScene
+
+  if (state.exploration?.currentLayer > 0) {
+    // 探索模式：重置至同層第一子層
+    newExploration = {
+      ...state.exploration,
+      currentSubLayer:          1,
+      currentSubLayerLocations: [],
+      completedLocations:       [],
+      restUsedInSubLayer:       false,
+      subLayerUnlocked:         false,
+      subLayerUsedScenes:       [],
+      drawnScenes:              [],
+      activeScene:              null,
+      activeEventId:            null,
+    }
+  } else if (state.currentScene) {
+    // 劇情模式：'2-3' → '2-1'
+    const match = String(state.currentScene).match(/^(\d+)-/)
+    if (match) newCurrentScene = `${match[1]}-1`
+  }
+
+  return {
+    ...state,
+    phase: 'death_rewind',
+    heroine: {
+      ...h,
+      HP: newHP, SP: Math.min(h.SP, newMaxSP), maxSP: newMaxSP,
+      DES: newDES, ATK: newATK, AGI: newAGI, WIL: newWIL,
+      equipment: newEquipment, items: [],
+    },
+    skills:       { active: newActive, inventory: newInventory },
+    exploration:  newExploration,
+    currentScene: newCurrentScene,
+  }
+}

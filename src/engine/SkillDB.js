@@ -97,11 +97,11 @@ const SKILL_DB = {
       type: 'heal_sp',
       amount: 30,
     },
-    description: '暫停行動，主動向深淵源點送出回汲信號，接收返回的靈質能量補充，回復 30 SP（消耗行動，不攻擊）',
+    description: '暫停行動，進行靈質能量補充，回復 30 SP（消耗行動，不攻擊）',
   },
 
   T1_10: {
-    id: 'T1_10', tier: 1, name: '法則震盪打擊', spCost: 18, cd: 2,
+    id: 'T1_10', tier: 1, name: '震盪打擊', spCost: 18, cd: 2,
     effect: {
       type: 'attack',
       ampPercent: 30,
@@ -120,7 +120,7 @@ const SKILL_DB = {
   },
 
   T1_12: {
-    id: 'T1_12', tier: 1, name: '存在衝碎打擊', spCost: 30,
+    id: 'T1_12', tier: 1, name: '衝碎打擊', spCost: 30,
     effect: {
       type: 'attack',
       ampPercent: 100,
@@ -139,13 +139,13 @@ const SKILL_DB = {
   },
 
   T1_14: {
-    id: 'T1_14', tier: 1, name: '存在自修復', spCost: 15, cd: 3,
+    id: 'T1_14', tier: 1, name: '持續自我修復', spCost: 15, cd: 4,
     noAttack: true,
     effect: {
-      type: 'heal_hp',
-      percent: 0.15,
+      type: 'buff_self',
+      applyStatus: { type: 'regen', duration: 2, value: 12 },
     },
-    description: '喚醒身體組織的原始記憶，引導其往「未受傷」的狀態靠近，回復 15% 最大生命值',
+    description: '喚醒身體組織的原始記憶，引導其往「未受傷」的狀態靠近，每回合回復 12 HP，持續 2 回合',
   },
 
   T1_15: {
@@ -170,23 +170,23 @@ const SKILL_DB = {
   },
 
   T1_17: {
-    id: 'T1_17', tier: 1, name: '法則固化壁', spCost: 25, cd: 3,
+    id: 'T1_17', tier: 1, name: '固化壁', spCost: 25, cd: 3,
     noAttack: true,
     effect: {
       type: 'buff_self',
-      applyStatus: { type: 'absorb_shield', duration: 99, value: 0 },  // 持續到觸發
+      applyStatus: { type: 'absorb_shield', duration: 2, value: 0 },  // 持續兩回合
     },
-    description: '預先在感知邊界建立一層固化的法則層，完全抵消下一次到達的衝擊，直到觸發為止',
+    description: '預先在感知邊界建立一層固化的法則層，完全抵消下一次到達的衝擊，持續兩回合',
   },
 
   T1_18: {
-    id: 'T1_18', tier: 1, name: '地層記憶踏碎', spCost: 18,
+    id: 'T1_18', tier: 1, name: '地層踏碎', spCost: 18,
     effect: {
       type: 'attack',
       ampPercent: 20,
       durabilityDamage: { amount: 5, target: 'lower' },
     },
-    description: '以全力踩踏地面，釋放地層壓縮記憶的衝擊波；主要傳導至目標的下半身裝備，傷害倍率 ×1.2，目標下裝耐久 −5',
+    description: '以全力踩踏地面，釋放地層壓縮的衝擊波；主要傳導至目標的下半身裝備，傷害倍率 ×1.2，目標下裝耐久 −5',
   },
 
   // ══════════════════════════════════════════
@@ -262,8 +262,8 @@ const SKILL_DB = {
   T2_09: {
     id: 'T2_09', tier: 2, name: '存在大修復', spCost: 25, cd: 5,
     noAttack: true,
-    effect: { type: 'heal_hp', percent: 0.35 },
-    description: '深度引導存在自修復機制，恢復較大比例的生命值，回復 35% 最大生命值',
+    effect: { type: 'heal_hp', percent: 0.4 },
+    description: '深度引導存在自修復機制，恢復較大比例的生命值，回復 40% 最大生命值',
   },
 
   T2_10: {

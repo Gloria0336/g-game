@@ -36,10 +36,10 @@ const CHAR_PROFILES = {
 
 const SPEAKER_LABEL = {
   narrator: '旁白',
-  heroine:  '女主角',
-  demon_a:  '瑠夜',
-  demon_b:  '颯牙',
-  demon_c:  '玄冥',
+  heroine: '女主角',
+  demon_a: '瑠夜',
+  demon_b: '颯牙',
+  demon_c: '玄冥',
 }
 
 // ─── Prompt 建構 ──────────────────────────────────────────────
@@ -88,7 +88,7 @@ function buildPrompt(sceneData, gameState) {
     }
   })
 
-  return `你是乙女視覺小說《心鎖》的日系劇本作家，風格細膩，擅長心理張力與情感拉扯。
+  return `你是乙女視覺小說《裂隙召喚》的日系劇本作家，風格細膩，擅長心理張力與情感拉扯。
 
 ## 當前場景資訊
 章節：第 ${currentChapter} 章　場景 ID：${sceneData.sceneId}　背景：${sceneData.background ?? '未知'}
@@ -197,7 +197,7 @@ function mergeAIText(sceneData, aiRaw) {
         if (!aiC) return c
         return {
           ...c,
-          ...(aiC.text     ? { text: aiC.text }         : {}),
+          ...(aiC.text ? { text: aiC.text } : {}),
           ...(aiC.response ? { response: aiC.response } : {}),
         }
       })
@@ -312,20 +312,137 @@ export async function fillSceneText(sceneData, gameState, apiKey, modelId) {
 // ─── DES 語氣映射 ──────────────────────────────────────────
 
 function getDESTone(des) {
-  if (des <= 40)  return '清醒：旁白冷靜客觀，惡魔保持距離'
-  if (des <= 80)  return '動搖：旁白帶疲憊與緊繃，惡魔開始過度關注'
+  if (des <= 40) return '清醒：旁白冷靜客觀，惡魔保持距離'
+  if (des <= 80) return '動搖：旁白帶疲憊與緊繃，惡魔開始過度關注'
   if (des <= 120) return '心防崩解：旁白暗示情緒，惡魔越界行為增加'
   if (des <= 160) return '依賴萌生：情感溢出明顯，惡魔難以回到契約距離'
   return '完全沉淪：描寫深度情感依賴'
 }
 
 const AWAKENING_BONUS_DESC = {
-  slayer:     'ATK+8、AGI+2，初始技能：本能突刺',
-  guardian:   'maxHP+30、WIL+2，初始技能：護盾展開',
+  slayer: 'ATK+8、AGI+2，初始技能：本能突刺',
+  guardian: 'maxHP+30、WIL+2，初始技能：護盾展開',
   windwalker: 'AGI+6、洞察+10，初始技能：快速連打',
-  seeker:     '洞察+25、ATK+2，初始技能：弱點標記',
+  seeker: '洞察+25、ATK+2，初始技能：弱點標記',
   apothecary: 'maxSP+40、WIL+4，初始技能：靈力回充',
-  balanced:   'ATK/AGI/WIL各+2，初始技能：契約脈衝',
+  balanced: 'ATK/AGI/WIL各+2，初始技能：契約脈衝',
+}
+
+// ─── 戰鬥前遭遇描述生成 ────────────────────────────────────
+
+/**
+ * 生成遭遇怪物時的旁白描述（50–100字）
+ * @param {object} enemyData  MonsterDB 怪物資料（含 name、description、ATK、AGI）
+ * @param {object} gameState  當前 GameState
+ * @returns {Promise<string|null>}  純文字，失敗時回傳 null
+ */
+export async function generateEncounterNarrative(enemyData, gameState, apiKey, modelId) {
+  const { heroine } = gameState
+
+  const prompt = `你是乙女視覺小說《裂隙召喚》的日系劇本作家。
+
+## 任務
+女主角與「${enemyData.name}」遭遇，以旁白視角寫一段50–100字的遭遇描寫。
+描寫重點：魔物外觀與威脅感、女主角的瞬間反應（身體感知、心跳、緊繃）。
+
+## 魔物資料
+名稱：${enemyData.name}
+背景：${enemyData.description ?? '（無）'}
+攻擊力：${enemyData.ATK}　速度：${enemyData.AGI}
+
+## 當前語氣模式
+${getDESTone(heroine.DES)}
+
+## 寫作規則
+1. 純旁白，不加台詞引號
+2. 50–100字，一段文字
+3. 著重魔物的威脅性與女主角的身體感知
+4. 只輸出純文字，不加任何說明或 markdown`
+
+  try {
+    const raw = await callOpenRouter(apiKey, modelId, prompt)
+    return raw.replace(/```[\s\S]*?```/g, '').trim() || null
+  } catch (err) {
+    console.warn('[AIWriter] generateEncounterNarrative 失敗:', err)
+    return null
+  }
+}
+
+// ─── 戰鬥中動態文本生成 ─────────────────────────────────────
+
+const MID_COMBAT_TRIGGER_DESC = {
+  enemy_hp50: {
+    toneLevel: '中性威脅',
+    situation: '魔物受到重創，HP 降至一半，開始狂亂反撲，攻擊更兇殘。',
+    rule: '描寫魔物受傷後的行為變化，語氣保持中性但帶威脅感，無性暗示。',
+  },
+  enemy_hp30: {
+    toneLevel: '威脅強化',
+    situation: '魔物瀕死，做出末路的瘋狂反撲，危險程度大幅提升。',
+    rule: '描寫魔物垂死時的絕望攻勢，語氣緊迫，可帶有狂暴感，無性暗示。',
+  },
+  player_hp50: {
+    toneLevel: '輕度暗示',
+    situation: '女主角 HP 降至一半，魔物察覺獵物虛弱，態度從純攻擊轉為「玩弄」。',
+    rule: '描寫魔物對女主角虛弱的反應，可帶有輕微的「主導感」或「玩弄」意圖，語氣曖昧但克制。',
+  },
+  player_hp30: {
+    toneLevel: '中度性暗示',
+    situation: '女主角 HP 危急，魔物展現出明確的侵略性意圖，描寫更直接。',
+    rule: '描寫魔物對獵物的侵略行為，語氣帶有明確的性暗示，可描寫魔物對女主角身體的注視或接近。',
+  },
+  des80: {
+    toneLevel: '高度性暗示',
+    situation: '女主角絕望值高漲，魔物感知到其心防崩解，開始針對性地侵犯。',
+    rule: '描寫魔物感知到女主角絕望後的反應，可帶有強烈性暗示，描寫魔物的蠢蠢欲動與女主角的心理動搖。',
+  },
+  special_skill: {
+    toneLevel: '依當前語氣模式',
+    situation: '魔物釋放特殊技能，展現出驚人能力。',
+    rule: '描寫技能效果的視覺衝擊與女主角的感受，語氣強度跟隨當前 DES 語氣模式。',
+  },
+}
+
+/**
+ * 生成戰鬥中途的怪物行為描述（1–2句）
+ * @param {string} trigger       觸發類型：enemy_hp50/enemy_hp30/player_hp50/player_hp30/des80/special_skill
+ * @param {object} enemyData     MonsterDB 怪物資料
+ * @param {object} gameState     當前 GameState
+ * @param {object} extra         額外參數（special_skill 時含 skillName）
+ * @returns {Promise<string|null>}  純文字（不含【】），失敗時回傳 null
+ */
+export async function generateMidCombatText(trigger, enemyData, gameState, extra, apiKey, modelId) {
+  const { heroine } = gameState
+  const triggerInfo = MID_COMBAT_TRIGGER_DESC[trigger]
+  if (!triggerInfo) return null
+
+  const skillLine = extra?.skillName ? `\n使用的技能：${extra.skillName}` : ''
+
+  const prompt = `你是乙女視覺小說《裂隙召喚》的日系劇本作家。
+
+## 任務
+戰鬥中途，「${enemyData.name}」的行為發生變化。寫1–2句旁白描述（不超過60字）。
+
+## 觸發情境
+${triggerInfo.situation}${skillLine}
+
+## 語氣強度
+${triggerInfo.toneLevel}
+當前女主角狀態語氣：${getDESTone(heroine.DES)}
+
+## 寫作規則
+${triggerInfo.rule}
+- 純旁白，不加台詞引號
+- 1–2句，不超過60字
+- 只輸出純文字，不加任何說明`
+
+  try {
+    const raw = await callOpenRouter(apiKey, modelId, prompt)
+    return raw.replace(/```[\s\S]*?```/g, '').trim() || null
+  } catch (err) {
+    console.warn('[AIWriter] generateMidCombatText 失敗:', err)
+    return null
+  }
 }
 
 // ─── 戰鬥敘事生成 ──────────────────────────────────────────
@@ -340,22 +457,27 @@ export async function generateCombatNarrative(combatResult, gameState, apiKey, m
   const hpPct = Math.round((heroine.HP / heroine.maxHP) * 100)
   const resultLabel = combatResult === 'victory' ? '勝利' : combatResult === 'defeat' ? '落敗' : '撤退'
 
-  const prompt = `你是乙女視覺小說《心鎖》的日系劇本作家。
+  const activeDemonIds = Object.keys(combat.activeDemons ?? {})
+  const demonNames = activeDemonIds.map(id => DEMON_DATA[id]?.name ?? id).join('、')
+  const demonLine = demonNames ? `\n在場惡魔：${demonNames}（結尾需包含惡魔的反應或存在感）` : ''
+
+  const prompt = `你是乙女視覺小說《裂隙召喚》的日系劇本作家。
 
 ## 任務
 以女主角視角寫一段60–150字的戰鬥後旁白。
 
 ## 戰鬥結果
-結果：${resultLabel}　敵人：${enemy}　剩餘HP：${hpPct}%
+結果：${resultLabel}　敵人：${enemy}　剩餘HP：${hpPct}%${demonLine}
 語氣模式：${getDESTone(heroine.DES)}
 
 ## 寫作規則
 1. 純旁白，不加角色台詞引號
 2. 60–150字，一段文字
 3. 勝利→帶些許餘震；落敗→帶疲憊與挫折；撤退→帶緊張與解脫
-4. 禁止描寫角色死亡
-5. 只輸出純文字，不加任何說明或 markdown`
-
+4. 若有在場惡魔，描寫其在戰後的存在感或簡短反應
+5. 禁止描寫角色死亡
+6. 只輸出純文字，不加任何說明或 markdown
+7. 禁止機械化的說明角色剩餘數值`
   try {
     const raw = await callOpenRouter(apiKey, modelId, prompt)
     return raw.replace(/```[\s\S]*?```/g, '').trim() || null
@@ -378,7 +500,7 @@ export async function generateDemonDialogue(demonId, combatResult, gameState, ap
 
   const resultLabel = combatResult === 'victory' ? '勝利' : combatResult === 'defeat' ? '落敗' : '撤退'
 
-  const prompt = `你是乙女視覺小說《心鎖》的日系劇本作家。
+  const prompt = `你是乙女視覺小說《裂隙召喚》的日系劇本作家。
 
 ## 角色設定
 ${CHAR_PROFILES[demonId] ?? demonId}
@@ -420,7 +542,7 @@ ${CHAR_PROFILES[demonId] ?? demonId}
  * @returns {Promise<{ speaker: string, text: string }[]|null>}
  */
 export async function generateAwakeningScene(awakeningType, gameState, apiKey, modelId) {
-  const prompt = `你是乙女視覺小說《心鎖》的日系劇本作家。
+  const prompt = `你是乙女視覺小說《裂隙召喚》的日系劇本作家。
 
 ## 任務
 女主角剛完成覺醒試煉，以戲劇性方式發現自己的力量。
@@ -477,7 +599,7 @@ export async function generateInvestigationText(mode, locationData, gameState, a
   let prompt
 
   if (mode === 'thorough') {
-    prompt = `你是乙女視覺小說《心鎖》的日系劇本作家。
+    prompt = `你是乙女視覺小說《裂隙召喚》的日系劇本作家。
 
 ## 任務
 女主角正在對「${locName}」進行仔細搜查。
@@ -496,7 +618,7 @@ ${locHint}
 ## 輸出格式
 {"intro":"旁白文字","objects":["物件A","物件B","物件C"]}`
   } else if (mode === 'quick_success') {
-    prompt = `你是乙女視覺小說《心鎖》的日系劇本作家。
+    prompt = `你是乙女視覺小說《裂隙召喚》的日系劇本作家。
 
 ## 任務
 女主角對「${locName}」進行快速掃視，結果成功發現線索。
@@ -514,7 +636,7 @@ ${locHint}
 ## 輸出格式
 {"narrative":"旁白文字"}`
   } else if (mode === 'quick_failure') {
-    prompt = `你是乙女視覺小說《心鎖》的日系劇本作家。
+    prompt = `你是乙女視覺小說《裂隙召喚》的日系劇本作家。
 
 ## 任務
 女主角對「${locName}」進行快速掃視，結果什麼都沒發現。
@@ -533,7 +655,7 @@ ${locHint}
 {"narrative":"旁白文字"}`
   } else if (mode === 'deep_success') {
     const objName = extra.objectName ?? '目標物件'
-    prompt = `你是乙女視覺小說《心鎖》的日系劇本作家。
+    prompt = `你是乙女視覺小說《裂隙召喚》的日系劇本作家。
 
 ## 任務
 女主角仔細調查了「${locName}」中的「${objName}」，調查成功，有所發現。
@@ -552,7 +674,7 @@ ${locHint}
 {"narrative":"旁白文字"}`
   } else if (mode === 'deep_failure') {
     const objName = extra.objectName ?? '目標物件'
-    prompt = `你是乙女視覺小說《心鎖》的日系劇本作家。
+    prompt = `你是乙女視覺小說《裂隙召喚》的日系劇本作家。
 
 ## 任務
 女主角仔細調查了「${locName}」中的「${objName}」，但調查失敗，什麼都沒找到。

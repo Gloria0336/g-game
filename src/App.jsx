@@ -14,6 +14,8 @@ import {
   generateCombatNarrative,
   generateDemonDialogue,
   generateAwakeningScene,
+  generateEncounterNarrative,
+  generateMidCombatText,
 } from './engine/AIWriter.js'
 import { judgeAwakeningType } from './engine/StatsManager.js'
 import {
@@ -160,7 +162,7 @@ const AWAKENING_SKILLS = {
   guardian: '護盾展開',
   windwalker: '快速連打',
   seeker: '弱點標記',
-  apothecary: '靈力回充',
+  apothecary: null,
   balanced: '契約脈衝',
 }
 
@@ -185,9 +187,11 @@ function AwakeningResultPanel({ awakeningType, scene, sceneIdx, onAdvanceScene, 
         {!scene && <div className="mb-6 h-[72px]" />}
 
         <p className="text-game-accent text-xs tracking-widest mb-4">AWAKENING</p>
-        <p className="text-gray-400 text-sm mb-6">
-          初始技能解鎖：<span className="text-game-accent">{AWAKENING_SKILLS[awakeningType]}</span>
-        </p>
+        {AWAKENING_SKILLS[awakeningType] && (
+          <p className="text-gray-400 text-sm mb-6">
+            初始技能解鎖：<span className="text-game-accent">{AWAKENING_SKILLS[awakeningType]}</span>
+          </p>
+        )}
 
         {showingScene ? (
           <button
@@ -213,7 +217,21 @@ function AwakeningResultPanel({ awakeningType, scene, sceneIdx, onAdvanceScene, 
 
 // ── 戰鬥結束面板 ─────────────────────────────────────────────
 
-function CombatEndPanel({ result, narrative, onContinue }) {
+function CombatEndPanel({ result, narrative, isGenerating, onContinue }) {
+  const [showContinue, setShowContinue] = useState(!isGenerating)
+
+  // 敘事生成完成 → 顯示繼續按鈕
+  useEffect(() => {
+    if (narrative) setShowContinue(true)
+  }, [narrative])
+
+  // 20 秒 fallback：AI 超時或失敗時強制顯示繼續按鈕
+  useEffect(() => {
+    if (!isGenerating) return
+    const timer = setTimeout(() => setShowContinue(true), 20000)
+    return () => clearTimeout(timer)
+  }, [isGenerating])
+
   return (
     <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/80">
       <div className="max-w-md w-full mx-6 game-panel rounded-lg p-6 text-center">
@@ -223,15 +241,50 @@ function CombatEndPanel({ result, narrative, onContinue }) {
           {result === 'victory' ? '戰鬥勝利' :
             result === 'defeat' ? '戰鬥失敗' : '成功撤退'}
         </h2>
-        {narrative && (
+        {narrative ? (
           <p className="text-gray-300 text-sm leading-relaxed mb-6">{narrative}</p>
+        ) : isGenerating ? (
+          <p className="text-gray-500 text-xs mb-6 animate-pulse">敘事生成中…</p>
+        ) : null}
+        {showContinue && (
+          <button
+            onClick={onContinue}
+            className="px-8 py-2.5 border border-game-border text-gray-300
+              hover:border-game-accent hover:text-game-accent rounded transition-all text-sm"
+          >
+            繼續
+          </button>
         )}
+      </div>
+    </div>
+  )
+}
+
+function DeathRewindScreen({ heroine, onContinue }) {
+  return (
+    <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/90">
+      <div className="max-w-md w-full mx-6 game-panel rounded-lg p-6 text-center">
+        <h2 className="text-red-400 text-xl font-bold mb-2 tracking-widest">死亡回朔</h2>
+        <p className="text-gray-500 text-xs mb-6 tracking-wide">
+          意識碎裂，時間倒流——代價已刻入靈魂。
+        </p>
+        <div className="grid grid-cols-2 gap-y-2 text-left text-xs mb-6">
+          <span className="text-gray-400">HP 回復至</span>
+          <span className="text-red-300">{heroine.HP} / {heroine.maxHP}（25%）</span>
+          <span className="text-gray-400">靈力上限</span>
+          <span className="text-red-300">{heroine.maxSP}（永久 −15%）</span>
+          <span className="text-gray-400">ATK / AGI / WIL</span>
+          <span className="text-red-300">{heroine.ATK} / {heroine.AGI} / {heroine.WIL}（各隨機削減）</span>
+          <span className="text-gray-400">裝備 &amp; 背包</span>
+          <span className="text-red-300">重置為契約初始狀態</span>
+          <span className="text-gray-400">技能欄</span>
+          <span className="text-red-300">隨機消失 3–5 個</span>
+        </div>
         <button
           onClick={onContinue}
-          className="px-8 py-2.5 border border-game-border text-gray-300
-            hover:border-game-accent hover:text-game-accent rounded transition-all text-sm"
+          className="px-8 py-2.5 border border-red-800 text-red-400 hover:border-red-600 hover:text-red-200 rounded transition-all text-sm"
         >
-          繼續
+          繼續前行
         </button>
       </div>
     </div>
@@ -271,11 +324,19 @@ export default function App() {
 
   // stateRef（避免 stale closure）
   const stateRef = useRef(state)
+  const aiSettingsRef = useRef(aiSettings)
 
   // 回合推進 ref（避免 goToScene TDZ 問題）
   const handleEnemyTurnRef = useRef(null)
   const advanceToNextActorRef = useRef(null)
   const handleDemonTurnRef = useRef(null)
+
+  // 戰中文本觸發 refs（各戰鬥只觸發一次）
+  const enemyHpThreshold50Triggered = useRef(false)
+  const enemyHpThreshold30Triggered = useRef(false)
+  const playerHpThreshold50Triggered = useRef(false)
+  const playerHpThreshold30Triggered = useRef(false)
+  const desThreshold80Triggered = useRef(false)
 
   // AI 錯誤自動消失
   useEffect(() => {
@@ -339,6 +400,56 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.phase, state.combat.result])
 
+  // combat → 戰中動態文本（HP / DES 閾值監控）
+  useEffect(() => {
+    if (state.phase !== 'combat') return
+    if (!aiSettings.enabled || !aiSettings.apiKey) return
+
+    const { heroine, combat } = state
+    const enemyData = getMonsterData(combat.enemyId)
+    if (!enemyData) return
+
+    const playerHpPct = heroine.HP / heroine.maxHP
+    const enemyHpPct  = combat.enemyMaxHP > 0 ? combat.enemyHP / combat.enemyMaxHP : 1
+
+    if (enemyHpPct <= 0.5 && !enemyHpThreshold50Triggered.current) {
+      enemyHpThreshold50Triggered.current = true
+      generateMidCombatText('enemy_hp50', enemyData, stateRef.current, {}, aiSettings.apiKey, aiSettings.modelId)
+        .then(text => {
+          if (text) dispatch({ type: ACTION.COMBAT_APPLY_LOG, combatUpdate: { log: [`【${text}】`] } })
+        })
+    }
+    if (enemyHpPct <= 0.3 && !enemyHpThreshold30Triggered.current) {
+      enemyHpThreshold30Triggered.current = true
+      generateMidCombatText('enemy_hp30', enemyData, stateRef.current, {}, aiSettings.apiKey, aiSettings.modelId)
+        .then(text => {
+          if (text) dispatch({ type: ACTION.COMBAT_APPLY_LOG, combatUpdate: { log: [`【${text}】`] } })
+        })
+    }
+    if (playerHpPct <= 0.5 && !playerHpThreshold50Triggered.current) {
+      playerHpThreshold50Triggered.current = true
+      generateMidCombatText('player_hp50', enemyData, stateRef.current, {}, aiSettings.apiKey, aiSettings.modelId)
+        .then(text => {
+          if (text) dispatch({ type: ACTION.COMBAT_APPLY_LOG, combatUpdate: { log: [`【${text}】`] } })
+        })
+    }
+    if (playerHpPct <= 0.3 && !playerHpThreshold30Triggered.current) {
+      playerHpThreshold30Triggered.current = true
+      generateMidCombatText('player_hp30', enemyData, stateRef.current, {}, aiSettings.apiKey, aiSettings.modelId)
+        .then(text => {
+          if (text) dispatch({ type: ACTION.COMBAT_APPLY_LOG, combatUpdate: { log: [`【${text}】`] } })
+        })
+    }
+    if (heroine.DES >= 80 && !desThreshold80Triggered.current) {
+      desThreshold80Triggered.current = true
+      generateMidCombatText('des80', enemyData, stateRef.current, {}, aiSettings.apiKey, aiSettings.modelId)
+        .then(text => {
+          if (text) dispatch({ type: ACTION.COMBAT_APPLY_LOG, combatUpdate: { log: [`【${text}】`] } })
+        })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.heroine.HP, state.heroine.DES, state.combat.enemyHP, state.phase])
+
   // demon_dialogue → AI 惡魔對話生成
   useEffect(() => {
     if (state.phase !== 'demon_dialogue') return
@@ -377,8 +488,34 @@ export default function App() {
     if (sceneData.type === 'combat') {
       const enemyData = getMonsterData(sceneData.enemyId)
       if (enemyData) {
+        // 重置 threshold refs
+        enemyHpThreshold50Triggered.current = false
+        enemyHpThreshold30Triggered.current = false
+        playerHpThreshold50Triggered.current = false
+        playerHpThreshold30Triggered.current = false
+        desThreshold80Triggered.current = false
+
         dispatch({ type: ACTION.START_COMBAT, enemyData })
         setIsProcessing(true)
+
+        // 戰前遭遇描述（非阻塞，在 1200ms 視窗內生成）
+        if (aiSettings.enabled && aiSettings.apiKey) {
+          generateEncounterNarrative(enemyData, stateRef.current, aiSettings.apiKey, aiSettings.modelId)
+            .then(narrative => {
+              if (narrative) {
+                dispatch({
+                  type: ACTION.COMBAT_APPLY_LOG,
+                  combatUpdate: { log: [`【${enemyData.name}】`, narrative] },
+                })
+              }
+            })
+        } else if (enemyData.description) {
+          dispatch({
+            type: ACTION.COMBAT_APPLY_LOG,
+            combatUpdate: { log: [`【${enemyData.name}】`, enemyData.description] },
+          })
+        }
+
         setTimeout(() => advanceToNextActorRef.current?.(), 1200)
       }
       dispatch({ type: ACTION.LOAD_SCENE, sceneData })
@@ -390,6 +527,7 @@ export default function App() {
 
   useEffect(() => {
     stateRef.current = state
+    aiSettingsRef.current = aiSettings
     // [Debug] 曝露給 Console
     if (process.env.NODE_ENV === 'development') {
       window.game = {
@@ -653,6 +791,23 @@ export default function App() {
         equipment: result.newHeroine.equipment,
       },
     })
+
+    // 特殊技能觸發：AI 生成描述（fire-and-forget，不影響 isProcessing）
+    if (result.specialSkillUsed) {
+      const ai = aiSettingsRef.current
+      if (ai.enabled && ai.apiKey) {
+        const enemyData = getMonsterData(combat.enemyId)
+        if (enemyData) {
+          generateMidCombatText(
+            'special_skill', enemyData, stateRef.current,
+            { skillName: result.specialSkillUsed },
+            ai.apiKey, ai.modelId
+          ).then(text => {
+            if (text) dispatch({ type: ACTION.COMBAT_APPLY_LOG, combatUpdate: { log: [`【${text}】`] } })
+          })
+        }
+      }
+    }
 
     // reflect 致死判定：敵人被反傷擊殺 → 勝利
     const reflectEnemyHP = result.combatUpdate.enemyHP
@@ -947,6 +1102,12 @@ export default function App() {
       return
     }
 
+    // 戰敗（非序章）→ 死亡回朔
+    if (combat.result === 'defeat' && !sceneData?.isPrologueCombat) {
+      dispatch({ type: ACTION.APPLY_DEATH_REWIND })
+      return
+    }
+
     // 勝利且有召喚惡魔 → 惡魔戰後對話
     if (combat.result === 'victory' && combat.summonedThisBattle.length > 0) {
       const demonId = combat.summonedThisBattle[combat.summonedThisBattle.length - 1]
@@ -976,6 +1137,17 @@ export default function App() {
       }
     }
   }, [goToScene, aiSettings])
+
+  // ── 死亡回朔：繼續 ──────────────────────────────────────
+
+  const handleDeathRewindContinue = useCallback(async () => {
+    const cur = stateRef.current
+    if (cur.exploration?.currentLayer > 0) {
+      dispatch({ type: ACTION.ENTER_MAP })
+    } else {
+      await goToScene(cur.currentScene)
+    }
+  }, [goToScene])
 
   // ── 惡魔回應選擇（demon_dialogue → 技能掉落 / 下一場景）────
 
@@ -1208,8 +1380,17 @@ export default function App() {
           <CombatEndPanel
             result={state.combat.result}
             narrative={state.combat.pendingNarrative}
+            isGenerating={aiSettings.enabled && !!aiSettings.apiKey && state.combat.pendingNarrative === null}
             onContinue={handleCombatEndContinue}
           />
+        </>
+      )}
+
+      {/* ── 死亡回朔 ── */}
+      {state.phase === 'death_rewind' && (
+        <>
+          <BackgroundLayer background={state.sceneData?.background ?? 'forest_ruin'} />
+          <DeathRewindScreen heroine={state.heroine} onContinue={handleDeathRewindContinue} />
         </>
       )}
 
