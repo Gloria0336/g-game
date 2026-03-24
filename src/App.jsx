@@ -650,23 +650,23 @@ export default function App() {
     const remaining = queue.slice(1)
 
     if (isNewRound) {
-      // 遞減敵方狀態 duration，移除過期
-      const newEnemyStatuses = (combat.enemyStatuses ?? [])
-        .map(s => ({ ...s, duration: s.duration - 1 }))
-        .filter(s => s.duration > 0)
-
-      // 遞減女主角狀態 duration，移除過期（defend 已在攻擊時清除，此處統一處理其餘）
-      const newHeroineStatuses = (combat.heroineStatuses ?? [])
-        .map(s => ({ ...s, duration: s.duration - 1 }))
-        .filter(s => s.duration > 0)
-
       // 遞減技能冷卻
       const nextSkillCDs = tickCooldowns(combat.skillCooldowns ?? {})
       const nextEnemySkillCDs = tickCooldowns(combat.enemySkillCooldowns ?? {})
 
-      // DOT 效果（bleed/poison）
-      const { newHeroine: dotHeroine, newStatuses: dotStatuses, logs: dotLogs } =
-        processStatusEffects(heroine, newHeroineStatuses)
+      // DOT 效果（bleed/poison）與狀態持續時間遞減
+      const { 
+        newHeroine: dotHeroine, 
+        newHeroineStatuses: dotHeroineStatuses, 
+        newEnemyHP: dotEnemyHP, 
+        newEnemyStatuses: dotEnemyStatuses, 
+        logs: dotLogs 
+      } = processStatusEffects(
+        heroine, 
+        combat.heroineStatuses ?? [], 
+        combat.enemyHP, 
+        combat.enemyStatuses ?? []
+      )
 
       const roundLogs = ['── 新回合 ──', ...dotLogs]
 
@@ -675,13 +675,23 @@ export default function App() {
         combatUpdate: {
           log: roundLogs,
           turnQueue: remaining,
-          enemyStatuses: newEnemyStatuses,
-          heroineStatuses: dotStatuses,
+          enemyHP: dotEnemyHP,
+          enemyStatuses: dotEnemyStatuses,
+          heroineStatuses: dotHeroineStatuses,
           skillCooldowns: nextSkillCDs,
           enemySkillCooldowns: nextEnemySkillCDs,
         },
-        ...(dotLogs.length > 0 ? { heroineUpdate: { HP: dotHeroine.HP } } : {}),
+        heroineUpdate: { HP: dotHeroine.HP },
       })
+
+      if (dotEnemyHP <= 0) {
+        setTimeout(() => { dispatch({ type: ACTION.END_COMBAT, result: 'victory' }); setIsProcessing(false) }, 600)
+        return
+      }
+      if (dotHeroine.HP <= 0) {
+        setTimeout(() => { dispatch({ type: ACTION.END_COMBAT, result: 'defeat' }); setIsProcessing(false) }, 600)
+        return
+      }
     } else {
       dispatch({ type: ACTION.SET_TURN_QUEUE, queue: remaining })
     }
@@ -1141,6 +1151,9 @@ export default function App() {
   const handleDeathRewindContinue = useCallback(async () => {
     const cur = stateRef.current
     if (cur.exploration?.currentLayer > 0) {
+      const layer = cur.exploration.currentLayer
+      const locations = generateSubLayerLocations(layer, 1)
+      dispatch({ type: ACTION.SET_SUBLAYER_LOCATIONS, locations })
       dispatch({ type: ACTION.ENTER_MAP })
     } else {
       await goToScene(cur.currentScene)

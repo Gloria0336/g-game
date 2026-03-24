@@ -160,40 +160,60 @@ export function applyDurabilityDamage(equipment, durDmg) {
  * @param {object[]} statuses  狀態陣列 [{ type, value, duration }]
  * @returns {{ newHeroine, newStatuses, logs }}
  */
-export function processStatusEffects(heroine, statuses) {
+export function processStatusEffects(heroine, heroineStatuses, enemyHP = 0, enemyStatuses = []) {
   let newHeroine = { ...heroine }
+  let newEnemyHP = enemyHP
   const logs = []
-  const newStatuses = []
 
-  for (const status of statuses) {
-    const remaining = (status.duration ?? 1) - 1
+  const processStatuses = (statuses, isEnemy) => {
+    const nextStatuses = []
+    for (const status of statuses) {
+      const remaining = (status.duration ?? 1) - 1
 
-    switch (status.type) {
-      case 'bleed':
-        newHeroine.HP = Math.max(0, newHeroine.HP - status.value)
-        logs.push(`流血：損失 ${status.value} HP`)
-        break
-      case 'poison':
-        const poisonPct = status.value ?? 0.08
-        const poisonDmg = Math.floor(newHeroine.HP * poisonPct)
-        newHeroine.HP = Math.max(0, newHeroine.HP - poisonDmg)
-        logs.push(`重毒：損失 ${poisonDmg} HP`)
-        break
-      case 'regen':
-        newHeroine.HP = Math.min(newHeroine.maxHP, newHeroine.HP + status.value)
-        logs.push(`再生：回復 ${status.value} HP`)
-        break
-      case 'curse':
-        // 詛咒在使用技能時才觸發，此處僅保留持續時間
-        break
+      switch (status.type) {
+        case 'bleed':
+          if (isEnemy) {
+            newEnemyHP = Math.max(0, newEnemyHP - status.value)
+            logs.push(`敵方流血：損失 ${status.value} HP`)
+          } else {
+            newHeroine.HP = Math.max(0, newHeroine.HP - status.value)
+            logs.push(`流血：損失 ${status.value} HP`)
+          }
+          break
+        case 'poison':
+          const poisonPct = status.value ?? 0.08
+          if (isEnemy) {
+            const poisonDmg = Math.max(1, Math.floor(newEnemyHP * poisonPct))
+            newEnemyHP = Math.max(0, newEnemyHP - poisonDmg)
+            logs.push(`敵方重毒：損失 ${poisonDmg} HP`)
+          } else {
+            const poisonDmg = Math.max(1, Math.floor(newHeroine.HP * poisonPct))
+            newHeroine.HP = Math.max(0, newHeroine.HP - poisonDmg)
+            logs.push(`重毒：損失 ${poisonDmg} HP`)
+          }
+          break
+        case 'regen':
+          if (!isEnemy) {
+            newHeroine.HP = Math.min(newHeroine.maxHP, newHeroine.HP + status.value)
+            logs.push(`再生：回復 ${status.value} HP`)
+          }
+          break
+        case 'curse':
+          // 詛咒在使用技能時才觸發，此處僅保留持續時間
+          break
+      }
+
+      if (remaining > 0) {
+        nextStatuses.push({ ...status, duration: remaining })
+      }
     }
-
-    if (remaining > 0) {
-      newStatuses.push({ ...status, duration: remaining })
-    }
+    return nextStatuses
   }
 
-  return { newHeroine, newStatuses, logs }
+  const newHeroineStatuses = processStatuses(heroineStatuses, false)
+  const newEnemyStatuses = processStatuses(enemyStatuses, true)
+
+  return { newHeroine, newHeroineStatuses, newEnemyHP, newEnemyStatuses, logs }
 }
 
 /**

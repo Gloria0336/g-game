@@ -4,7 +4,7 @@ import { pickEvents, applyNoIntervention, applyTrapEffect, getPrivateMomentDemon
 import { canAdvanceSubLayer, advanceToNextSubLayer, getLayerTierDesc, LOCATIONS_TO_UNLOCK_NEXT, SCENE_DRAW_COUNT } from '../engine/MapEngine.js'
 import { getLocationByTypeId } from '../engine/LocationDB.js'
 import { getRandomMonsterByTier } from '../engine/MonsterDB.js'
-import { RIFT_ANOMALY_SUBTYPES, CRISIS_RESCUE_SUBTYPES, INVESTIGATION, TRAP_SUBTYPES, drawItemFromPool } from '../engine/EventDB.js'
+import { RIFT_ANOMALY_SUBTYPES, CRISIS_RESCUE_SUBTYPES, INVESTIGATION, TRAP_SUBTYPES, drawItemFromPool, REST_RECOVERY } from '../engine/EventDB.js'
 import StatsDisplay from './StatsDisplay.jsx'
 
 const LOCATION_ICON = {
@@ -36,11 +36,21 @@ const EVENT_PROGRESSION_OPTIONS = {
   crisis_rescue:        [{ label: '⚠ 快速通過', key: 'confirm' }],
 }
 
-function getEventOptions(eventId) {
+function getEventOptions(eventId, state) {
   if (!eventId) return [{ label: '繼續', key: 'confirm' }]
   const [type] = eventId.split('.')
 
-  // anomaly.* 子類型：從 EventDB 讀取真實選項
+  // rest_recovery：動態依惡魔狀態產生選項
+  if (type === 'rest_recovery') {
+    const opts = [{ label: '😴 獨自休息', key: 'solo_rest' }]
+    REST_RECOVERY.options.filter(o => o.demonId).forEach(o => {
+      const demon = state?.demons?.[o.demonId]
+      if (demon?.contract_status !== 'hostile') opts.push({ label: `💞 ${o.label}`, key: o.id })
+    })
+    return opts
+  }
+
+    // anomaly.* 子類型：從 EventDB 讀取真實選項
   if (type === 'anomaly') {
     const def = RIFT_ANOMALY_SUBTYPES[eventId]
     if (def?.options) return def.options.map(o => ({ label: o.label, key: o.id }))
@@ -306,7 +316,6 @@ export default function WorldMapScreen({ state, dispatch, revealedDemons, apiKey
         // 非伏擊陷阱：不立即套用效果，交由 trapState 子流程處理
       } else if (evType === 'rest_recovery') {
         dispatch({ type: ACTION.USE_REST_IN_SUBLAYER })
-        dispatch({ type: ACTION.REST })
       } else if (evType === 'demon_private_moment') {
         const demonId = getPrivateMomentDemon(typeId, state)
         if (demonId) {
@@ -348,10 +357,41 @@ export default function WorldMapScreen({ state, dispatch, revealedDemons, apiKey
         }
       }
 
-      // anomaly.*：套用選項獎勵（DES、independence）
+      // rest_recovery：依選項套用回復效果
+      if (type === 'rest_recovery') {
+        const opt = REST_RECOVERY.options.find(o => o.id === optionKey)
+        if (opt) {
+          const h = state.heroine
+          const heroineUpdate = { ...h }
+          if (opt.rewards.HP) heroineUpdate.HP = Math.min(h.maxHP, h.HP + Math.floor(h.maxHP * opt.rewards.HP))
+          if (opt.rewards.SP) heroineUpdate.SP = Math.min(h.maxSP, h.SP + Math.floor(h.maxSP * opt.rewards.SP))
+          if (opt.rewards.DES !== undefined) heroineUpdate.DES = Math.max(0, h.DES + opt.rewards.DES)
+          if (opt.rewards.independence !== undefined) heroineUpdate.independence = Math.min(100, (h.independence ?? 30) + opt.rewards.independence)
+          dispatch({ type: ACTION.COMBAT_APPLY_LOG, heroineUpdate, combatUpdate: {} })
+          if (opt.demonId) {
+            dispatch({ type: ACTION.UPDATE_DEMON_RELATION, demonId: opt.demonId,
+              affectionDelta: opt.rewards.affection ?? 0, trustDelta: opt.rewards.trust ?? 0 })
+          }
+        }
+      }
+
+            // anomaly.*：套用選項獎勵（DES、independence）
       if (type === 'anomaly') {
         const def = RIFT_ANOMALY_SUBTYPES[activeEventId]
         const chosenOpt = def?.options?.find(o => o.id === optionKey)
+        if (chosenOpt?.chainEvent === 'encounter_combat') {
+          let tier = 'A'
+          if (exploration.currentLayer === 2 && Math.random() < 0.2) tier = 'B'
+          else if (exploration.currentLayer === 3) tier = 'B'
+          else if (exploration.currentLayer === 4 && Math.random() < 0.2) tier = 'C'
+          else if (exploration.currentLayer === 4) tier = 'B'
+          else if (exploration.currentLayer === 5) tier = Math.random() < 0.5 ? 'B' : 'C'
+          const monster = getRandomMonsterByTier(tier)
+          if (monster) {
+            dispatch({ type: ACTION.START_COMBAT, enemyData: monster })
+            return
+          }
+        }
         if (chosenOpt?.rewards) {
           const heroineUpdate = { ...state.heroine }
           if (chosenOpt.rewards.DES !== undefined)
@@ -616,7 +656,7 @@ export default function WorldMapScreen({ state, dispatch, revealedDemons, apiKey
                 在 {activeLocData?.name ?? exploration.activeScene} 中，你要怎麼做？
               </p>
               <div className="flex flex-col gap-2">
-                {getEventOptions(activeEventId).map((opt) => (
+                {getEventOptions(activeEventId, state).map((opt) => (
                   <button
                     key={opt.key}
                     onClick={() => handleEventOption(opt.key)}
