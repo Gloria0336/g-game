@@ -9,7 +9,7 @@
  *   - Ch.E1 觸發判定
  */
 
-import { randomPickLocations } from './LocationDB.js'
+import { randomPickLocations, getLocationPoolByLayer } from './LocationDB.js'
 
 // ────────────────────────────────────────
 // 地圖常數
@@ -20,6 +20,9 @@ export const LOCATIONS_PER_SUBLAYER = 4
 
 /** 推進至下一子層所需的最少已探索地點數 */
 export const LOCATIONS_TO_UNLOCK_NEXT = 3
+
+/** 每回合從池中抽取並顯示的場景數 */
+export const SCENE_DRAW_COUNT = 3
 
 /** 各層的子層數 */
 export const SUBLAYER_COUNT = {
@@ -76,14 +79,19 @@ export function createInitialExplorationState() {
     currentLayer: 1,
     currentSubLayer: 1,
     visitedSubLayers: [],            // 已完成的子層 ['2-1', '2-2', ...]
-    currentSubLayerLocations: [],    // 當前子層的 LocationType ID 陣列（隨機生成）
-    completedLocations: [],          // 本子層已探索完畢的地點索引（0-based）
+    currentSubLayerLocations: [],    // 當前子層的 LocationType ID 陣列（相容舊路徑）
+    completedLocations: [],          // 本子層已完成場景計數（push 用，非索引）
     completedEvents: [],             // 全域已完成事件 ID（防重複觸發）
     restUsedInSubLayer: false,       // 本子層是否已使用休息
     layerBattleCount: 0,             // 當前層累積戰鬥場數
     tierCKillCount: 0,               // 當前層擊殺 Tier C 數
     subLayerUnlocked: false,         // 當前子層是否已滿足推進條件
     town_outskirts_visited: false,   // 第一層特殊追蹤
+    // 場景池系統（新）
+    subLayerUsedScenes: [],          // 本子層玩家已選過的場景 typeId
+    drawnScenes: [],                 // 當前顯示的場景選項
+    activeScene: null,               // 正在探索的場景 typeId（null = 場景選擇模式）
+    activeEventId: null,             // 該場景觸發的事件 ID
   }
 }
 
@@ -92,14 +100,36 @@ export function createInitialExplorationState() {
 // ────────────────────────────────────────
 
 /**
- * 為當前子層隨機生成地點清單
+ * 為當前子層隨機生成地點清單（相容舊路徑用）
  * @param {number} layer
  * @returns {string[]} LocationType ID 陣列
  */
 export function generateSubLayerLocations(layer) {
-  // 第一層為固定地點，由 App.jsx 直接使用 TOWN_LOCATIONS
   if (layer === 1) return ['town_market', 'town_shelter', 'town_outskirts']
   return randomPickLocations(layer, LOCATIONS_PER_SUBLAYER)
+}
+
+/**
+ * 取得指定層所有地點 typeId（作為場景抽取池）
+ * @param {number} layer
+ * @returns {string[]}
+ */
+export function getLayerScenePool(layer) {
+  const pool = getLocationPoolByLayer(layer)
+  return pool.map(loc => loc.typeId)
+}
+
+/**
+ * 從池中扣除已用場景後隨機抽取 N 個
+ * @param {string[]} pool - 全部 typeId
+ * @param {string[]} usedScenes - 本子層已選過的 typeId
+ * @param {number} count
+ * @returns {string[]} 抽到的 typeId（最多 count 個）
+ */
+export function drawScenesFromPool(pool, usedScenes, count) {
+  const available = pool.filter(id => !usedScenes.includes(id))
+  const shuffled = [...available].sort(() => Math.random() - 0.5)
+  return shuffled.slice(0, Math.min(count, shuffled.length))
 }
 
 // ────────────────────────────────────────
@@ -112,15 +142,15 @@ export function generateSubLayerLocations(layer) {
  * @returns {{ canAdvance: boolean, reason: string }}
  */
 export function canAdvanceSubLayer(exploration) {
-  const { currentLayer, currentSubLayer, completedLocations, subLayerUnlocked } = exploration
+  const { currentLayer, currentSubLayer, subLayerUnlocked } = exploration
 
   if (subLayerUnlocked) return { canAdvance: true, reason: 'already_unlocked' }
 
   const totalSubLayers = SUBLAYER_COUNT[currentLayer] ?? 1
   const isLastSubLayer = currentSubLayer >= totalSubLayers
 
-  // 預設：完成 3 個地點後解鎖
-  const defaultUnlocked = completedLocations.length >= LOCATIONS_TO_UNLOCK_NEXT
+  // 預設：選過 3 個場景後解鎖
+  const defaultUnlocked = (exploration.subLayerUsedScenes ?? []).length >= LOCATIONS_TO_UNLOCK_NEXT
 
   if (!isLastSubLayer) {
     return {
@@ -194,11 +224,11 @@ function checkLayerTransitionCondition(cond, exploration, defaultLocationsMet) {
  * @returns {boolean}
  */
 export function shouldTriggerFinalEval(exploration) {
-  const { currentLayer, currentSubLayer, completedLocations } = exploration
+  const { currentLayer, currentSubLayer } = exploration
   return (
     currentLayer === 5 &&
     currentSubLayer === 3 &&
-    completedLocations.length >= LOCATIONS_TO_UNLOCK_NEXT
+    (exploration.subLayerUsedScenes ?? []).length >= LOCATIONS_TO_UNLOCK_NEXT
   )
 }
 
@@ -220,8 +250,8 @@ export function markLocationCompleted(exploration, locationIndex) {
     completedLocations: [...exploration.completedLocations, locationIndex],
   }
 
-  // 第三個地點完成時，檢查並更新 subLayerUnlocked
-  if (updated.completedLocations.length >= LOCATIONS_TO_UNLOCK_NEXT) {
+  // 重算 subLayerUnlocked（改用 subLayerUsedScenes）
+  if ((updated.subLayerUsedScenes ?? []).length >= LOCATIONS_TO_UNLOCK_NEXT) {
     const { canAdvance } = canAdvanceSubLayer(updated)
     updated.subLayerUnlocked = canAdvance
   }
@@ -243,6 +273,8 @@ export function advanceToNextSubLayer(exploration) {
   if (currentSubLayer < totalSubLayers) {
     // 推進至同層下一子層
     const nextSubLayer = currentSubLayer + 1
+    const newPool = getLayerScenePool(currentLayer)
+    const newDrawn = drawScenesFromPool(newPool, [], SCENE_DRAW_COUNT)
     return {
       ...exploration,
       currentSubLayer: nextSubLayer,
@@ -251,10 +283,16 @@ export function advanceToNextSubLayer(exploration) {
       restUsedInSubLayer: false,
       subLayerUnlocked: false,
       visitedSubLayers: [...exploration.visitedSubLayers, subLayerKey],
+      subLayerUsedScenes: [],
+      drawnScenes: newDrawn,
+      activeScene: null,
+      activeEventId: null,
     }
   } else {
     // 推進至下一層第一子層
     const nextLayer = currentLayer + 1
+    const newPool = getLayerScenePool(nextLayer)
+    const newDrawn = drawScenesFromPool(newPool, [], SCENE_DRAW_COUNT)
     return {
       ...exploration,
       currentLayer: nextLayer,
@@ -263,9 +301,13 @@ export function advanceToNextSubLayer(exploration) {
       completedLocations: [],
       restUsedInSubLayer: false,
       subLayerUnlocked: false,
-      layerBattleCount: 0,    // 層戰鬥計數重置
-      tierCKillCount: 0,      // 層 TierC 計數重置
+      layerBattleCount: 0,
+      tierCKillCount: 0,
       visitedSubLayers: [...exploration.visitedSubLayers, subLayerKey],
+      subLayerUsedScenes: [],
+      drawnScenes: newDrawn,
+      activeScene: null,
+      activeEventId: null,
     }
   }
 }
@@ -284,7 +326,7 @@ export function recordBattleComplete(exploration, { tierC = false } = {}) {
   if (tierC) updated.tierCKillCount = exploration.tierCKillCount + 1
 
   // 重新評估 subLayerUnlocked（如果還沒解鎖）
-  if (!updated.subLayerUnlocked && updated.completedLocations.length >= LOCATIONS_TO_UNLOCK_NEXT) {
+  if (!updated.subLayerUnlocked && (updated.subLayerUsedScenes ?? []).length >= LOCATIONS_TO_UNLOCK_NEXT) {
     const { canAdvance } = canAdvanceSubLayer(updated)
     updated.subLayerUnlocked = canAdvance
   }
@@ -300,8 +342,8 @@ export function recordBattleComplete(exploration, { tierC = false } = {}) {
 export function markTownOutskirtsVisited(exploration) {
   const updated = { ...exploration, town_outskirts_visited: true }
 
-  // 若目前在第一層的最後子層且地點數滿足，自動解鎖
-  if (updated.completedLocations.length >= LOCATIONS_TO_UNLOCK_NEXT) {
+  // 若目前在第一層的最後子層且場景選擇數滿足，自動解鎖
+  if ((updated.subLayerUsedScenes ?? []).length >= LOCATIONS_TO_UNLOCK_NEXT) {
     const { canAdvance } = canAdvanceSubLayer(updated)
     updated.subLayerUnlocked = canAdvance
   }

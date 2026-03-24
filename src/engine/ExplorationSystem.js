@@ -55,17 +55,27 @@ export function pickEvents(locationTypeId, state, { maxEvents = 2 } = {}) {
 
   if (candidates.length === 0) return []
 
-  // 依機率篩選：純機率事件
-  const triggered = candidates.filter(entry => {
-    if (entry.triggerChance === null) return true // 條件觸發已在上方通過
-    return Math.random() < entry.triggerChance
-  })
+  // 計算總權重
+  const totalWeight = candidates.reduce((sum, entry) => sum + (entry.weight ?? 1), 0)
+  
+  if (totalWeight <= 0) {
+    return [candidates[0].eventTypeId]
+  }
 
-  if (triggered.length === 0) return []
+  // 產生 0 ~ totalWeight 之間的亂數
+  let rand = Math.random() * totalWeight
 
-  // 依 weight 加權排序後取前 maxEvents 個
-  const sorted = [...triggered].sort((a, b) => (b.weight ?? 1) - (a.weight ?? 1))
-  return sorted.slice(0, maxEvents).map(e => e.eventTypeId)
+  // 依序扣除權重，決定選中的單一事件
+  for (const entry of candidates) {
+    const w = entry.weight ?? 1
+    rand -= w
+    if (rand <= 0) {
+      return [entry.eventTypeId]
+    }
+  }
+
+  // Fallback (理論上不會走到這裡)
+  return [candidates[candidates.length - 1].eventTypeId]
 }
 
 /**

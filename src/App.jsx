@@ -968,8 +968,12 @@ export default function App() {
     if (nextScene) {
       await goToScene(nextScene)
     } else if (exploration?.currentLayer > 0) {
-      // 若是在地圖探索中的戰鬥，且沒有特別指定的下個場景，則回到地圖
-      dispatch({ type: ACTION.ENTER_MAP })
+      // 若是在地圖探索中的戰鬥：有 activeScene 時確認場景事件，否則回到地圖
+      if (exploration.activeScene !== null) {
+        dispatch({ type: ACTION.CONFIRM_SCENE_EVENT })
+      } else {
+        dispatch({ type: ACTION.ENTER_MAP })
+      }
     }
   }, [goToScene, aiSettings])
 
@@ -977,7 +981,6 @@ export default function App() {
 
   const handleDemonResponsePick = useCallback(async (choiceIndex) => {
     dispatch({ type: ACTION.PICK_DEMON_RESPONSE, choiceIndex })
-    // 等 state 更新後處理後續流程
     const cur = stateRef.current
     const candidates = rollSkillReward(cur)
     if (candidates.length > 0) {
@@ -985,21 +988,35 @@ export default function App() {
       return
     }
     const nextScene = cur.sceneData?.nextScene
-    if (nextScene) await goToScene(nextScene)
+    if (nextScene) {
+      await goToScene(nextScene)
+    } else if (cur.exploration?.currentLayer > 0 && cur.exploration?.activeScene !== null) {
+      dispatch({ type: ACTION.CONFIRM_SCENE_EVENT })
+    }
   }, [goToScene])
 
   // ── 技能選擇 ─────────────────────────────────────────────
 
   const handlePickSkill = useCallback(async (skillId) => {
     dispatch({ type: ACTION.PICK_SKILL, skillId })
-    const nextScene = stateRef.current.sceneData?.nextScene
-    if (nextScene) await goToScene(nextScene)
+    const cur = stateRef.current
+    const nextScene = cur.sceneData?.nextScene
+    if (nextScene) {
+      await goToScene(nextScene)
+    } else if (cur.exploration?.currentLayer > 0 && cur.exploration?.activeScene !== null) {
+      dispatch({ type: ACTION.CONFIRM_SCENE_EVENT })
+    }
   }, [goToScene])
 
   const handleSkipSkill = useCallback(async () => {
     dispatch({ type: ACTION.SKIP_SKILL_REWARD })
-    const nextScene = stateRef.current.sceneData?.nextScene
-    if (nextScene) await goToScene(nextScene)
+    const cur = stateRef.current
+    const nextScene = cur.sceneData?.nextScene
+    if (nextScene) {
+      await goToScene(nextScene)
+    } else if (cur.exploration?.currentLayer > 0 && cur.exploration?.activeScene !== null) {
+      dispatch({ type: ACTION.CONFIRM_SCENE_EVENT })
+    }
   }, [goToScene])
 
   // ── 存讀檔 ───────────────────────────────────────────────

@@ -11,6 +11,7 @@ import { resolveChoices, executeChoice } from './ChoiceResolver.js'
 import { resolveEnding } from './EndingResolver.js'
 import { getPrimaryDemonId, createDemonUnit } from './DemonSystem.js'
 import { getItemData } from './ItemDB.js'
+import { getLayerScenePool, drawScenesFromPool, SCENE_DRAW_COUNT, canAdvanceSubLayer } from './MapEngine.js'
 
 // ─── Phase 常數 ────────────────────────────────────────────────
 
@@ -104,6 +105,11 @@ export const INITIAL_STATE = {
     town_outskirts_visited: false,
     // Ch.E1 評估結果（evaluateFinalTrack 寫入）
     finalTrack: null,
+    // 場景池系統
+    subLayerUsedScenes: [],
+    drawnScenes: [],
+    activeScene: null,
+    activeEventId: null,
   },
 }
 
@@ -179,6 +185,8 @@ export const ACTION = {
   MARK_PRIVATE_MOMENT:     'MARK_PRIVATE_MOMENT',     // 標記惡魔私下互動已觸發
   TRIGGER_FINAL_EVAL:      'TRIGGER_FINAL_EVAL',      // 進入 Ch.E1 評估
   APPLY_FINAL_EVAL_RESULT: 'APPLY_FINAL_EVAL_RESULT', // 寫入 finalTrack 並進入 Ch.E2
+  SELECT_SCENE:            'SELECT_SCENE',            // 玩家從場景池選擇一個場景
+  CONFIRM_SCENE_EVENT:     'CONFIRM_SCENE_EVENT',     // 完成事件進程，返回場景選擇
 
   // ── 調試工具 ──
   DEBUG_MODIFY_STATE: 'DEBUG_MODIFY_STATE', // 深度修改或覆蓋 state
@@ -749,8 +757,11 @@ export function gameReducer(state, action) {
     case ACTION.ENTER_MAP:
       return { ...state, phase: 'map' }
 
-    // 設定子層地點清單（子層開始時由 App 呼叫）
-    case ACTION.SET_SUBLAYER_LOCATIONS:
+    // 設定子層地點清單（子層開始時由 App 呼叫），同時初始化場景池
+    case ACTION.SET_SUBLAYER_LOCATIONS: {
+      const layer = state.exploration.currentLayer
+      const pool = getLayerScenePool(layer)
+      const drawn = drawScenesFromPool(pool, [], SCENE_DRAW_COUNT)
       return {
         ...state,
         exploration: {
@@ -759,8 +770,13 @@ export function gameReducer(state, action) {
           completedLocations: [],
           restUsedInSubLayer: false,
           subLayerUnlocked: false,
+          subLayerUsedScenes: [],
+          drawnScenes: drawn,
+          activeScene: null,
+          activeEventId: null,
         },
       }
+    }
 
     // 標記地點已探索
     case ACTION.COMPLETE_LOCATION: {
@@ -791,6 +807,50 @@ export function gameReducer(state, action) {
         exploration: {
           ...state.exploration,
           completedEvents: [...state.exploration.completedEvents, eventId],
+        },
+      }
+    }
+
+    // 玩家從場景池選擇場景
+    case ACTION.SELECT_SCENE: {
+      const { typeId, eventId } = action
+      const expl = state.exploration
+      const newUsed = [...(expl.subLayerUsedScenes ?? []), typeId]
+      const townVisited = expl.town_outskirts_visited || (typeId === 'town_outskirts')
+      const newCompletedEvents = eventId && !expl.completedEvents.includes(eventId)
+        ? [...expl.completedEvents, eventId]
+        : expl.completedEvents
+      return {
+        ...state,
+        exploration: {
+          ...expl,
+          subLayerUsedScenes: newUsed,
+          activeScene: typeId,
+          activeEventId: eventId ?? null,
+          town_outskirts_visited: townVisited,
+          completedEvents: newCompletedEvents,
+        },
+      }
+    }
+
+    // 玩家完成事件進程，返回場景選擇
+    case ACTION.CONFIRM_SCENE_EVENT: {
+      const expl = state.exploration
+      const pool = getLayerScenePool(expl.currentLayer)
+      const used = expl.subLayerUsedScenes ?? []
+      const newDrawn = drawScenesFromPool(pool, used, SCENE_DRAW_COUNT)
+      const newCompleted = [...expl.completedLocations, expl.completedLocations.length]
+      const tempExpl = { ...expl, completedLocations: newCompleted }
+      const { canAdvance } = canAdvanceSubLayer(tempExpl)
+      return {
+        ...state,
+        exploration: {
+          ...expl,
+          activeScene: null,
+          activeEventId: null,
+          drawnScenes: newDrawn,
+          completedLocations: newCompleted,
+          subLayerUnlocked: canAdvance,
         },
       }
     }
