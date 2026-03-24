@@ -17,7 +17,7 @@
 
 export const ENCOUNTER_COMBAT = {
   typeId: 'encounter_combat',
-  name: '遭遇戰',
+  name: '異形接觸戰',
   flow: 'combat',                   // 直接觸發 COMBAT phase
   preNarrativeAI: true,             // 使用 AI 生成地點差異化的遭遇旁白
   rewards: {
@@ -47,7 +47,7 @@ export const ENCOUNTER_COMBAT = {
 
 export const INVESTIGATION = {
   typeId: 'investigation',
-  name: '調查事件',
+  name: '遺構解讀事件',
   flow: 'local',                    // 由 WorldMapScreen 本地管理多層子流程
 
   // ── 仔細搜查 ──────────────────────────────────────────────
@@ -189,7 +189,7 @@ export const CRISIS_RESCUE_SUBTYPES = {
 
   'rescue.town_outskirts': {
     typeId: 'rescue.town_outskirts',
-    name: '小鎮外圍危機',
+    name: '認知邊界區危機',
     scenario: '被魔物追逐的逃難者',
     interventionFlow: 'force_combat',
     successRewards: { heart: 3, flags: ['npc_favor_town'] },
@@ -198,7 +198,7 @@ export const CRISIS_RESCUE_SUBTYPES = {
 
   'rescue.outskirts_ruins': {
     typeId: 'rescue.outskirts_ruins',
-    name: '廢棄建築群危機',
+    name: '侵蝕建築群危機',
     scenario: '被廢墟結構困住的探索者',
     interventionFlow: 'dice',
     diceStats: ['WIL', 'AGI'],     // 合力判定（取平均）
@@ -208,7 +208,7 @@ export const CRISIS_RESCUE_SUBTYPES = {
 
   'rescue.outskirts_field': {
     typeId: 'rescue.outskirts_field',
-    name: '荒廢曠野危機',
+    name: '染毒曠野危機',
     scenario: '野外魔物包圍的傷者',
     interventionFlow: 'force_combat',
     successRewards: { heart: 3, flags: ['npc_favor_outskirts'] },
@@ -217,7 +217,7 @@ export const CRISIS_RESCUE_SUBTYPES = {
 
   'rescue.outskirts_watchtower': {
     typeId: 'rescue.outskirts_watchtower',
-    name: '崩塌瞭望台危機',
+    name: '半毀觀測台危機',
     scenario: '困在搖搖欲墜台頂的哨兵',
     interventionFlow: 'dice',
     diceStats: ['AGI'],
@@ -227,7 +227,7 @@ export const CRISIS_RESCUE_SUBTYPES = {
 
   'rescue.outskirts_road': {
     typeId: 'rescue.outskirts_road',
-    name: '破碎公路危機',
+    name: '解構幹道危機',
     scenario: '路上遭魔物攻擊的旅人',
     interventionFlow: 'force_combat',
     successRewards: { heart: 3, possibleTrade: true },
@@ -236,7 +236,7 @@ export const CRISIS_RESCUE_SUBTYPES = {
 
   'rescue.rift_nest': {
     typeId: 'rescue.rift_nest',
-    name: '魔物聚集地危機',
+    name: '型態聚集地危機',
     scenario: '被魔物巢穴困住的倖存者',
     interventionFlow: 'force_combat',
     combatModifier: { enemyCountBonus: 1 }, // 敵方數量 +1
@@ -246,7 +246,7 @@ export const CRISIS_RESCUE_SUBTYPES = {
 
   'rescue.rift_ruins': {
     typeId: 'rescue.rift_ruins',
-    name: '古代遺跡危機',
+    name: '封印遺跡危機',
     scenario: '觸發古代機關被困的人',
     interventionFlow: 'dice',
     diceStats: ['insight'],
@@ -256,7 +256,7 @@ export const CRISIS_RESCUE_SUBTYPES = {
 
   'rescue.deep_vortex': {
     typeId: 'rescue.deep_vortex',
-    name: '能量漩渦危機',
+    name: '旋核吞噬危機',
     scenario: '被能量漩渦半吞噬的契約者',
     interventionFlow: 'dice_or_summon',
     diceStats: ['WIL'],
@@ -271,7 +271,7 @@ export const CRISIS_RESCUE_SUBTYPES = {
 
   'rescue.core_threshold': {
     typeId: 'rescue.core_threshold',
-    name: '裂隙源點入口危機',
+    name: '源點閾口失志危機',
     scenario: '已半失去意志的契約者（抉擇）',
     interventionFlow: 'three_choice',
     options: [
@@ -309,8 +309,8 @@ export const RIFT_ANOMALY_SUBTYPES = {
 
   'anomaly.spatial': {
     typeId: 'anomaly.spatial',
-    name: '空間扭曲',
-    description: '地面與空間產生異常折疊，方向感完全喪失。',
+    name: '法則折疊異變',
+    description: '局部空間的座標系在外力干涉下產生折疊，方向感完全依賴的重力參考系失效。',
     options: [
       {
         id: 'summon_guide',
@@ -333,8 +333,8 @@ export const RIFT_ANOMALY_SUBTYPES = {
 
   'anomaly.surge': {
     typeId: 'anomaly.surge',
-    name: '能量衝擊',
-    description: '裂隙能量突然大量湧出，精神承受衝擊。',
+    name: '淵能浪湧衝擊',
+    description: '裂隙能量因某個未知觸發以波形大量釋放，精神首當其衝。',
     options: [
       {
         id: 'resist',
@@ -355,8 +355,8 @@ export const RIFT_ANOMALY_SUBTYPES = {
 
   'anomaly.swarm': {
     typeId: 'anomaly.swarm',
-    name: '魔物湧現',
-    description: '裂隙異變引發魔物群湧，數量超出預期。',
+    name: '型態群湧異變',
+    description: '裂隙能量的特定波動觸發了大量深淵生物的集體行動，數量超出正常遭遇範疇。',
     options: [
       {
         id: 'fight',
@@ -378,8 +378,8 @@ export const RIFT_ANOMALY_SUBTYPES = {
 
   'anomaly.vision': {
     typeId: 'anomaly.vision',
-    name: '幻覺侵蝕',
-    description: '裂隙投射幻覺，女主角看見自己最恐懼或最渴望的事物。',
+    name: '認知侵入幻蝕',
+    description: '裂隙投射具有個人化特性的幻覺，精確對應觀察者的深層渴望或恐懼——裂隙在某個程度上能夠「閱讀」接觸者。',
     options: [
       {
         id: 'resist_vision',
@@ -400,8 +400,8 @@ export const RIFT_ANOMALY_SUBTYPES = {
 
   'anomaly.seal': {
     typeId: 'anomaly.seal',
-    name: '封印崩潰',
-    description: '舊時代封印瓦解，被封存的能量殘留湧出。',
+    name: '古封崩解異變',
+    description: '前文明時代的封印在裂隙能量的侵蝕下到達崩解臨界，封存物質開始溢出。',
     options: [
       {
         id: 'research',
@@ -428,8 +428,8 @@ export const RIFT_ANOMALY_SUBTYPES = {
 export const TRAP_SUBTYPES = {
   'trap.physical': {
     typeId: 'trap.physical',
-    name: '物理陷阱',
-    description: '機械式陷阱（尖刺、落石、夾具）',
+    name: '機械遺留陷阱',
+    description: '前文明或深掘者前人設置的機械式防護，目的是阻止未授權者進入。召喚的深淵存在能在接近前察覺機械陷阱發出的特定振動頻率。',
     avoidDice: { stats: ['AGI'] },
     avoidOptions: [
       { id: 'dodge_agi', label: '閃避（身體本能）', stat: 'AGI', statLabel: '敏捷', dcAvoid: 70, dcHalf: 40 },
@@ -441,8 +441,8 @@ export const TRAP_SUBTYPES = {
 
   'trap.magical': {
     typeId: 'trap.magical',
-    name: '魔法陷阱',
-    description: '符文或魔法陣觸發的能量封鎖',
+    name: '靈紋封鎖陷阱',
+    description: '以符文或魔法陣構成的能量封鎖，觸發後選擇性阻斷靈力流通路徑。意志堅定者更清楚自己的靈力邊界，封鎖較難找到可入侵的缺口。',
     avoidDice: { stats: ['WIL'] },
     avoidOptions: [
       { id: 'resist_wil',    label: '意志抵抗（抵禦魔力）', stat: 'WIL',    statLabel: '意志',  dcAvoid: 70, dcHalf: 40 },
@@ -455,8 +455,8 @@ export const TRAP_SUBTYPES = {
 
   'trap.mental': {
     typeId: 'trap.mental',
-    name: '精神陷阱',
-    description: '幻象或詛咒侵蝕意志，令人對惡魔產生渴望依賴',
+    name: '渴望植入精神阱',
+    description: '針對人類神經系統中的「依賴機制」設計的幻象裝置，令接觸者對選定對象產生非理性的渴望和依賴感。Insight用於抵抗，辨別「這是植入的」而非「這是自己的」。',
     avoidDice: { stats: ['insight'] },
     avoidOptions: [
       { id: 'see_through',      label: '洞察破除（識破幻象）', stat: 'insight', statLabel: '洞察力', dcAvoid: 65, dcHalf: 35 },
@@ -469,8 +469,8 @@ export const TRAP_SUBTYPES = {
 
   'trap.ambush': {
     typeId: 'trap.ambush',
-    name: '伏擊陷阱',
-    description: '魔物預先設置的伏擊位置，觸發後魔物搶佔先手',
+    name: '型態預伏陷阱',
+    description: '深淵型態生物預先選定的伏擊位置。察覺到伏擊的方式，往往不是看到，而是先感覺到不對。',
     avoidDice: { stats: ['AGI'], note: '先制判定' },
     fullTrigger: { chainEvent: 'encounter_combat', enemyFirstStrike: true },
     halfTrigger: { chainEvent: 'encounter_combat', enemyFirstStrike: false },
@@ -479,8 +479,8 @@ export const TRAP_SUBTYPES = {
 
   'trap.seal': {
     typeId: 'trap.seal',
-    name: '封印陷阱',
-    description: '古代封印誤觸，暫時封鎖某項戰鬥能力',
+    name: '古代誤觸封印',
+    description: '前文明封印設施的警報系統，它封鎖的往往是接觸者當下最依賴的那一項，如同古代設計師仍在觀察並作出判斷。',
     avoidDice: { stats: ['WIL'] },
     avoidOptions: [
       { id: 'resist_wil',    label: '抵禦封印（意志對抗）',   stat: 'WIL', statLabel: '意志',  dcAvoid: 65, dcHalf: 35 },
@@ -511,7 +511,7 @@ export const TRAP_SUBTYPES = {
 
 export const REST_RECOVERY = {
   typeId: 'rest_recovery',
-  name: '休息/補給',
+  name: '負荷舒緩補給',
   flow: 'choice',
   limit: { perSubLayer: 1 },       // 每個子層最多休息 1 次
   options: [
@@ -550,7 +550,7 @@ export const REST_RECOVERY = {
 
 export const ITEM_DISCOVERY = {
   typeId: 'item_discovery',
-  name: '物品發現',
+  name: '遺物發現',
   flow: 'auto',                     // 自動觸發，無選擇
 
   /**
@@ -675,7 +675,7 @@ export function drawItemFromPool(layer) {
 
 export const DEMON_PRIVATE_MOMENT = {
   typeId: 'demon_private_moment',
-  name: '惡魔私下互動',
+  name: '深淵存在私語',
   flow: 'dialogue',                 // 觸發 DIALOGUE phase
   triggerConditions: {
     note: '各惡魔×地點組合在 LocationDB.eventPool 中個別設定（affection門檻 + warmedUpCount門檻）',
@@ -700,7 +700,7 @@ export const DEMON_PRIVATE_MOMENT = {
 
 export const NPC_ENCOUNTER = {
   typeId: 'npc_encounter',
-  name: 'NPC 遭遇',
+  name: '他者生存者接觸',
   flow: 'dialogue',
   possibleOutcomes: [
     'intel_flags',        // 獲得情報（設定 flags）

@@ -7,8 +7,8 @@ export default function TitleScreen({ onStart, onLoadSave, onAISettings, aiEnabl
                     bg-gradient-to-b from-slate-950 via-purple-950/60 to-slate-950">
       {/* 標題 */}
       <div className="text-center mb-16">
-        <h1 className="text-6xl font-thin tracking-[0.3em] text-white mb-3">心鎖</h1>
-        <p className="text-game-accent text-sm tracking-widest">HEARTLOCK</p>
+        <h1 className="text-6xl font-thin tracking-[0.3em] text-white mb-3">裂隙召喚</h1>
+        <p className="text-game-accent text-sm tracking-widest">RIFT SUMMON</p>
       </div>
 
       {/* 選單 */}

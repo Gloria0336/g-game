@@ -8,7 +8,7 @@ const MONSTER_DB = {
 
   rift_hound: {
     id:        'rift_hound',
-    name:      '飢渴的裂隙犬',
+    name:      '飢餓的門縫獸',
     tier:      'P',
     HP:        45,
     ATK:       9,
@@ -22,18 +22,18 @@ const MONSTER_DB = {
         chance:     0.4,         // 每回合 40% 機率觸發
         ampPercent: 60,          // ATK × 1.6
         hitRate:    80,
-        log:        '裂隙犬猛地躍起，以利齒猛咬！',
+        log:        '門縫獸猛地躍起，以利齒猛咬！',
       },
     },
     loot:      { tierPool: 0, guaranteed: false },
-    description: '從裂隙湧出的低階獸型魔物，靠本能殺戮。序章教學魔物。',
+    description: '從現實的裂縫中撕擠而出的原始獸型，永遠保持著飢餓的狀態。其存在本身違反物理法則——身軀比縫隙更大，卻能從中整體鑽出。序章的第一次接觸，讓人初次理解「裂隙」並非空間破損，而是某種生命的出入口。',
   },
 
   // ── Tier A 教學魔物（第 1–2 章）────────────────────────────
 
   vine_monster: {
     id:     'vine_monster',
-    name:   '藤蔓魔物',
+    name:   '纏絡根絲體',
     tier:   'A',
     HP:     60,
     ATK:    10,
@@ -42,12 +42,12 @@ const MONSTER_DB = {
     evadeRate: 5,
     skills:  [],
     loot:   { tierPool: 1, guaranteed: false },
-    description: '從裂隙滲出的低階魔物，以藤蔓束縛獵物。',
+    description: '外觀如腐根，實為從地底伸出的觸手網絡末端。其本體從未被人見過，見到的永遠只是它用來獵食的一部分。藤蔓束縛時，會有輕微的低語聲貫入腦中——那是它的消化方式，先腐蝕意識，再腐蝕肉體。',
   },
 
   shadow_hound: {
     id:     'shadow_hound',
-    name:   '暗影獵犬',
+    name:   '光蝕犬',
     tier:   'A',
     HP:     50,
     ATK:    12,
@@ -56,12 +56,12 @@ const MONSTER_DB = {
     evadeRate: 15,
     skills:  [],
     loot:   { tierPool: 1, guaranteed: false },
-    description: '速度型低階魔物，攻擊迅猛但防禦薄弱。',
+    description: '以光的負值構成的速攻型存在，準確來說它存在於光照不到的位置，而非「陰影中」。移動速度超越正常認知，是因為它並非在移動，而是在不斷消失和重現。防禦薄弱是因為它本身幾乎沒有物質性。',
   },
 
   stone_golem_minor: {
     id:     'stone_golem_minor',
-    name:   '碎石魔偶',
+    name:   '地層記憶聚合體',
     tier:   'A',
     HP:     80,
     ATK:    8,
@@ -70,14 +70,14 @@ const MONSTER_DB = {
     evadeRate: 0,
     skills:  [],
     loot:   { tierPool: 1, guaranteed: true },
-    description: '以碎石構成的低階魔物，行動緩慢但防禦厚實。',
+    description: '由裂隙壓力將無數層地質記憶凝聚的移動岩體。身上的紋路是數萬年地層被壓縮的印記，每一條裂痕都是一個已消失的地質年代。行動遲緩是因為它仍試圖「記住」自己是岩石，但記憶正在流失。',
   },
 
   // ── Tier A 第一章教學專屬怪物 ────────────────────────────────
 
   fire_wraith: {
     id:     'fire_wraith',
-    name:   '焰靈幽鬼',
+    name:   '燃燒記憶幽形',
     tier:   'A',
     HP:     90,
     ATK:    10,
@@ -86,12 +86,12 @@ const MONSTER_DB = {
     evadeRate: 20,
     skills:  [],
     loot:   { tierPool: 1, guaranteed: false },
-    description: '由裂隙火焰凝聚的幽靈型魔物，身形飄忽，普通攻擊難以命中。搭配瑠夜封印術，展示封印的戰術價值。',
+    description: '某個在裂隙中死去者的最後情緒被火焰固化的產物，並非真正的火，而是「記憶燃燒的殘影」。身形飄忽是因為它不斷在死亡的那一瞬間和此刻之間震盪。普通攻擊穿過它，就像穿過過去的幻象。搭配瑠夜封印術，展示封印的戰術價值。',
   },
 
   heavy_beast: {
     id:     'heavy_beast',
-    name:   '重甲巨獸',
+    name:   '古殼覆甲者',
     tier:   'A',
     HP:     100,
     ATK:    12,
@@ -100,12 +100,12 @@ const MONSTER_DB = {
     evadeRate: 0,
     skills:  [],
     loot:   { tierPool: 1, guaranteed: false },
-    description: '全身覆蓋厚重甲殼的巨型魔物，普通攻擊幾乎無效。颯牙的無視防禦攻擊可造成全額傷害。',
+    description: '蟲型深淵生物在演化頂點時分泌的外骨骼層層疊加形成的巨型個體，最外層的殼已是數百代前的祖先所留。甲殼厚到幾乎吸收所有外力，颯牙的力量之所以有效，是因為它不是「穿透」，而是直接撕碎時間。',
   },
 
   shadow_lurker: {
     id:     'shadow_lurker',
-    name:   '暗影潛伏者',
+    name:   '暗域潛息者',
     tier:   'A',
     HP:     85,
     ATK:    14,
@@ -114,165 +114,165 @@ const MONSTER_DB = {
     evadeRate: 10,
     skills:  [],
     loot:   { tierPool: 1, guaranteed: false },
-    description: '棲息於暗影的中階魔物，防禦與速度兼備。玄冥的腐蝕詛咒可大幅削弱其防禦，展示詛咒型惡魔的戰略價值。',
+    description: '長期棲居於暗處，已將自身的存在密度降至接近零。它潛伏時，旁邊的空氣折射率會輕微改變——這是唯一可察覺的線索。玄冥的腐蝕詛咒之所以有效，是因為它攻擊的是「存在密度」，而非物理防禦。',
   },
 
   // ── Tier A 擴充魔物（四類型）──────────────────────────────────
 
   mud_beast: {
-    id: 'mud_beast', name: '泥岩魔獸', tier: 'A', monsterType: '物理',
+    id: 'mud_beast', name: '地泥蠕龐', tier: 'A', monsterType: '物理',
     HP: 90, ATK: 14, AGI: 2, DR: 15, evadeRate: 0,
     skills: [],
     skillDefs: {
       mudslam: {
         name: '泥漿衝撞', chance: 0.35, ampPercent: 75, hitRate: 72,
-        log: '泥岩魔獸以龐大身軀猛力衝撞！濺起的泥漿模糊視線，難以看清攻擊軌跡！',
+        log: '地泥蠕龐以龐大身軀猛力衝撞！濺起的泥漿模糊視線，難以看清攻擊軌跡！',
       },
     },
     loot: { tierPool: 1, guaranteed: false },
-    description: '沉積在裂隙泥沼中的魔物，厚實泥甲能抵擋普通斬擊，衝撞力道驚人。',
+    description: '裂隙壓縮作用使泥土和礦石融合成半流動的巨型蠕動體。撞擊後濺起的泥漿帶有輕微的視覺干擾性，讓人無法看清它的邊界在哪裡。',
   },
 
   stone_serpent: {
-    id: 'stone_serpent', name: '岩石蛇怪', tier: 'A', monsterType: '物理',
+    id: 'stone_serpent', name: '硬殼蜿蜒脊', tier: 'A', monsterType: '物理',
     HP: 95, ATK: 13, AGI: 3, DR: 18, evadeRate: 0,
     skills: [],
     skillDefs: {
       stone_coil: {
         name: '岩甲纏繞', chance: 0.35, ampPercent: 60, hitRate: 70,
-        log: '岩石蛇怪以粗礪鱗甲猛力纏繞，磨損裝備的同時施加窒息重壓！',
+        log: '硬殼蜿蜒脊以粗礪鱗甲猛力纏繞，磨損裝備的同時施加窒息重壓！',
         durabilityDamage: { amount: 3 },
       },
     },
     loot: { tierPool: 1, guaranteed: false },
-    description: '外皮如岩石般堅硬的大型蛇型魔物，纏繞攻擊會磨損對手裝備。',
+    description: '在高壓地層中生成的節肢型礦石生物，外殼是真正意義上的岩石。纏繞時產生的磨耗是它認識世界的方式——用自己的礦石質感去感知獵物的材料組成。',
   },
 
   hollow_knight: {
-    id: 'hollow_knight', name: '空洞武士', tier: 'A', monsterType: '物理',
+    id: 'hollow_knight', name: '空甲意志遺形', tier: 'A', monsterType: '物理',
     HP: 100, ATK: 14, AGI: 3, DR: 20, evadeRate: 0,
     skills: [],
     skillDefs: {
       void_hammer: {
         name: '虛空重鎚', chance: 0.4, ampPercent: 85, hitRate: 73,
-        log: '空洞武士揮動注滿裂隙能量的鐵鎚，重力扭曲周圍空間，砸落一瞬如山崩！',
+        log: '空甲意志遺形揮動注滿裂隙能量的鐵鎚，重力扭曲周圍空間，砸落一瞬如山崩！',
       },
     },
     loot: { tierPool: 1, guaranteed: true },
-    description: '裂隙能量填充的空甲武士，無意識地持鎚揮砍，是 Tier A 中防禦最高的威脅。',
+    description: '某位在裂隙中死去的武士的「戰意」遺留，找到了空的甲冑並住進去。嚴格意義上沒有生命，只有慣性——戰鬥的慣性。揮動重錘的並非肌肉，而是被壓縮在鎧甲內的純粹慣性。',
   },
 
   toxic_slug: {
-    id: 'toxic_slug', name: '劇毒蛞蝓', tier: 'A', monsterType: '精神',
+    id: 'toxic_slug', name: '腐訊滲體', tier: 'A', monsterType: '精神',
     HP: 55, ATK: 8, AGI: 2, DR: 5, evadeRate: 0,
     skills: [],
     skillDefs: {
       corrosive_slime: {
         name: '腐蝕黏液', chance: 0.35, ampPercent: 0, hitRate: 68,
-        log: '劇毒蛞蝓噴濺腐蝕黏液，裝甲被緩緩溶解，殘餘氣息令心神不寧...',
+        log: '腐訊滲體噴濺腐蝕黏液，裝甲被緩緩溶解，殘餘氣息令心神不寧...',
         durabilityDamage: { amount: 4 },
         desDrain: 2,
       },
     },
     loot: { tierPool: 1, guaranteed: false },
-    description: '行動遲緩但散發強烈毒素的黏液魔物，其黏液同時腐蝕裝備與心神。',
+    description: '以信息形式傳播腐蝕的軟體生物，其「毒素」實際上是一種改寫材料記憶的物質——讓金屬忘記自己是金屬、讓心靈忘記自己的邊界。行動遲緩，但牠等的起。',
   },
 
   ice_wisp: {
-    id: 'ice_wisp', name: '冰晶鬼火', tier: 'A', monsterType: '精神',
+    id: 'ice_wisp', name: '絕對零響體', tier: 'A', monsterType: '精神',
     HP: 55, ATK: 9, AGI: 6, DR: 3, evadeRate: 12,
     skills: [],
     skillDefs: {
       despair_chill: {
         name: '絕望寒流', chance: 0.3, ampPercent: 20, hitRate: 65,
-        log: '冰晶鬼火穿透軀體，絕對零度的虛空寒氣直侵心靈，契約意志開始動搖...',
+        log: '絕對零響體穿透軀體，絕對零度的虛空寒氣直侵心靈，契約意志開始動搖...',
         desDrain: 4,
       },
     },
     loot: { tierPool: 1, guaranteed: false },
-    description: '在寒冷裂隙區域遊蕩的冰系靈體，其寒氣直接侵蝕心靈契約的意志根基。',
+    description: '溫度的概念在它附近失去意義。穿過人體時，帶走的不是體溫，而是「想要繼續的意願」——那種在心靈最深處支撐一切的基礎動能。',
   },
 
   swamp_leech: {
-    id: 'swamp_leech', name: '沼澤巨蛭', tier: 'A', monsterType: '控制',
+    id: 'swamp_leech', name: '深沼附貼者', tier: 'A', monsterType: '控制',
     HP: 75, ATK: 10, AGI: 3, DR: 10, evadeRate: 0,
     skills: [],
     skillDefs: {
       bloodsuck: {
         name: '噬血吸附', chance: 0.4, ampPercent: 50, hitRate: 72,
-        log: '沼澤巨蛭猛地吸附於傷口，以倒刺深入吸取血液，分泌的黏液同時侵蝕裝甲縫隙！',
+        log: '深沼附貼者猛地吸附於傷口，以倒刺深入吸取血液，分泌的黏液同時侵蝕裝甲縫隙！',
         durabilityDamage: { amount: 2 },
       },
     },
     loot: { tierPool: 1, guaranteed: false },
-    description: '在裂隙沼澤中潛伏的吸血巨蛭，吸附後以黏液侵蝕裝備，難以擺脫。',
+    description: '以倒刺吸附後分泌物重寫了皮膚表面的分子記憶，使兩者「認為」彼此是同一個體。黏液的腐蝕功能原是用來消融獵物，對裝甲同樣有效。',
   },
 
   bone_crawler: {
-    id: 'bone_crawler', name: '骨爬蟲', tier: 'A', monsterType: '控制',
+    id: 'bone_crawler', name: '死骸拼合蟲', tier: 'A', monsterType: '控制',
     HP: 70, ATK: 9, AGI: 4, DR: 8, evadeRate: 5,
     skills: [],
     skillDefs: {
       toxic_claw: {
         name: '毒爪撕裂', chance: 0.35, ampPercent: 40, hitRate: 70,
-        log: '骨爬蟲以沾滿神經毒素的利爪撕裂，傷口傳來麻痺感，意志力隨毒素流失...',
+        log: '死骸拼合蟲以沾滿神經毒素的利爪撕裂，傷口傳來麻痺感，意志力隨毒素流失...',
         desDrain: 2,
       },
     },
     loot: { tierPool: 1, guaranteed: false },
-    description: '由死骸碎骨自行組合的低階魔物，爪間分泌的神經毒素緩慢侵蝕意志力。',
+    description: '自行從骨骸殘骸中組裝的個體，沒有原始形態。爪間的神經毒素是從死骸殘留的神經組織中萃取，傳遞的是死者最後的恐懼。',
   },
 
   wind_specter: {
-    id: 'wind_specter', name: '風靈幽體', tier: 'A', monsterType: '敏捷',
+    id: 'wind_specter', name: '氣流相位體', tier: 'A', monsterType: '敏捷',
     HP: 52, ATK: 12, AGI: 10, DR: 0, evadeRate: 25,
     skills: [],
     skillDefs: {
       wind_blade: {
         name: '裂空刃', chance: 0.45, ampPercent: 55, hitRate: 88,
-        log: '風靈幽體凝聚氣流化為無形刃，以令人難以置信的速度切割，幾乎無法格擋！',
+        log: '氣流相位體凝聚氣流化為無形刃，以令人難以置信的速度切割，幾乎無法格擋！',
       },
     },
     loot: { tierPool: 1, guaranteed: false },
-    description: '乘著裂隙氣流飄移的幽靈，極難命中，但本身防禦脆弱，一擊可破。',
+    description: '存在於空氣振動頻率的邊緣。「速度快」是誤解——它只在攻擊的那一瞬間進入可見相位。維持實體形態對它而言需要極大的「意志消耗」，防禦因此薄弱。',
   },
 
   ash_bat: {
-    id: 'ash_bat', name: '灰燼蝙蝠', tier: 'A', monsterType: '敏捷',
+    id: 'ash_bat', name: '煤靈騷翼獸', tier: 'A', monsterType: '敏捷',
     HP: 50, ATK: 11, AGI: 10, DR: 0, evadeRate: 22,
     skills: [],
     skillDefs: {
       ash_flurry: {
         name: '灰燼亂舞', chance: 0.4, ampPercent: 30, hitRate: 85,
-        log: '灰燼蝙蝠揚起漫天灰燼遮蔽視線，同時以利翼連續切割——看不清攻擊方向！',
+        log: '煤靈騷翼獸揚起漫天灰燼遮蔽視線，同時以利翼連續切割——看不清攻擊方向！',
         desDrain: 2,
       },
     },
     loot: { tierPool: 1, guaranteed: false },
-    description: '在裂隙灰燼中棲息的小型飛行魔物，以灰燼遮蔽視線後連續突擊。',
+    description: '翼膜由凝固的燃燒殘留物構成，揮動時散開的灰燼具有視覺干擾性。所謂「灰燼亂舞」並非特技，而是它的正常呼吸方式。',
   },
 
   crystal_spider: {
-    id: 'crystal_spider', name: '水晶毒蛛', tier: 'A', monsterType: '敏捷',
+    id: 'crystal_spider', name: '假晶蛛形體', tier: 'A', monsterType: '敏捷',
     HP: 58, ATK: 12, AGI: 8, DR: 3, evadeRate: 15,
     skills: [],
     skillDefs: {
       venom_web: {
         name: '毒蛛絲網', chance: 0.35, ampPercent: 0, hitRate: 75,
-        log: '水晶毒蛛噴射含有強烈毒素的蛛絲，腐蝕裝甲的同時麻痺神經，令心神渙散...',
+        log: '假晶蛛形體噴射含有強烈毒素的蛛絲，腐蝕裝甲的同時麻痺神經，令心神渙散...',
         durabilityDamage: { amount: 3 },
         desDrain: 3,
       },
     },
     loot: { tierPool: 1, guaranteed: false },
-    description: '以水晶外殼偽裝的蜘蛛型魔物，噴射的毒蛛絲能同時腐蝕裝備與心神。',
+    description: '以生長中的晶石結構模擬自然礦石，偽裝精確度幾乎無法區分真假。蛛絲帶有破壞晶格結構的物質——對裝甲的金屬晶格有效，對神經網絡的電信號同樣有效。',
   },
 
   // ── Tier B 中期魔物（第 3–6 章）────────────────────────────
 
   rift_knight: {
     id:     'rift_knight',
-    name:   '裂隙騎士',
+    name:   '縫隙誓衛者',
     tier:   'B',
     HP:     140,
     ATK:    18,
@@ -281,12 +281,12 @@ const MONSTER_DB = {
     evadeRate: 5,
     skills:  ['seal'],
     loot:   { tierPool: 2, guaranteed: false },
-    description: '裂隙中武裝化的中階魔物，手持封印之槍。',
+    description: '無法確認是否曾為人類的武裝存在，持有的封印之槍設計目的不是殺傷，而是「固定存在」——令目標無法繼續移動於時間流中。命令的來源已無從追溯。',
   },
 
   plague_wraith: {
     id:     'plague_wraith',
-    name:   '疫癘幽靈',
+    name:   '黑疫漂流形',
     tier:   'B',
     HP:     100,
     ATK:    14,
@@ -295,104 +295,104 @@ const MONSTER_DB = {
     evadeRate: 20,
     skills:  ['poison'],
     loot:   { tierPool: 2, guaranteed: false },
-    description: '施放毒素的靈體魔物，觸碰即中毒。',
+    description: '不是個體，而是某次大規模死亡事件的「集體記憶」凝結。每次觸碰都是在傳遞那次死亡的感受——接觸者的夢境會開始出現那次死亡的片段。',
   },
 
   // ── Tier B 擴充魔物（四類型）──────────────────────────────────
 
   iron_colossus: {
-    id: 'iron_colossus', name: '鐵鑄巨像', tier: 'B', monsterType: '物理',
+    id: 'iron_colossus', name: '鑄鐵古代機', tier: 'B', monsterType: '物理',
     HP: 160, ATK: 22, AGI: 2, DR: 30, evadeRate: 0,
     skills: [],
     skillDefs: {
       earth_shatter: {
         name: '裂地鐵拳', chance: 0.4, ampPercent: 100, hitRate: 68,
-        log: '鐵鑄巨像舉起巨拳砸向地面，衝擊波從地底湧出，撕裂一切阻擋物！',
+        log: '鑄鐵古代機舉起巨拳砸向地面，衝擊波從地底湧出，撕裂一切阻擋物！',
       },
     },
     loot: { tierPool: 2, guaranteed: true },
-    description: '裂隙熔融金屬凝固而成的巨像，攻擊如山崩地裂，防禦厚實近乎無解。',
+    description: '前文明時代的戰爭機械被遺棄在裂隙中後，裂隙能量滲入其金屬組織，鐵開始「思考」。思考的結果是：持續戰鬥，直到找到下達停止命令的主人。',
   },
 
   blood_wolf: {
-    id: 'blood_wolf', name: '血狼獸王', tier: 'B', monsterType: '物理',
+    id: 'blood_wolf', name: '血跡嗅獵王', tier: 'B', monsterType: '物理',
     HP: 145, ATK: 20, AGI: 7, DR: 15, evadeRate: 10,
     skills: [],
     skillDefs: {
       predator_bite: {
         name: '獵殺撕咬', chance: 0.4, ampPercent: 70, hitRate: 82,
-        log: '血狼獸王發出低沉嚎叫，以獵食者的本能精準鎖定要害，猛力咬下！',
+        log: '血跡嗅獵王發出低沉嚎叫，以獵食者的本能精準鎖定要害，猛力咬下！',
       },
     },
     loot: { tierPool: 2, guaranteed: false },
-    description: '統率成群弱小魔物的狼型獸王，嗜血本能讓牠愈戰愈勇，精準鎖定弱點。',
+    description: '通過感知血液中的恐懼素精準鎖定目標弱點。「愈戰愈勇」的原因是：戰鬥中接收到愈來愈多的恐懼素，而恐懼素是它最有效的興奮劑。',
   },
 
   venom_witch: {
-    id: 'venom_witch', name: '毒蠱巫女', tier: 'B', monsterType: '精神',
+    id: 'venom_witch', name: '污誦術形', tier: 'B', monsterType: '精神',
     HP: 105, ATK: 14, AGI: 8, DR: 8, evadeRate: 18,
     skills: [],
     skillDefs: {
       curse_brew: {
         name: '蠱毒詛咒', chance: 0.4, ampPercent: 10, hitRate: 75,
-        log: '毒蠱巫女吟唱邪咒，裝甲表面湧現腐蝕斑點，心靈同步傳來難以抗拒的崩潰感...',
+        log: '污誦術形吟唱邪咒，裝甲表面湧現腐蝕斑點，心靈同步傳來難以抗拒的崩潰感...',
         durabilityDamage: { amount: 8 },
         desDrain: 6,
       },
     },
     loot: { tierPool: 2, guaranteed: false },
-    description: '以裂隙毒素施術的女巫型魔物，其詛咒同時腐蝕裝備與瓦解心靈防線。',
+    description: '吟誦的「邪咒」是裂隙能量的頻率調製，能定點溶解物質的分子鍵結。裝甲的腐蝕斑點是鍵結被選擇性切斷的結果；心靈同步崩潰，是因為人類神經系統恰好在同一頻率範圍內運作。',
   },
 
   chaos_hydra: {
-    id: 'chaos_hydra', name: '混沌九頭蛇', tier: 'B', monsterType: '控制',
+    id: 'chaos_hydra', name: '九意識裂頭蛇', tier: 'B', monsterType: '控制',
     HP: 140, ATK: 17, AGI: 5, DR: 18, evadeRate: 8,
     skills: [],
     skillDefs: {
       nine_fang: {
         name: '九頭並噬', chance: 0.45, ampPercent: 50, hitRate: 76,
-        log: '混沌九頭蛇九口齊噬，在防具各處留下毒牙啃咬的痕跡，毒素從縫隙滲入...',
+        log: '九意識裂頭蛇九口齊噬，在防具各處留下毒牙啃咬的痕跡，毒素從縫隙滲入...',
         durabilityDamage: { amount: 5 },
       },
     },
     loot: { tierPool: 2, guaranteed: true },
-    description: '九個蛇頭各自思考的裂隙魔物，多頭同時攻擊難以全部防禦，毒牙啃碎裝甲。',
+    description: '九個完全獨立的意識共享一具身體，從不協調——每個頭都有自己的判斷，攻擊時方向完全不可預測，因為連它自己都不知道下一個頭打算做什麼。',
   },
 
   curse_mage: {
-    id: 'curse_mage', name: '詛咒術師', tier: 'B', monsterType: '控制',
+    id: 'curse_mage', name: '古語詛刻者', tier: 'B', monsterType: '控制',
     HP: 110, ATK: 14, AGI: 6, DR: 15, evadeRate: 10,
     skills: [],
     skillDefs: {
       soul_shackle: {
         name: '靈魂枷鎖', chance: 0.38, ampPercent: 25, hitRate: 72,
-        log: '詛咒術師以契約裂隙力量鑄造靈魂枷鎖，強制撕裂心靈防禦，慾望的枷鎖收緊！',
+        log: '古語詛刻者以契約裂隙力量鑄造靈魂枷鎖，強制撕裂心靈防禦，慾望的枷鎖收緊！',
         desDrain: 8,
       },
     },
     loot: { tierPool: 2, guaranteed: false },
-    description: '精通裂隙詛咒魔法的術師型魔物，靈魂枷鎖直接侵蝕契約意志，令人恐懼。',
+    description: '使用的詛咒語言早於任何已知文明，符文的形狀在視覺上製造輕微的認知不適——不是魔法效果，而是大腦試圖識別無法識別的符號時產生的生理反應。',
   },
 
   shadow_reaper: {
-    id: 'shadow_reaper', name: '暗影死神', tier: 'B', monsterType: '敏捷',
+    id: 'shadow_reaper', name: '虛空割徑者', tier: 'B', monsterType: '敏捷',
     HP: 115, ATK: 22, AGI: 14, DR: 8, evadeRate: 28,
     skills: [],
     skillDefs: {
       soul_harvest: {
         name: '魂魄收割', chance: 0.45, ampPercent: 75, hitRate: 92,
-        log: '暗影死神的鐮刀劃過虛空，以幾乎無法察覺的軌跡準確斬向要害——無從迴避！',
+        log: '虛空割徑者的鐮刀劃過虛空，以幾乎無法察覺的軌跡準確斬向要害——無從迴避！',
       },
     },
     loot: { tierPool: 2, guaranteed: false },
-    description: '以大鐮刀斬裂空間的死神型魔物，極高速度讓普通戰士難以追蹤，幾近必中。',
+    description: '鐮刀劃過的不是空間，而是目標「下一個時刻存在於此處」的可能性。被切的不是當前位置，而是未來位置——因此幾乎無從迴避。',
   },
 
   // ── Tier C 後期魔物（第 7–10 章）───────────────────────────
 
   abyss_overlord: {
     id:     'abyss_overlord',
-    name:   '深淵霸主',
+    name:   '淵底主宰者',
     tier:   'C',
     HP:     280,
     ATK:    28,
@@ -401,70 +401,70 @@ const MONSTER_DB = {
     evadeRate: 10,
     skills:  ['seal', 'poison'],
     loot:   { tierPool: 3, guaranteed: true },
-    description: '從深淵核心誕生的高階魔物，威壓令人窒息。',
+    description: '不是誕生自裂隙，而是裂隙為了它的存在而形成的。靠近它的人，本能的第一反應永遠是跪下——那是人類大腦在感知到「比自身存在層級更高的存在」時觸發的本能性系統崩潰。',
   },
   // ── Tier C 擴充魔物（四類型）──────────────────────────────────
 
   rift_emperor: {
-    id: 'rift_emperor', name: '裂隙帝王', tier: 'C', monsterType: '物理',
+    id: 'rift_emperor', name: '空間折疊帝', tier: 'C', monsterType: '物理',
     HP: 310, ATK: 34, AGI: 6, DR: 38, evadeRate: 5,
     skills: [],
     skillDefs: {
       rift_domain: {
         name: '裂隙帝域', chance: 0.4, ampPercent: 110, hitRate: 80,
-        log: '裂隙帝王展開帝域，在場所有存在都受到空間壓力碾壓，裝甲在絕對威壓下變形！',
+        log: '空間折疊帝展開帝域，在場所有存在都受到空間壓力碾壓，裝甲在絕對威壓下變形！',
         durabilityDamage: { amount: 12 },
       },
     },
     loot: { tierPool: 3, guaranteed: true },
-    description: '統治裂隙領域的帝王型魔物，全身鎧甲由凝固裂隙能量構成，帝域之內無一倖免。',
+    description: '統治的不是領土，而是一定範圍內的空間法則。在其帝域內，所有物理定律受它的意志調整，包括材料的強度上限。裝甲在帝域內變形，是因為帝域重新定義了該材料「能夠承受的壓力」的上限值。',
   },
 
   soul_devourer: {
-    id: 'soul_devourer', name: '噬魂惡魔', tier: 'C', monsterType: '精神',
+    id: 'soul_devourer', name: '靈質吞食者', tier: 'C', monsterType: '精神',
     HP: 220, ATK: 28, AGI: 12, DR: 20, evadeRate: 18,
     skills: [],
     skillDefs: {
       soul_drain: {
         name: '噬魂吞食', chance: 0.4, ampPercent: 0, hitRate: 82,
-        log: '噬魂惡魔伸出無形觸手，將靈魂與契約意志一同吞噬，裝備在虛空侵蝕中化為虛無...',
+        log: '靈質吞食者伸出無形觸手，將靈魂與契約意志一同吞噬，裝備在虛空侵蝕中化為虛無...',
         durabilityDamage: { amount: 15 },
         desDrain: 12,
       },
     },
     loot: { tierPool: 3, guaranteed: true },
-    description: '吞噬靈魂維持存在的高階惡魔，其觸碰直接瓦解心靈契約，裝備亦難以倖免。',
+    description: '以消化「存在的連續性」維生——不是靈魂，而是「這個人在時間流中保持同一個人」的連貫性。接觸者不會立即死亡，而是開始忘記自己是誰。',
   },
 
   eternal_lich: {
-    id: 'eternal_lich', name: '永恆死靈王', tier: 'C', monsterType: '控制',
+    id: 'eternal_lich', name: '萬古不滅詛主', tier: 'C', monsterType: '控制',
     HP: 270, ATK: 30, AGI: 8, DR: 25, evadeRate: 10,
     skills: [],
     skillDefs: {
       eternal_curse: {
         name: '萬古詛滅', chance: 0.38, ampPercent: 30, hitRate: 78,
-        log: '永恆死靈王揮動法杖，千年詛咒凝聚成形，裝備表面龜裂的同時靈魂深處傳來腐朽之感！',
+        log: '萬古不滅詛主揮動法杖，千年詛咒凝聚成形，裝備表面龜裂的同時靈魂深處傳來腐朽之感！',
         durabilityDamage: { amount: 10 },
         desDrain: 8,
       },
     },
     loot: { tierPool: 3, guaranteed: true },
-    description: '以死亡魔法延續萬年的死靈王，萬古詛滅同時腐化裝備與靈魂，無從抵抗。',
+    description: '存在的時間長到已超越「死亡」的定義範疇，嚴格來說並非「死靈」，而是「超越了死生分界的存在」。揮杖時洩漏的是它無意間承受的歲月壓力——一瞬間承受萬年的時間重量。',
   },
 
   void_dragon: {
-    id: 'void_dragon', name: '虛空龍王', tier: 'C', monsterType: '敏捷',
+    id: 'void_dragon', name: '深宇龍型存在', tier: 'C', monsterType: '敏捷',
     HP: 280, ATK: 38, AGI: 15, DR: 22, evadeRate: 22,
     skills: [],
     skillDefs: {
       void_breath: {
         name: '虛空龍息', chance: 0.4, ampPercent: 90, hitRate: 90,
-        log: '虛空龍王噴出扭曲時空的龍息，物理衝擊與心靈崩潰同時爆發，令人無法思考！',
+        log: '深宇龍型存在噴出扭曲時空的龍息，物理衝擊與心靈崩潰同時爆發，令人無法思考！',
         desDrain: 7,
       },
     },
     loot: { tierPool: 3, guaranteed: true },
-    description: '從虛空深處誕生的龍王，每次振翅裂開空間，龍息同時摧毀肉體與心靈意志。',
+    description: '在宇宙尺度的虛空中活動的龍類，出現在此處純屬降級——它偶爾對局部空間產生興趣。振翅時裂開空間，是因為翅膀結構是為了在真空中產生推進力，在有大氣的環境中使用會對周遭空間造成副作用。',
   },
 }
 

@@ -31,10 +31,10 @@
 export const TOWN_LOCATIONS = [
   {
     typeId: 'town_market',
-    name: '廢棄集市',
+    name: '棄世集市遺構',
     layer: 1,
-    description: '昔日喧囂的集市如今空無一人，破損的攤位東倒西歪，散落各處的商品殘骸在風中搖曳。偶爾可見翻倒的油燈與未燒完的帳簿。',
-    aiPromptHint: '廢棄的城市集市場景，戰後荒涼氛圍，灰塵中殘留著昔日繁榮的痕跡，光線昏黃，空氣中有焦味與腐敗氣息混合。',
+    description: '昔日集市如今是靜止的時間剖面，每個倒塌的攤位都是某個決定「不再等待」的人所遺留的。油燈旁的未燒帳簿詳細記錄著最後幾天的交易，數字在某一天突然中斷，之後是空白頁。',
+    aiPromptHint: '廢棄的城市集市場景，靜止的時間切面，灰塵中封存著過去最後一天的印記，油燈半傾未滅，帳簿數字戛然而止，光線昏黃如腐蝕中的記憶。',
     investigationHint: '搜尋集市中遺留的商品、帳簿殘頁，或許能找到有用的物資與情報。',
     eventPool: [
       { eventTypeId: 'rest_recovery',  triggerChance: 0.60, triggerCondition: null, weight: 3 },
@@ -44,10 +44,10 @@ export const TOWN_LOCATIONS = [
   },
   {
     typeId: 'town_shelter',
-    name: '臨時避難所',
+    name: '末日倖存穴居',
     layer: 1,
-    description: '廢棄建築的地下室被改作避難使用，牆壁上留有倉皇逃離的塗鴉與求救標記。角落堆放著殘破的行囊，空氣沉悶，帶著人留存過的氣息。',
-    aiPromptHint: '昏暗的地下避難所，牆上有潦草的記號，地板散落個人物品，氛圍壓抑而充滿人類掙扎求生的痕跡。',
+    description: '牆上的塗鴉從求救信號，到日期記錄，到哲學塗鴉，最後到單純的重複符號——可以追蹤一個人的心理在密閉空間中的崩潰過程。現在是空的，但空氣仍保有人類聚集時的溫度殘影。',
+    aiPromptHint: '昏暗的地下避難所，牆上塗鴉記錄著意識崩潰的軌跡，地板散落個人物品，空氣凝固著生存意志的最後殘留，氛圍壓抑而充滿人類掙扎的印記。',
     investigationHint: '調查倖存者留下的物品或訊息，或許能了解裂隙事件的始末。',
     eventPool: [
       { eventTypeId: 'rest_recovery',          triggerChance: 0.60, triggerCondition: null, weight: 3 },
@@ -57,10 +57,10 @@ export const TOWN_LOCATIONS = [
   },
   {
     typeId: 'town_outskirts',
-    name: '小鎮外圍',
+    name: '認知邊界區',
     layer: 1,
-    description: '小鎮與荒野的交界地帶，路邊的路牌半倒在草叢中，遠處的天際線有隱約的紫色光暈——那是裂隙的方向。風帶來一股異常的溫熱。',
-    aiPromptHint: '城鎮邊緣的荒廢公路，天空顏色開始偏向異常的紫灰色，植被稀疏且部分枯萎，地面有不明液體的污跡。',
+    description: '這裡是「日常世界」和「其他的某種東西」的接縫。路牌的指示方向在裂隙的影響下已失去意義，但仍有人在夜間修復它——不知道是求生本能，還是在深淵中保持習慣的執念。',
+    aiPromptHint: '城鎮邊緣的認知接縫地帶，天空顏色開始向異常頻率偏移，路牌指向的方向已失去意義，地面有不明液體的污跡，空氣中瀰漫著對正常世界的無聲告別。',
     investigationHint: '調查裂隙滲透的跡象，地面的異常痕跡或許能透露裂隙的擴張速度。',
     eventPool: [
       { eventTypeId: 'investigation',           triggerChance: 0.35, triggerCondition: null, weight: 2 },
@@ -78,10 +78,10 @@ export const TOWN_LOCATIONS = [
 export const OUTSKIRTS_LOCATION_POOL = [
   {
     typeId: 'outskirts_ruins',
-    name: '廢棄建築群',
+    name: '侵蝕建築遺群',
     layer: 2,
-    description: '昔日的住宅區如今只剩殘垣斷壁，每一處牆角都藏著可能的危機。腐蝕的鐵鑄窗框在風中發出低鳴，空氣中有裂隙能量特有的金屬味。',
-    aiPromptHint: '廢棄的建築群，植被開始出現扭曲，天空顏色異常（紫灰色調），空氣中輕微震動感，裂隙影響的初期環境。',
+    description: '建築物的崩塌方式違反重力邏輯——有些牆是向上倒塌的，有些則以非歐幾何的角度停在半空中。裂隙能量已重寫了局部的物理法則，深掘者在此必須持續重新確認自己對「穩定」的定義。',
+    aiPromptHint: '廢棄的建築群，崩塌方向違反物理，牆壁以非歐幾何角度靜止半空，植被呈現扭曲適應，天空顏色異常（紫灰色調），裂隙影響已重寫局部物理的環境。',
     investigationHint: '解讀廢棄建築的崩塌原因，牆上殘留的標記可能是逃難者或先驅者留下的情報。',
     eventPool: [
       { eventTypeId: 'investigation',           triggerChance: 0.60, triggerCondition: null, weight: 3 },
@@ -92,10 +92,10 @@ export const OUTSKIRTS_LOCATION_POOL = [
   },
   {
     typeId: 'outskirts_field',
-    name: '荒廢曠野',
+    name: '染毒曠野遺原',
     layer: 2,
-    description: '廣闊的平原上雜草高及膝蓋，枯萎的植物透露著裂隙污染的跡象。遠處偶爾傳來不屬於任何已知生物的低吼聲，空氣中有輕微的電磁感。',
-    aiPromptHint: '廣闊的荒廢平原，植被大面積枯萎，部分植物呈現異常的深紫或暗紅色，天空橙紅色調，是裂隙外圍的典型景觀。',
+    description: '植被的死亡方式有選擇性——某些種類完全消失，某些種類以異常的形態過度繁殖。遠處傳來的低吼聲從未固定方向。',
+    aiPromptHint: '廣闊的染毒平原，植被死亡有選擇性，部分呈現過度繁殖的異常形態，天空橙紅色調，低吼聲從不固定方向傳來，是深淵侵蝕外圍的典型景觀。',
     investigationHint: null,
     eventPool: [
       { eventTypeId: 'encounter_combat',        triggerChance: 0.60, triggerCondition: null, weight: 3 },
@@ -105,10 +105,10 @@ export const OUTSKIRTS_LOCATION_POOL = [
   },
   {
     typeId: 'outskirts_camp',
-    name: '廢棄紮營地',
+    name: '棄守先驅紮營地',
     layer: 2,
-    description: '有人曾在此長時間駐紮，留下精心搭建卻被倉皇廢棄的營地。帳篷支架仍在，篝火的灰燼已冷卻多日，但補給箱中或許還有遺留物。',
-    aiPromptHint: '廢棄的野外營地，帳篷架子仍完整但布料腐爛，空火盆與散落的補給殘骸，傳達人類曾在此求生的痕跡。',
+    description: '這個營地曾被人精心維護，最後卻在某一個瞬間被完全放棄，沒有打包，沒有收拾。補給箱的鎖被從內部打開，不是從外——最後一個人是帶著選擇離開的。他們去了哪裡無從知曉。',
+    aiPromptHint: '廢棄的野外營地，帳篷架子仍完整但布料腐爛，補給箱從內部打開，物品原封未動——不是逃離，是選擇。空火盆與散落的個人物品傳達一個有意識的決定的殘跡。',
     investigationHint: null,
     eventPool: [
       { eventTypeId: 'rest_recovery',  triggerChance: 0.35, triggerCondition: null, weight: 2 },
@@ -118,10 +118,10 @@ export const OUTSKIRTS_LOCATION_POOL = [
   },
   {
     typeId: 'outskirts_watchtower',
-    name: '崩塌瞭望台',
+    name: '半毀觀測遺台',
     layer: 2,
-    description: '軍用瞭望台的上半部已經倒塌，殘存的結構搖搖欲墜。從最高的完整樓層可以俯瞰裂隙方向，能量異常在這裡格外清晰可辨。',
-    aiPromptHint: '半坍塌的瞭望台，金屬結構扭曲生鏽，從現存的高處可以看見遠方裂隙的光暈，視野開闊但環境不穩定。',
+    description: '瞭望台的上半部倒塌方向是向內而非向外，殘存的樓層形成一個半封閉的觀測空間。從那裡看向裂隙方向，觀察者也更容易被觀察到。',
+    aiPromptHint: '半坍塌的瞭望台，倒塌方向向內形成半封閉觀測空間，金屬結構扭曲生鏽，從現存的高處可以看見遠方裂隙的光暈，視野開闊但暴露感強烈。',
     investigationHint: '分析瞭望台殘留的記錄資料，觀測裂隙活動的方向與強度變化。',
     eventPool: [
       { eventTypeId: 'investigation',                triggerChance: 0.60, triggerCondition: null, weight: 3 },
@@ -131,10 +131,10 @@ export const OUTSKIRTS_LOCATION_POOL = [
   },
   {
     typeId: 'outskirts_road',
-    name: '破碎公路',
+    name: '解構幹道遺路',
     layer: 2,
-    description: '昔日的主要幹道如今佈滿裂縫，地面的柏油被不明力量掀起，形成奇異的波浪狀斷面。路旁有翻覆的車輛與散落的個人物品。',
-    aiPromptHint: '廢棄的主要公路，路面嚴重破損呈波浪狀，翻覆車輛，個人物品散落兩側，天空顏色異常，傳達大規模撤離後的荒廢感。',
+    description: '路面被抬起的力量來自某個位於地下深處的「地質記憶」，一個遠比道路更古老的事件在地層中的餘震，在裂隙的催化下終於抵達地面。路旁有翻覆的車輛與散落的個人物品。',
+    aiPromptHint: '廢棄的主要公路，路面被地質記憶的餘震抬起呈波浪狀，翻覆車輛，個人物品散落兩側，天空顏色異常，地層深處的某個古老事件終於在地面留下印記。',
     investigationHint: null,
     eventPool: [
       { eventTypeId: 'encounter_combat',       triggerChance: 0.35, triggerCondition: null, weight: 2 },
@@ -151,10 +151,10 @@ export const OUTSKIRTS_LOCATION_POOL = [
 export const RIFT_ENTRANCE_LOCATION_POOL = [
   {
     typeId: 'rift_boundary',
-    name: '裂隙邊界',
+    name: '存在法則邊界',
     layer: 3,
-    description: '空間在這裡開始變得不穩定，視覺上有輕微的折疊感。地面的顏色變得深暗，植被完全消失，取而代之的是凝固的黑色物質，像是被燒焦的時間。',
-    aiPromptHint: '裂隙邊界地帶，空間感扭曲，光源不明且方向混亂，地面材質異常（黑色焦化），隱約可見空間折疊的視覺效果。',
+    description: '法則的邊界不是可見的牆，而是一個需要感知才能察覺的過渡帶。穿越它時，人體短暫接收到來自兩套不同物理法則的信號，大腦在協調時產生的短暫混亂，就是「空間折疊感」的本質。',
+    aiPromptHint: '裂隙邊界地帶，法則的過渡在視覺上無法察覺，空間感扭曲，光源方向混亂，地面材質異常（黑色焦化），穿越時兩套物理法則的交疊在感知中產生短暫的現實錯位。',
     investigationHint: '測量裂隙擴張速度，記錄能量讀數的異常波動規律。',
     eventPool: [
       { eventTypeId: 'rift_anomaly',    triggerChance: 0.60, triggerCondition: null, weight: 3 },
@@ -164,10 +164,10 @@ export const RIFT_ENTRANCE_LOCATION_POOL = [
   },
   {
     typeId: 'rift_forest',
-    name: '腐化森林',
+    name: '法則侵蝕異林',
     layer: 3,
-    description: '曾經的森林被裂隙能量完全腐化，樹木扭曲成不自然的形狀，樹皮呈現深紫色的腐爛紋路。地面上有不明液體慢慢滲透，空氣甜膩令人作嘔。',
-    aiPromptHint: '完全腐化的森林，樹木扭曲異形，深紫色樹皮，地面有黏稠的暗色液體，陰暗的光線透過扭曲的枝條形成怪異的陰影。',
+    description: '樹木的扭曲是它們「記住了」裂隙能量的力量方向後的生長結果，不是被動的破壞，而是主動的適應。問題在於它們適應的方向和人類的導向感完全不同。地面上有不明液體慢慢滲透，空氣甜膩令人作嘔。',
+    aiPromptHint: '完全被法則侵蝕的森林，樹木扭曲是主動適應而非被動破壞，深紫色樹皮，地面有黏稠的暗色液體，陰暗的光線透過扭曲的枝條形成怪異的陰影，方向感完全失效。',
     investigationHint: null,
     eventPool: [
       { eventTypeId: 'encounter_combat',      triggerChance: 0.60, triggerCondition: null, weight: 3 },
@@ -178,10 +178,10 @@ export const RIFT_ENTRANCE_LOCATION_POOL = [
   },
   {
     typeId: 'rift_nest',
-    name: '魔物聚集地',
+    name: '深淵型態聚集地',
     layer: 3,
-    description: '這裡有大量魔物的棲息痕跡——巨大的爪痕、咀嚼過的獵物殘骸、散發異味的巢穴材料。空氣中充斥著魔物的氣息，使人本能地想要逃離。',
-    aiPromptHint: '魔物巢穴核心區域，地面有大量爪痕和腐蝕斑，獵物骨骸散落，巢穴材料堆積成奇異的結構，危機四伏的壓迫氣氛。',
+    description: '大量深淵生物在此聚集，因為這片區域的能量頻率對特定生物類型有吸引力。骨骸散落方式顯示部分是互相獵殺的結果，另一部分可能是將此地視為目的地而非起點的生物的遺骸。',
+    aiPromptHint: '深淵型態生物的聚集核心區域，地面有大量爪痕和腐蝕斑，骨骸散落模式暗示複雜的獵食關係，巢穴材料堆積成奇異的結構，能量頻率對特定生物具有吸引力。',
     investigationHint: null,
     eventPool: [
       { eventTypeId: 'encounter_combat',   triggerChance: 0.80, triggerCondition: null, weight: 4 },
@@ -191,10 +191,10 @@ export const RIFT_ENTRANCE_LOCATION_POOL = [
   },
   {
     typeId: 'rift_ruins',
-    name: '古代遺跡',
+    name: '前文明封印遺跡',
     layer: 3,
-    description: '比裂隙更古老的建築遺址，石塊上刻有失傳的封印紋路。部分紋路仍在發光，是某種古代防禦系統最後的殘留能量。空間在此相對穩定。',
-    aiPromptHint: '古老石造遺跡，刻有發光封印紋路，空氣中有某種古老力量的殘留，相對穩定但隱藏著未知的危機，神秘而肅穆。',
+    description: '建造者使用了此後從未被成功複製的結構技術。封印紋路仍在發光，意味著能量來源尚未耗盡——要麼建造者預留的能量極度充足，要麼來源不在此處。空間在此相對穩定。',
+    aiPromptHint: '古老石造遺跡，使用已失傳的結構技術建造，刻有仍在發光的封印紋路，能量來源不明，空氣中有某種超越時間的殘留力量，相對穩定但藏著前文明的未解之謎。',
     investigationHint: '解讀古代碑文，分析封印構造的設計意圖與作用原理。',
     eventPool: [
       { eventTypeId: 'investigation',   triggerChance: 0.60, triggerCondition: null, weight: 3 },
@@ -205,10 +205,10 @@ export const RIFT_ENTRANCE_LOCATION_POOL = [
   },
   {
     typeId: 'rift_gate',
-    name: '封印殘跡',
+    name: '崩潰封印圓場',
     layer: 3,
-    description: '某個巨大封印崩潰後留下的遺址，中央仍有能量在緩慢洩漏。周圍的地面被封印爆炸燒焦，但奇異的是，植被從焦痕邊緣開始重新生長，呈現反常的鮮豔綠色。',
-    aiPromptHint: '崩潰的封印中心遺址，地面有燒焦的環形痕跡，中央有緩慢洩漏的能量光芒，邊緣有異常鮮豔的植被，對比強烈且令人不安。',
+    description: '封印的爆炸以完美的圓形向外擴散，在物理上幾乎不可能——完美圓形意味著爆炸能量在每個方向都受到同等的導引，需要極度精確的設計，或是某種超越設計的對稱性存在。中央仍有能量在緩慢洩漏。',
+    aiPromptHint: '崩潰的封印中心遺址，地面有完美圓形的燒焦痕跡——物理上幾乎不可能，中央有緩慢洩漏的能量光芒，邊緣有異常鮮豔的植被，對稱性令人不安地完美。',
     investigationHint: '研究封印殘留的能量紋路，分析封印崩潰的原因與規律。',
     eventPool: [
       { eventTypeId: 'rift_anomaly',          triggerChance: 0.60, triggerCondition: null, weight: 3 },
@@ -225,10 +225,10 @@ export const RIFT_ENTRANCE_LOCATION_POOL = [
 export const DEEP_RIFT_LOCATION_POOL = [
   {
     typeId: 'deep_interior',
-    name: '裂隙內部',
+    name: '法則解體內域',
     layer: 4,
-    description: '完全進入裂隙的空間，天地的概念在此變得模糊。重力方向似乎每隔幾步就會微妙地改變，視覺上呈現不斷流動的深藍與黑色紋路，像是凝固的虛空。',
-    aiPromptHint: '裂隙內部空間，重力感不穩定，天地邊界模糊，流動的深藍黑色紋路構成環境，無自然光源，充滿壓迫感的宇宙性空曠。',
+    description: '在這裡，「內」和「外」的概念開始分離。重力每隔幾步的微妙改變，是因為此空間受多個來源的力場疊加，深藍黑色紋路是多個力場邊界的可見化——如同等高線，只是等力場線。',
+    aiPromptHint: '裂隙內部空間，「內」與「外」的概念分離，重力受多個力場疊加而不穩定，流動的深藍黑色紋路是力場邊界的可見化，無自然光源，充滿宇宙尺度的壓迫性空曠。',
     investigationHint: '分析裂隙核心結構的能量流向，尋找結構規律。',
     eventPool: [
       { eventTypeId: 'rift_anomaly',    triggerChance: 0.60, triggerCondition: null, weight: 3 },
@@ -238,10 +238,10 @@ export const DEEP_RIFT_LOCATION_POOL = [
   },
   {
     typeId: 'deep_lair',
-    name: '魔物巢穴',
+    name: '高階型態巢域',
     layer: 4,
-    description: '高階魔物的棲息地，整個空間充斥著強烈的魔物氣息。巢穴結構複雜，由無法辨識的材料構成，有些部分似乎還是活的，在緩慢地蠕動。',
-    aiPromptHint: '高階魔物的巢穴，有機體狀的結構材料，部分仍在蠕動，強烈的異味，極高的危機感，是獵手的領域。',
+    description: '有機體狀的結構材料是多個生物共同分泌和構建的，不是某個單一生物的巢穴。參與構建的生物之間存在人類尚未理解的溝通機制。巢穴結構複雜，有些部分似乎還是活的。',
+    aiPromptHint: '高階型態生物的共同構建巢域，有機體狀的結構材料由多個生物協作分泌，部分仍在蠕動，強烈的異味，是比獵手更高層級的意志在此組織居住。',
     investigationHint: null,
     eventPool: [
       { eventTypeId: 'encounter_combat', triggerChance: 0.80, triggerCondition: null, weight: 4 },
@@ -252,10 +252,10 @@ export const DEEP_RIFT_LOCATION_POOL = [
   },
   {
     typeId: 'deep_shrine',
-    name: '腐化祭壇',
+    name: '侵蝕儀軌祭壇',
     layer: 4,
-    description: '某種儀式場所，但已被裂隙能量完全腐化。祭壇上的獻祭痕跡已難以辨認，但殘留的能量仍在共鳴，發出低頻振動，令人隱約感到恐懼。',
-    aiPromptHint: '腐化的古代祭壇，能量低頻共鳴，表面有複雜的侵蝕紋路，空間中漂浮著細微的能量粒子，邪惡而神聖的矛盾感。',
+    description: '祭壇的原始功能是「向某個存在送出信號」，而非典型的祈禱或獻祭設施。被裂隙能量腐化後，它仍在發送信號，只是內容已無法確認是否與原始設計一致。殘留的能量仍在共鳴，發出低頻振動。',
+    aiPromptHint: '腐化的古代信號祭壇，能量低頻共鳴，表面有複雜的侵蝕紋路，空間中漂浮著細微的能量粒子，仍在發送的信號正在聯繫某個存在——目標不明。',
     investigationHint: '解讀腐化祭壇上殘存的儀式痕跡，理解其原始功能。',
     eventPool: [
       { eventTypeId: 'investigation',         triggerChance: 0.60, triggerCondition: null, weight: 3 },
@@ -266,10 +266,10 @@ export const DEEP_RIFT_LOCATION_POOL = [
   },
   {
     typeId: 'deep_vortex',
-    name: '能量漩渦',
+    name: '裂隙能量旋核',
     layer: 4,
-    description: '裂隙能量在此形成可見的漩渦，中心處發出刺眼的白光。周圍的空間被漩渦拉扯，形成奇異的透視變形。靠近時能明顯感受到意志力被侵蝕的壓力。',
-    aiPromptHint: '可見的能量漩渦，中心白光，周圍空間透視變形，具有強烈的吸引力與威脅感，讓人同時感到恐懼與著迷。',
+    description: '漩渦的旋轉方向與此區域的主導力場方向呈精確的90度偏移，在物理上無法用常規力學解釋。靠近時感受到的意志力侵蝕，是因為漩渦產生的橫向波與神經系統的電場產生了共鳴干擾。',
+    aiPromptHint: '可見的能量漩渦，旋轉方向呈精確90度偏移（物理上不可能），中心白光，周圍空間透視變形，橫向波干擾神經系統電場，讓人同時感到恐懼與難以解釋的吸引。',
     investigationHint: null,
     eventPool: [
       { eventTypeId: 'rift_anomaly',       triggerChance: 0.80, triggerCondition: null, weight: 4 },
@@ -279,10 +279,10 @@ export const DEEP_RIFT_LOCATION_POOL = [
   },
   {
     typeId: 'deep_corridor',
-    name: '崩塌通道',
+    name: '時序崩塌通道',
     layer: 4,
-    description: '連接裂隙各區域的通道，大部分已經崩塌，只剩下狹窄且不穩定的路徑。踏錯一步可能觸發進一步的崩塌，或者掉入看不見底的裂縫。',
-    aiPromptHint: '崩塌的地下通道，不穩定的岩石結構，狹窄的可行路徑，深不見底的裂縫，極度壓迫的封閉空間感，每步都是試探。',
+    description: '通道的崩塌不是一次事件的結果，而是多個時間點的崩塌層疊在一起——有些石塊崩塌是很久以前的，有些是很近的，有些尚未崩塌但已處於臨界點。在此行走，是在多個時間層的縫隙中尋找路徑。',
+    aiPromptHint: '時序層疊崩塌的地下通道，不同時間點的崩塌交疊在同一空間，不穩定的岩石結構，狹窄的可行路徑，深不見底的裂縫，每步都是在時間縫隙中的試探。',
     investigationHint: null,
     eventPool: [
       { eventTypeId: 'encounter_combat', triggerChance: 0.60, triggerCondition: null, weight: 3 },
@@ -300,10 +300,10 @@ export const DEEP_RIFT_LOCATION_POOL = [
 export const DEEPEST_RIFT_LOCATION_POOL = [
   {
     typeId: 'core_chamber',
-    name: '核心腔室',
+    name: '感知失效核腔',
     layer: 5,
-    description: '裂隙能量最濃縮的腔室，空氣本身似乎在震動。人類的本能在此完全失效，感知到的顏色、聲音、距離都帶有欺騙性。這裡是屬於惡魔的空間。',
-    aiPromptHint: '裂隙核心腔室，現實感完全喪失，顏色飽和度極端，感知全面扭曲，是惡魔的自然棲息地，人類在此顯得渺小而脆弱。',
+    description: '人類感知系統在進化過程中從未需要處理這種密度的信息，在此處所有感知都帶有主動的「過濾錯誤」——大腦試圖將感知到的東西轉化為已知形態，但材料不足，輸出的是拼湊的幻象。',
+    aiPromptHint: '裂隙核心腔室，感知系統的過濾機制在信息密度過載下主動輸出拼湊的幻象，顏色飽和度極端，感知全面扭曲，是深淵存在的自然棲息地，人類在此顯得不相容。',
     investigationHint: null,
     eventPool: [
       { eventTypeId: 'rift_anomaly',          triggerChance: 0.80, triggerCondition: null, weight: 4 },
@@ -313,10 +313,10 @@ export const DEEPEST_RIFT_LOCATION_POOL = [
   },
   {
     typeId: 'demon_territory',
-    name: '異界領域',
+    name: '他律法則異域',
     layer: 5,
-    description: '這片空間遵循著與人類世界完全不同的法則。引力、時間、空間都以惡魔的邏輯運行。越是了解惡魔的人，在這裡就越能感受到一種奇異的共鳴。',
-    aiPromptHint: '遵循異界法則的領域，幾何形狀超自然，光影方向倒置，在此惡魔的存在比人類更「自然」，充滿異質美感與壓迫感。',
+    description: '這個空間遵循的法則是由其中居住的存在的意志主動決定的。越了解那些存在，越能預測法則的邏輯。完全不了解的人，在這裡的每一步都是在對抗由他者意志制訂的現實。',
+    aiPromptHint: '遵循他律法則的異域，幾何形狀超自然，光影方向由居住者意志決定，在此深淵存在的邏輯比人類更「自然」，了解他們的人在此有優勢，不了解的人在此是外來者。',
     investigationHint: '觀察異界領域的運行法則，尋找結構中可利用的弱點。',
     eventPool: [
       { eventTypeId: 'encounter_combat',      triggerChance: 0.80, triggerCondition: null, weight: 4 },
@@ -326,10 +326,10 @@ export const DEEPEST_RIFT_LOCATION_POOL = [
   },
   {
     typeId: 'core_threshold',
-    name: '裂隙源點入口',
+    name: '淵源起點閾口',
     layer: 5,
-    description: '站在裂隙的起源面前，感覺到所有一切的開端都在這一點。能量在此匯聚而非擴散，有一種奇特的寧靜——像是風暴中心。通往Ch.E1的門就在此處。',
-    aiPromptHint: '裂隙的源點入口，能量匯聚而非擴散，奇異的寂靜感，視野延伸至無盡深處，是旅程的終點也是新的開始，莊嚴而壓迫。',
+    description: '所有裂隙能量的起點在此匯聚。能量匯聚而非擴散，是因為所有擴散出去的能量都在試圖返回這裡。站在此處感受到的寂靜，是一切最終回歸後的靜止，是完成而非虛空。通往Ch.E1的門就在此處。',
+    aiPromptHint: '裂隙的淵源起點，能量匯聚而非擴散，奇異的完成感而非虛空感，視野延伸至無盡深處，是所有裂隙能量想要回歸的地方——站在此處，能感受到自己也在被輕輕拉扯。',
     investigationHint: '解析裂隙源點的能量構成，試圖理解裂隙存在的根本原因。',
     eventPool: [
       { eventTypeId: 'investigation',             triggerChance: 0.60, triggerCondition: null, weight: 3 },
