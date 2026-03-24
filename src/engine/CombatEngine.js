@@ -636,14 +636,18 @@ export function executeEnemyAttack(heroine, combat) {
   const logs = []
   let currentHeroineStatuses = [...(combat.heroineStatuses ?? [])]
 
-  // 敵人技能觸發判定
+  // 敵人技能觸發判定（CD 制：冷卻歸零時必定優先使用）
   const skillDefs = combat.enemySkillDefs ?? {}
+  const enemySkillCDs = combat.enemySkillCooldowns ?? {}
+
+  const readySkills = Object.entries(skillDefs)
+    .filter(([key]) => (enemySkillCDs[key] ?? 0) === 0)
+    .sort(([, a], [, b]) => (a.priority ?? 99) - (b.priority ?? 99))
+
+  let useSkillKey = null
   let useSkill = null
-  for (const key of Object.keys(skillDefs)) {
-    if (Math.random() < (skillDefs[key].chance ?? 0)) {
-      useSkill = skillDefs[key]
-      break
-    }
+  if (readySkills.length > 0) {
+    ;[useSkillKey, useSkill] = readySkills[0]
   }
 
   const enemyHitRate = useSkill ? (useSkill.hitRate ?? 65) : 65
@@ -809,6 +813,12 @@ export function executeEnemyAttack(heroine, combat) {
     if (!counterStatus) logs.push(`反傷：${reflectDmgToEnemy} 傷害反射回敵人！`)
   }
 
+  // 更新敵人技能冷卻
+  const newEnemySkillCDs = { ...enemySkillCDs }
+  if (useSkillKey) {
+    newEnemySkillCDs[useSkillKey] = skillDefs[useSkillKey].cd ?? 2
+  }
+
   return {
     damage,
     newHeroine,
@@ -818,6 +828,7 @@ export function executeEnemyAttack(heroine, combat) {
     combatUpdate: {
       log: logs,
       heroineStatuses: currentHeroineStatuses,
+      enemySkillCooldowns: newEnemySkillCDs,
       ...(newEnemyHP < combat.enemyHP ? { enemyHP: newEnemyHP } : {}),
     },
   }

@@ -19,8 +19,9 @@ const MONSTER_DB = {
     skillDefs: {
       fierce_bite: {
         name:       '猛咬',
-        chance:     0.4,         // 每回合 40% 機率觸發
-        ampPercent: 60,          // ATK × 1.6
+        cd:         2,
+        initialCd:  1,
+        ampPercent: 60,
         hitRate:    80,
         log:        '門縫獸猛地躍起，以利齒猛咬！',
       },
@@ -125,7 +126,7 @@ const MONSTER_DB = {
     skills: [],
     skillDefs: {
       mudslam: {
-        name: '泥漿衝撞', chance: 0.35, ampPercent: 75, hitRate: 72,
+        name: '泥漿衝撞', cd: 2, initialCd: 2, ampPercent: 75, hitRate: 72,
         log: '地泥蠕龐以龐大身軀猛力衝撞！濺起的泥漿模糊視線，難以看清攻擊軌跡！',
       },
     },
@@ -139,7 +140,7 @@ const MONSTER_DB = {
     skills: [],
     skillDefs: {
       stone_coil: {
-        name: '岩甲纏繞', chance: 0.35, ampPercent: 60, hitRate: 70,
+        name: '岩甲纏繞', cd: 3, initialCd: 2, ampPercent: 60, hitRate: 70,
         log: '硬殼蜿蜒脊以粗礪鱗甲猛力纏繞，磨損裝備的同時施加窒息重壓！',
         durabilityDamage: { amount: 3 },
       },
@@ -154,7 +155,7 @@ const MONSTER_DB = {
     skills: [],
     skillDefs: {
       void_hammer: {
-        name: '虛空重鎚', chance: 0.4, ampPercent: 85, hitRate: 73,
+        name: '虛空重鎚', cd: 2, initialCd: 1, ampPercent: 85, hitRate: 73,
         log: '空甲意志遺形揮動注滿裂隙能量的鐵鎚，重力扭曲周圍空間，砸落一瞬如山崩！',
       },
     },
@@ -168,7 +169,7 @@ const MONSTER_DB = {
     skills: [],
     skillDefs: {
       corrosive_slime: {
-        name: '腐蝕黏液', chance: 0.35, ampPercent: 0, hitRate: 68,
+        name: '腐蝕黏液', cd: 3, initialCd: 2, ampPercent: 0, hitRate: 68,
         log: '腐訊滲體噴濺腐蝕黏液，裝甲被緩緩溶解，殘餘氣息令心神不寧...',
         durabilityDamage: { amount: 4 },
         desDrain: 2,
@@ -184,7 +185,7 @@ const MONSTER_DB = {
     skills: [],
     skillDefs: {
       despair_chill: {
-        name: '絕望寒流', chance: 0.3, ampPercent: 20, hitRate: 65,
+        name: '絕望寒流', cd: 2, initialCd: 2, ampPercent: 20, hitRate: 65,
         log: '絕對零響體穿透軀體，絕對零度的虛空寒氣直侵心靈，契約意志開始動搖...',
         desDrain: 4,
       },
@@ -199,7 +200,7 @@ const MONSTER_DB = {
     skills: [],
     skillDefs: {
       bloodsuck: {
-        name: '噬血吸附', chance: 0.4, ampPercent: 50, hitRate: 72,
+        name: '噬血吸附', cd: 2, initialCd: 1, ampPercent: 50, hitRate: 72,
         log: '深沼附貼者猛地吸附於傷口，以倒刺深入吸取血液，分泌的黏液同時侵蝕裝甲縫隙！',
         durabilityDamage: { amount: 2 },
       },
@@ -214,7 +215,7 @@ const MONSTER_DB = {
     skills: [],
     skillDefs: {
       toxic_claw: {
-        name: '毒爪撕裂', chance: 0.35, ampPercent: 40, hitRate: 70,
+        name: '毒爪撕裂', cd: 2, initialCd: 2, ampPercent: 40, hitRate: 70,
         log: '死骸拼合蟲以沾滿神經毒素的利爪撕裂，傷口傳來麻痺感，意志力隨毒素流失...',
         desDrain: 2,
       },
@@ -229,7 +230,7 @@ const MONSTER_DB = {
     skills: [],
     skillDefs: {
       wind_blade: {
-        name: '裂空刃', chance: 0.45, ampPercent: 55, hitRate: 88,
+        name: '裂空刃', cd: 2, initialCd: 1, ampPercent: 55, hitRate: 88,
         log: '氣流相位體凝聚氣流化為無形刃，以令人難以置信的速度切割，幾乎無法格擋！',
       },
     },
@@ -243,7 +244,7 @@ const MONSTER_DB = {
     skills: [],
     skillDefs: {
       ash_flurry: {
-        name: '灰燼亂舞', chance: 0.4, ampPercent: 30, hitRate: 85,
+        name: '灰燼亂舞', cd: 2, initialCd: 1, ampPercent: 30, hitRate: 85,
         log: '煤靈騷翼獸揚起漫天灰燼遮蔽視線，同時以利翼連續切割——看不清攻擊方向！',
         desDrain: 2,
       },
@@ -258,7 +259,7 @@ const MONSTER_DB = {
     skills: [],
     skillDefs: {
       venom_web: {
-        name: '毒蛛絲網', chance: 0.35, ampPercent: 0, hitRate: 75,
+        name: '毒蛛絲網', cd: 3, initialCd: 2, ampPercent: 0, hitRate: 75,
         log: '假晶蛛形體噴射含有強烈毒素的蛛絲，腐蝕裝甲的同時麻痺神經，令心神渙散...',
         durabilityDamage: { amount: 3 },
         desDrain: 3,
@@ -283,7 +284,8 @@ const MONSTER_DB = {
     skillDefs: {
       lance_seal: {
         name: '封印之槍',
-        chance: 0.35,
+        cd: 4,
+        initialCd: 2,
         ampPercent: 30,
         hitRate: 72,
         log: '縫隙誓衛者以封印之槍貫穿目標，時間流在槍尖凝固——無法行動！',
@@ -307,7 +309,8 @@ const MONSTER_DB = {
     skillDefs: {
       plague_touch: {
         name: '黑疫觸碰',
-        chance: 0.35,
+        cd: 4,
+        initialCd: 3,
         ampPercent: 0,
         hitRate: 70,
         log: '黑疫漂流形傳遞死亡記憶的觸碰——毒素從心靈深處蔓延！',
@@ -326,7 +329,7 @@ const MONSTER_DB = {
     skills: [],
     skillDefs: {
       earth_shatter: {
-        name: '裂地鐵拳', chance: 0.4, ampPercent: 100, hitRate: 68,
+        name: '裂地鐵拳', cd: 3, initialCd: 2, ampPercent: 100, hitRate: 68,
         log: '鑄鐵古代機舉起巨拳砸向地面，衝擊波從地底湧出，撕裂一切阻擋物！',
       },
     },
@@ -340,7 +343,7 @@ const MONSTER_DB = {
     skills: [],
     skillDefs: {
       predator_bite: {
-        name: '獵殺撕咬', chance: 0.4, ampPercent: 70, hitRate: 82,
+        name: '獵殺撕咬', cd: 2, initialCd: 1, ampPercent: 70, hitRate: 82,
         log: '血跡嗅獵王發出低沉嚎叫，以獵食者的本能精準鎖定要害，猛力咬下！',
       },
     },
@@ -354,7 +357,7 @@ const MONSTER_DB = {
     skills: [],
     skillDefs: {
       curse_brew: {
-        name: '蠱毒詛咒', chance: 0.4, ampPercent: 10, hitRate: 75,
+        name: '蠱毒詛咒', cd: 3, initialCd: 2, ampPercent: 10, hitRate: 75,
         log: '污誦術形吟唱邪咒，裝甲表面湧現腐蝕斑點，心靈同步傳來難以抗拒的崩潰感...',
         durabilityDamage: { amount: 8 },
         desDrain: 6,
@@ -370,7 +373,7 @@ const MONSTER_DB = {
     skills: [],
     skillDefs: {
       nine_fang: {
-        name: '九頭並噬', chance: 0.45, ampPercent: 50, hitRate: 76,
+        name: '九頭並噬', cd: 3, initialCd: 2, ampPercent: 50, hitRate: 76,
         log: '九意識裂頭蛇九口齊噬，在防具各處留下毒牙啃咬的痕跡，毒素從縫隙滲入...',
         durabilityDamage: { amount: 5 },
       },
@@ -385,7 +388,7 @@ const MONSTER_DB = {
     skills: [],
     skillDefs: {
       soul_shackle: {
-        name: '靈魂枷鎖', chance: 0.38, ampPercent: 25, hitRate: 72,
+        name: '靈魂枷鎖', cd: 3, initialCd: 2, ampPercent: 25, hitRate: 72,
         log: '古語詛刻者以契約裂隙力量鑄造靈魂枷鎖，強制撕裂心靈防禦，慾望的枷鎖收緊！',
         desDrain: 8,
       },
@@ -400,7 +403,7 @@ const MONSTER_DB = {
     skills: [],
     skillDefs: {
       soul_harvest: {
-        name: '魂魄收割', chance: 0.45, ampPercent: 75, hitRate: 92,
+        name: '魂魄收割', cd: 2, initialCd: 1, ampPercent: 75, hitRate: 92,
         log: '虛空割徑者的鐮刀劃過虛空，以幾乎無法察覺的軌跡準確斬向要害——無從迴避！',
       },
     },
@@ -423,7 +426,9 @@ const MONSTER_DB = {
     skillDefs: {
       abyss_seal: {
         name: '時序禁錮',
-        chance: 0.3,
+        cd: 4,
+        initialCd: 2,
+        priority: 1,
         ampPercent: 0,
         hitRate: 78,
         log: '淵底主宰者以壓倒性的存在層級強制封印時間流，令一切抵抗陷入靜止！',
@@ -431,7 +436,9 @@ const MONSTER_DB = {
       },
       abyss_plague: {
         name: '淵底瘟疫',
-        chance: 0.3,
+        cd: 3,
+        initialCd: 4,
+        priority: 2,
         ampPercent: 0,
         hitRate: 75,
         log: '淵底主宰者釋放存在腐蝕，從存在的根源開始溶解……',
@@ -449,7 +456,7 @@ const MONSTER_DB = {
     skills: [],
     skillDefs: {
       rift_domain: {
-        name: '裂隙帝域', chance: 0.4, ampPercent: 110, hitRate: 80,
+        name: '裂隙帝域', cd: 4, initialCd: 2, ampPercent: 110, hitRate: 80,
         log: '空間折疊帝展開帝域，在場所有存在都受到空間壓力碾壓，裝甲在絕對威壓下變形！',
         durabilityDamage: { amount: 12 },
       },
@@ -464,7 +471,7 @@ const MONSTER_DB = {
     skills: [],
     skillDefs: {
       soul_drain: {
-        name: '噬魂吞食', chance: 0.4, ampPercent: 0, hitRate: 82,
+        name: '噬魂吞食', cd: 3, initialCd: 2, ampPercent: 0, hitRate: 82,
         log: '靈質吞食者伸出無形觸手，將靈魂與契約意志一同吞噬，裝備在虛空侵蝕中化為虛無...',
         durabilityDamage: { amount: 15 },
         desDrain: 12,
@@ -480,7 +487,7 @@ const MONSTER_DB = {
     skills: [],
     skillDefs: {
       eternal_curse: {
-        name: '萬古詛滅', chance: 0.38, ampPercent: 30, hitRate: 78,
+        name: '萬古詛滅', cd: 4, initialCd: 3, ampPercent: 30, hitRate: 78,
         log: '萬古不滅詛主揮動法杖，千年詛咒凝聚成形，裝備表面龜裂的同時靈魂深處傳來腐朽之感！',
         durabilityDamage: { amount: 10 },
         desDrain: 8,
@@ -496,7 +503,7 @@ const MONSTER_DB = {
     skills: [],
     skillDefs: {
       void_breath: {
-        name: '虛空龍息', chance: 0.4, ampPercent: 90, hitRate: 90,
+        name: '虛空龍息', cd: 3, initialCd: 2, ampPercent: 90, hitRate: 90,
         log: '深宇龍型存在噴出扭曲時空的龍息，物理衝擊與心靈崩潰同時爆發，令人無法思考！',
         desDrain: 7,
       },

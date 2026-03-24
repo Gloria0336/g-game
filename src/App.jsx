@@ -666,6 +666,7 @@ export default function App() {
 
       // 遞減技能冷卻
       const nextSkillCDs = tickCooldowns(combat.skillCooldowns ?? {})
+      const nextEnemySkillCDs = tickCooldowns(combat.enemySkillCooldowns ?? {})
 
       // DOT 效果（bleed/poison）
       const { newHeroine: dotHeroine, newStatuses: dotStatuses, logs: dotLogs } =
@@ -681,6 +682,7 @@ export default function App() {
           enemyStatuses: newEnemyStatuses,
           heroineStatuses: dotStatuses,
           skillCooldowns: nextSkillCDs,
+          enemySkillCooldowns: nextEnemySkillCDs,
         },
         ...(dotLogs.length > 0 ? { heroineUpdate: { HP: dotHeroine.HP } } : {}),
       })

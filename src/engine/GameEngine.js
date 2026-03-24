@@ -50,6 +50,7 @@ const INITIAL_COMBAT = {
   activeDemons: {},         // { [demonId]: DemonUnit } — 場上存活惡魔
   skillCooldowns: {},       // { skillId: remainingTurns }
   skillUses: {},            // { skillId: totalUses }
+  enemySkillCooldowns: {},  // { skillKey: remainingTurns }
   pendingNarrative: null,       // AI 戰鬥敘事（戰後顯示）
   pendingDemonDialogue: null,   // AI 惡魔對話 { lines:[], choices:[] }
   activeDemonDialogueId: null,  // 當前對話惡魔 ID
@@ -340,6 +341,10 @@ export function gameReducer(state, action) {
     // ── 進入戰鬥 ─────────────────────────────────────────────────
     case ACTION.START_COMBAT: {
       const { enemyData } = action
+      const enemySkillCooldowns = {}
+      for (const [key, def] of Object.entries(enemyData.skillDefs ?? {})) {
+        if (def.initialCd) enemySkillCooldowns[key] = def.initialCd
+      }
       return {
         ...state,
         phase: 'combat',
@@ -353,6 +358,7 @@ export function gameReducer(state, action) {
           enemyAGI: enemyData.AGI,
           enemyDR: enemyData.DR ?? 0,
           enemySkillDefs: enemyData.skillDefs ?? {},
+          enemySkillCooldowns,
           log: [`遭遇 ${enemyData.name}！`],
           turnQueue: [],   // 首次 advanceToNextActor 時惰性建立
         },
