@@ -1,8 +1,11 @@
+import { useState, useEffect, useRef } from 'react'
 import { ACTION } from '../engine/GameEngine.js'
 import { pickEvents, applyNoIntervention, applyTrapEffect, getPrivateMomentDemon } from '../engine/ExplorationSystem.js'
 import { canAdvanceSubLayer, advanceToNextSubLayer, getLayerTierDesc, LOCATIONS_TO_UNLOCK_NEXT, SCENE_DRAW_COUNT } from '../engine/MapEngine.js'
 import { getLocationByTypeId } from '../engine/LocationDB.js'
 import { getRandomMonsterByTier } from '../engine/MonsterDB.js'
+import { RIFT_ANOMALY_SUBTYPES, CRISIS_RESCUE_SUBTYPES, INVESTIGATION, TRAP_SUBTYPES, drawItemFromPool } from '../engine/EventDB.js'
+import { generateInvestigationText } from '../engine/AIWriter.js'
 import StatsDisplay from './StatsDisplay.jsx'
 
 const LOCATION_ICON = {
@@ -37,9 +40,24 @@ const EVENT_PROGRESSION_OPTIONS = {
 function getEventOptions(eventId) {
   if (!eventId) return [{ label: '繼續', key: 'confirm' }]
   const [type] = eventId.split('.')
-  if (type === 'trap') return [{ label: '⚠ 繼續前進', key: 'confirm' }]
-  if (type === 'rescue') return [{ label: '⚠ 確認', key: 'confirm' }]
-  return EVENT_PROGRESSION_OPTIONS[type] ?? [{ label: '繼續', key: 'confirm' }]
+
+  // anomaly.* 子類型：從 EventDB 讀取真實選項
+  if (type === 'anomaly') {
+    const def = RIFT_ANOMALY_SUBTYPES[eventId]
+    if (def?.options) return def.options.map(o => ({ label: o.label, key: o.id }))
+  }
+
+  // rescue.* 子類型：介入 / 不介入
+  if (type === 'rescue') {
+    return [
+      { label: '⚔ 介入救援', key: 'intervene' },
+      { label: '💨 選擇不介入', key: 'no_intervene' },
+    ]
+  }
+
+  return EVENT_PROGRESSION_OPTIONS[eventId]
+    ?? EVENT_PROGRESSION_OPTIONS[type]
+    ?? [{ label: '繼續', key: 'confirm' }]
 }
 
 function getEventDescription(eventId, locData) {
@@ -50,20 +68,196 @@ function getEventDescription(eventId, locData) {
   if (type === 'item_discovery') return '找到了一些物資遺留！'
   if (type === 'npc_encounter') return '遭遇一名倖存者...'
   if (type === 'demon_private_moment') return '惡魔似乎有話想說...'
-  if (type === 'rift_anomaly') return '裂隙能量異常波動，需要謹慎應對。'
-  if (type === 'crisis_rescue') return '遭遇危機事件。'
-  if (type === 'rescue') return '發現需要援助的對象。'
-  if (type === 'trap') return `觸發了陷阱！已受到傷害。`
+  if (type === 'anomaly') {
+    const def = RIFT_ANOMALY_SUBTYPES[eventId]
+    return def ? `【${def.name}】${def.description}` : '裂隙能量異常波動，需要謹慎應對。'
+  }
+  if (type === 'rescue') {
+    const def = CRISIS_RESCUE_SUBTYPES[eventId]
+    return def ? `【${def.name}】${def.scenario}` : '遭遇危機事件，有人需要援助。'
+  }
+  if (type === 'trap') {
+    if (eventId === 'trap.ambush') return '遭遇伏擊！魔物從暗處突襲。'
+    const def = TRAP_SUBTYPES[eventId]
+    return def ? `【${def.name}】${def.description}　觸發了陷阱，選擇迴避方式。` : '觸發了陷阱！選擇迴避方式。'
+  }
   return '發生了未知事件。'
 }
 
-export default function WorldMapScreen({ state, dispatch, revealedDemons }) {
+/**
+ * D100 陷阱迴避骰點（roll-high；total >= dcAvoid→avoid, >= dcHalf→half, else→full）
+ * AGI/WIL: bonus = floor(stat/5)*3；insight: bonus = floor(insight/10)*5
+ */
+function rollTrapDice(statValue, statKey, dcAvoid, dcHalf) {
+  const roll = Math.floor(Math.random() * 100) + 1
+  const bonus = statKey === 'insight'
+    ? Math.floor((statValue ?? 0) / 10) * 5
+    : Math.floor((statValue ?? 0) / 5) * 3
+  const total = roll + bonus
+  const outcome = total >= dcAvoid ? 'avoid' : total >= dcHalf ? 'half' : 'full'
+  return { roll, bonus, total, outcome }
+}
+
+/**
+ * D100 調查骰點（insight 每 10 點 → +5；roll + bonus ≤ dc 視為成功）
+ */
+function rollInvDice(insight, dc) {
+  const roll  = Math.floor(Math.random() * 100) + 1
+  const bonus = Math.floor((insight ?? 0) / 10) * 5
+  return { roll, bonus, success: roll + bonus <= dc }
+}
+
+export default function WorldMapScreen({ state, dispatch, revealedDemons, aiSettings }) {
   const { exploration, demons, heroine } = state
 
   const totalSubLayers = { 1: 1, 2: 5, 3: 5, 4: 5, 5: 3 }[exploration.currentLayer] || 1
   const advanceInfo = canAdvanceSubLayer(exploration)
   const completedCount = (exploration.subLayerUsedScenes ?? []).length
   const isEventMode = exploration.activeScene !== null
+
+  // ── 調查子流程本地狀態 ────────────────────────────────────────
+  // invState: null | { phase: 'initial' }
+  //         | { phase: 'deep_dive', intro: string, objects: string[], loading: boolean }
+  //         | { phase: 'result', text: string, success: boolean, trapId: string|null, itemFound: boolean }
+  const [invState, setInvState] = useState(null)
+  const aiCallRef = useRef(false)
+
+  // ── 陷阱迴避子流程本地狀態 ────────────────────────────────────
+  // trapState: null | { phase: 'choosing', trapId }
+  //          | { phase: 'result', trapId, outcome, roll, bonus, total, statLabel, option }
+  const [trapState, setTrapState] = useState(null)
+
+  // 進入/離開調查事件時重置子流程
+  const activeEventId = exploration.activeEventId
+  useEffect(() => {
+    if (activeEventId === 'investigation' && invState === null) {
+      setInvState({ phase: 'initial' })
+    }
+    if (activeEventId !== 'investigation' && invState !== null) {
+      setInvState(null)
+    }
+    // 陷阱迴避子流程生命週期
+    const isTrapEvent = activeEventId?.startsWith('trap.') && activeEventId !== 'trap.ambush'
+    if (isTrapEvent && trapState === null) setTrapState({ phase: 'choosing', trapId: activeEventId })
+    if (!isTrapEvent && trapState !== null) setTrapState(null)
+  }, [activeEventId]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── 調查選項處理（thorough / quick / abandon）────────────────
+  const handleInvestigationOption = async (optionKey) => {
+    const locData = getLocationByTypeId(exploration.activeScene)
+    const fallback = INVESTIGATION.fallbackTexts[exploration.activeScene] ?? {}
+
+    if (optionKey === 'abandon') {
+      const locName = locData?.name ?? '此地'
+      setInvState({
+        phase: 'result',
+        text: `妳無視了${locName}內的異樣，直接離開了。`,
+        success: false,
+        trapId: null,
+        itemFound: false,
+      })
+      return
+    }
+
+    if (optionKey === 'quick') {
+      const { success } = rollInvDice(heroine.insight, INVESTIGATION.quick.dc)
+      const mode = success ? 'quick_success' : 'quick_failure'
+      let narrative = null
+      if (aiSettings?.enabled && aiSettings?.apiKey) {
+        const result = await generateInvestigationText(mode, locData, state, aiSettings.apiKey, aiSettings.modelId)
+        narrative = result?.narrative ?? null
+      }
+      if (!narrative) {
+        narrative = success
+          ? (fallback.quick_success ?? '快速掃視後，確認了幾個值得注意的地方。')
+          : (fallback.quick_failure ?? '快速瀏覽一圈，什麼都沒有發現。')
+      }
+      const itemFound = success && Math.random() < INVESTIGATION.quick.itemDiscoveryChance
+      setInvState({ phase: 'result', text: narrative, success, trapId: null, itemFound })
+      return
+    }
+
+    if (optionKey === 'thorough') {
+      if (aiCallRef.current) return
+      aiCallRef.current = true
+      setInvState({ phase: 'deep_dive', intro: '', objects: [], loading: true })
+
+      let intro   = fallback.thorough_intro   ?? '妳開始仔細搜查這個地點。'
+      let objects = fallback.thorough_objects ?? ['物件 A', '物件 B', '物件 C']
+
+      if (aiSettings?.enabled && aiSettings?.apiKey) {
+        const result = await generateInvestigationText('thorough', locData, state, aiSettings.apiKey, aiSettings.modelId)
+        if (result?.intro) intro = result.intro
+        if (result?.objects?.length >= 3) objects = result.objects.slice(0, 3)
+      }
+
+      aiCallRef.current = false
+      setInvState({ phase: 'deep_dive', intro, objects, loading: false })
+    }
+  }
+
+  // ── 深入調查子物件 ─────────────────────────────────────────
+  const handleDeepDiveObject = async (objectName) => {
+    const locData = getLocationByTypeId(exploration.activeScene)
+    const fallback = INVESTIGATION.fallbackTexts[exploration.activeScene] ?? {}
+    const { success } = rollInvDice(heroine.insight, INVESTIGATION.thorough.dc)
+    const mode = success ? 'deep_success' : 'deep_failure'
+
+    let narrative = null
+    if (aiSettings?.enabled && aiSettings?.apiKey) {
+      const result = await generateInvestigationText(mode, locData, state, aiSettings.apiKey, aiSettings.modelId, { objectName })
+      narrative = result?.narrative ?? null
+    }
+    if (!narrative) {
+      narrative = success
+        ? (fallback.deep_success ?? '仔細調查後，找到了有用的線索。')
+        : (fallback.deep_failure ?? '調查無果，什麼都沒有發現。')
+    }
+
+    // 陷阱觸發（仔細搜查成功時 15% 機率）
+    let trapId = null
+    if (success && Math.random() < INVESTIGATION.thorough.trapChance) {
+      const trapKeys = Object.keys(TRAP_SUBTYPES)
+      trapId = trapKeys[Math.floor(Math.random() * trapKeys.length)]
+      const updates = applyTrapEffect(state, trapId, 'half')
+      if (updates?.heroine) {
+        dispatch({ type: ACTION.COMBAT_APPLY_LOG, heroineUpdate: updates.heroine, combatUpdate: {} })
+      }
+    }
+
+    const itemFound = success && Math.random() < INVESTIGATION.thorough.itemDiscoveryChance
+    setInvState({ phase: 'result', text: narrative, success, trapId, itemFound })
+  }
+
+  // ── 調查結果確認（加入物品 → 關閉事件）────────────────────
+  const handleInvestigationConfirm = () => {
+    if (invState?.itemFound) {
+      const drawn = drawItemFromPool(exploration.currentLayer)
+      if (drawn) {
+        dispatch({ type: ACTION.ADD_ITEM, itemId: drawn.id, source: drawn.source, quantity: 1 })
+      }
+    }
+    dispatch({ type: ACTION.CONFIRM_SCENE_EVENT })
+    setInvState(null)
+  }
+
+  // ── 陷阱迴避選項處理 ──────────────────────────────────────────
+  const handleTrapAvoidOption = (option) => {
+    const trapId = trapState?.trapId
+    if (!trapId) return
+    const statValue = heroine[option.stat] ?? 0
+    const { roll, bonus, total, outcome } = rollTrapDice(statValue, option.stat, option.dcAvoid, option.dcHalf)
+    if (outcome !== 'avoid') {
+      const updates = applyTrapEffect(state, trapId, outcome === 'half' ? 'half' : 'full')
+      if (updates?.heroine) dispatch({ type: ACTION.COMBAT_APPLY_LOG, heroineUpdate: updates.heroine, combatUpdate: {} })
+    }
+    setTrapState({ phase: 'result', trapId, outcome, roll, bonus, total, statLabel: option.statLabel, option })
+  }
+
+  const handleTrapConfirm = () => {
+    setTrapState(null)
+    dispatch({ type: ACTION.CONFIRM_SCENE_EVENT })
+  }
 
   const handleSceneSelect = async (typeId) => {
     if ((exploration.subLayerUsedScenes ?? []).includes(typeId)) return
@@ -88,14 +282,29 @@ export default function WorldMapScreen({ state, dispatch, revealedDemons }) {
       }
     }
 
+    // 裂隙異變：隨機選一個子類型，以子類型 ID 進入事件模式
+    if (eventId === 'rift_anomaly') {
+      const subtypeIds = Object.keys(RIFT_ANOMALY_SUBTYPES)
+      const pickedSubtype = subtypeIds[Math.floor(Math.random() * subtypeIds.length)]
+      dispatch({ type: ACTION.SELECT_SCENE, typeId, eventId: pickedSubtype })
+      return
+    }
+
     // 立即效果事件（在顯示事件面板前套用）
     if (eventId) {
       const [evType] = eventId.split('.')
       if (evType === 'trap') {
-        const updates = applyTrapEffect(state, eventId, 'full')
-        if (updates.heroine) {
-          dispatch({ type: ACTION.COMBAT_APPLY_LOG, heroineUpdate: updates.heroine, combatUpdate: {} })
+        if (eventId === 'trap.ambush') {
+          const tier = exploration.currentLayer >= 4 ? (Math.random() < 0.5 ? 'B' : 'C')
+                     : exploration.currentLayer === 3 ? 'B' : 'A'
+          const monster = getRandomMonsterByTier(tier)
+          if (monster) {
+            dispatch({ type: ACTION.SELECT_SCENE, typeId, eventId })
+            dispatch({ type: ACTION.START_COMBAT, enemyData: monster })
+          }
+          return
         }
+        // 非伏擊陷阱：不立即套用效果，交由 trapState 子流程處理
       } else if (evType === 'rest_recovery') {
         dispatch({ type: ACTION.USE_REST_IN_SUBLAYER })
         dispatch({ type: ACTION.REST })
@@ -105,11 +314,6 @@ export default function WorldMapScreen({ state, dispatch, revealedDemons }) {
           dispatch({ type: ACTION.MARK_PRIVATE_MOMENT, demonId, key: `${demonId}_${typeId}` })
           dispatch({ type: ACTION.UPDATE_DEMON_RELATION, demonId, trustDelta: 2, affectionDelta: 3 })
         }
-      } else if (evType === 'crisis_rescue') {
-        const updates = applyNoIntervention(state)
-        if (updates.heroine) {
-          dispatch({ type: ACTION.COMBAT_APPLY_LOG, heroineUpdate: updates.heroine, combatUpdate: {} })
-        }
       }
     }
 
@@ -117,7 +321,49 @@ export default function WorldMapScreen({ state, dispatch, revealedDemons }) {
     dispatch({ type: ACTION.SELECT_SCENE, typeId, eventId })
   }
 
-  const handleEventOption = () => {
+  const handleEventOption = (optionKey) => {
+    // 調查事件由獨立子流程處理
+    if (activeEventId === 'investigation') {
+      handleInvestigationOption(optionKey)
+      return
+    }
+
+    if (activeEventId) {
+      const [type] = activeEventId.split('.')
+
+      // rescue.*：介入 → 觸發戰鬥；不介入 → independence +1
+      if (type === 'rescue') {
+        if (optionKey === 'intervene') {
+          const tier = exploration.currentLayer <= 2 ? 'A' : exploration.currentLayer <= 4 ? 'B' : 'C'
+          const monster = getRandomMonsterByTier(tier)
+          if (monster) {
+            dispatch({ type: ACTION.SELECT_SCENE, typeId: exploration.activeScene, eventId: activeEventId })
+            dispatch({ type: ACTION.START_COMBAT, enemyData: monster })
+            return
+          }
+        } else if (optionKey === 'no_intervene') {
+          const updates = applyNoIntervention(state)
+          if (updates.heroine) {
+            dispatch({ type: ACTION.COMBAT_APPLY_LOG, heroineUpdate: updates.heroine, combatUpdate: {} })
+          }
+        }
+      }
+
+      // anomaly.*：套用選項獎勵（DES、independence）
+      if (type === 'anomaly') {
+        const def = RIFT_ANOMALY_SUBTYPES[activeEventId]
+        const chosenOpt = def?.options?.find(o => o.id === optionKey)
+        if (chosenOpt?.rewards) {
+          const heroineUpdate = { ...state.heroine }
+          if (chosenOpt.rewards.DES !== undefined)
+            heroineUpdate.DES = Math.max(0, Math.min(200, (heroineUpdate.DES ?? 0) + chosenOpt.rewards.DES))
+          if (chosenOpt.rewards.independence !== undefined)
+            heroineUpdate.independence = Math.min(100, (heroineUpdate.independence ?? 30) + chosenOpt.rewards.independence)
+          dispatch({ type: ACTION.COMBAT_APPLY_LOG, heroineUpdate, combatUpdate: {} })
+        }
+      }
+    }
+
     dispatch({ type: ACTION.CONFIRM_SCENE_EVENT })
   }
 
@@ -129,7 +375,6 @@ export default function WorldMapScreen({ state, dispatch, revealedDemons }) {
 
   // 事件面板資料
   const activeLocData = isEventMode ? getLocationByTypeId(exploration.activeScene) : null
-  const activeEventId = exploration.activeEventId
 
   return (
     <div className="relative w-screen h-screen overflow-hidden bg-game-dark text-white flex flex-col">
@@ -199,8 +444,174 @@ export default function WorldMapScreen({ state, dispatch, revealedDemons }) {
       <div className="px-6 pb-6 z-10">
         <div className="game-panel p-5 max-w-4xl mx-auto animate-slide-up">
 
-          {isEventMode ? (
-            /* Mode B：事件進程選項 */
+          {isEventMode && activeEventId === 'investigation' ? (
+            /* ── Mode B-INV：調查事件三階段子流程 ── */
+            <div className="flex flex-col gap-3">
+
+              {/* 階段1：選擇調查方式 */}
+              {invState?.phase === 'initial' && (
+                <>
+                  <p className="text-gray-400 text-sm mb-1 italic">
+                    {activeLocData?.investigationHint ?? '進行調查...'}
+                  </p>
+                  {[
+                    { key: 'thorough', label: '🔎 仔細搜查', desc: `深入分析，揭露更多細節（DC ${INVESTIGATION.thorough.dc}，較易）` },
+                    { key: 'quick',    label: '👀 快速掃視', desc: `快速確認，效率優先（DC ${INVESTIGATION.quick.dc}，較難）` },
+                    { key: 'abandon',  label: '↩ 放棄',     desc: '無視異樣，直接離開' },
+                  ].map(opt => (
+                    <button
+                      key={opt.key}
+                      onClick={() => handleInvestigationOption(opt.key)}
+                      className="choice-btn group text-left"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="shrink-0 text-xs px-2 py-0.5 rounded border border-game-border text-game-accent group-hover:bg-purple-900/40 mt-0.5">
+                          ▶ 選擇
+                        </span>
+                        <div>
+                          <span className="text-gray-100">{opt.label}</span>
+                          <span className="ml-2 text-xs text-gray-500">— {opt.desc}</span>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                  <p className="text-gray-600 text-xs mt-1">
+                    洞察力 {heroine.insight} → 骰點加成 +{Math.floor((heroine.insight ?? 0) / 10) * 5}
+                  </p>
+                </>
+              )}
+
+              {/* 階段2：仔細搜查深入（顯示 3 個子物件） */}
+              {invState?.phase === 'deep_dive' && (
+                <>
+                  {invState.loading ? (
+                    <p className="text-gray-400 text-sm italic animate-pulse">正在感知周遭環境...</p>
+                  ) : (
+                    <>
+                      <p className="text-gray-300 text-sm leading-relaxed mb-2">{invState.intro}</p>
+                      <p className="text-gray-500 text-xs mb-2">選擇一個調查目標：</p>
+                      {invState.objects.map((obj, i) => (
+                        <button
+                          key={i}
+                          onClick={() => handleDeepDiveObject(obj)}
+                          className="choice-btn group text-left"
+                        >
+                          <div className="flex items-center gap-3">
+                            <span className="shrink-0 text-xs px-2 py-0.5 rounded border border-game-border text-game-accent group-hover:bg-purple-900/40 mt-0.5">
+                              ▶ 調查
+                            </span>
+                            <span className="text-gray-100">{obj}</span>
+                          </div>
+                        </button>
+                      ))}
+                    </>
+                  )}
+                </>
+              )}
+
+              {/* 階段3：調查結果 */}
+              {invState?.phase === 'result' && (
+                <>
+                  <p className="text-gray-300 text-sm leading-relaxed mb-2">{invState.text}</p>
+                  {invState.trapId && (
+                    <p className="text-red-400 text-xs mb-2">
+                      ⚠ 觸發了陷阱：{TRAP_SUBTYPES[invState.trapId]?.name ?? '未知陷阱'}（已套用半傷效果）
+                    </p>
+                  )}
+                  {invState.itemFound && (
+                    <p className="text-game-accent text-xs mb-2">
+                      ✦ 妳在調查中發現了物資！
+                    </p>
+                  )}
+                  <button
+                    onClick={handleInvestigationConfirm}
+                    className="choice-btn group text-left"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="shrink-0 text-xs px-2 py-0.5 rounded border border-game-border text-game-accent group-hover:bg-purple-900/40 mt-0.5">
+                        ▶ 確認
+                      </span>
+                      <span className="text-gray-100">繼續前進</span>
+                    </div>
+                  </button>
+                </>
+              )}
+
+            </div>
+          ) : isEventMode && activeEventId?.startsWith('trap.') && activeEventId !== 'trap.ambush' && trapState ? (
+            /* ── Mode B-TRAP：陷阱迴避子流程 ── */
+            <div className="flex flex-col gap-3">
+
+              {/* 階段1：選擇迴避方式 */}
+              {trapState.phase === 'choosing' && (() => {
+                const trapDef = TRAP_SUBTYPES[trapState.trapId]
+                const opts = trapDef?.avoidOptions ?? []
+                return (
+                  <>
+                    <p className="text-red-400 text-sm mb-1">
+                      ⚠ {trapDef?.name ?? '陷阱'}發動！選擇迴避方式：
+                    </p>
+                    {opts.map(opt => {
+                      const statVal = heroine[opt.stat] ?? 0
+                      const bonusDisplay = opt.stat === 'insight'
+                        ? Math.floor(statVal / 10) * 5
+                        : Math.floor(statVal / 5) * 3
+                      return (
+                        <button
+                          key={opt.id}
+                          onClick={() => handleTrapAvoidOption(opt)}
+                          className="choice-btn group text-left"
+                        >
+                          <div className="flex items-center gap-3">
+                            <span className="shrink-0 text-xs px-2 py-0.5 rounded border border-game-border text-game-accent group-hover:bg-purple-900/40 mt-0.5">
+                              ▶ 選擇
+                            </span>
+                            <div>
+                              <span className="text-gray-100">{opt.label}</span>
+                              <span className="ml-2 text-xs text-gray-500">
+                                — {opt.statLabel} {statVal}（+{bonusDisplay}）　完全迴避DC：{opt.dcAvoid}　半規避DC：{opt.dcHalf}
+                              </span>
+                            </div>
+                          </div>
+                        </button>
+                      )
+                    })}
+                  </>
+                )
+              })()}
+
+              {/* 階段2：迴避結果 */}
+              {trapState.phase === 'result' && (
+                <>
+                  <p className="text-gray-400 text-xs mb-1">
+                    骰點：D100={trapState.roll} + {trapState.statLabel}加成={trapState.bonus} → 合計 {trapState.total}
+                  </p>
+                  {trapState.outcome === 'avoid' && (
+                    <p className="text-green-400 text-sm mb-2">✦ 完全迴避！妳成功躲開了陷阱，毫髮無傷。</p>
+                  )}
+                  {trapState.outcome === 'half' && (
+                    <p className="text-yellow-400 text-sm mb-2">◑ 部分規避。妳在最後一刻反應過來，減輕了部分傷害。</p>
+                  )}
+                  {trapState.outcome === 'full' && (
+                    <p className="text-red-400 text-sm mb-2">✕ 完全觸發！妳無法迴避，承受了完整的傷害。</p>
+                  )}
+                  <button
+                    onClick={handleTrapConfirm}
+                    className="choice-btn group text-left"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="shrink-0 text-xs px-2 py-0.5 rounded border border-game-border text-game-accent group-hover:bg-purple-900/40 mt-0.5">
+                        ▶ 確認
+                      </span>
+                      <span className="text-gray-100">繼續前進</span>
+                    </div>
+                  </button>
+                </>
+              )}
+
+            </div>
+          ) : isEventMode ? (
+            /* Mode B：其他事件進程選項 */
             <>
               <p className="text-gray-400 text-sm mb-3 italic">
                 在 {activeLocData?.name ?? exploration.activeScene} 中，你要怎麼做？
@@ -209,7 +620,7 @@ export default function WorldMapScreen({ state, dispatch, revealedDemons }) {
                 {getEventOptions(activeEventId).map((opt) => (
                   <button
                     key={opt.key}
-                    onClick={handleEventOption}
+                    onClick={() => handleEventOption(opt.key)}
                     className="choice-btn group text-left"
                   >
                     <div className="flex items-center gap-3">

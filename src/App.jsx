@@ -1295,7 +1295,7 @@ export default function App() {
               🎒 背包
             </button>
           </div>
-          <WorldMapScreen state={state} dispatch={dispatch} revealedDemons={revealedDemons} />
+          <WorldMapScreen state={state} dispatch={dispatch} revealedDemons={revealedDemons} aiSettings={aiSettings} />
         </>
       )}
 

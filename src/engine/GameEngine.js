@@ -188,6 +188,9 @@ export const ACTION = {
   SELECT_SCENE:            'SELECT_SCENE',            // 玩家從場景池選擇一個場景
   CONFIRM_SCENE_EVENT:     'CONFIRM_SCENE_EVENT',     // 完成事件進程，返回場景選擇
 
+  // ── 物品系統 ──
+  ADD_ITEM: 'ADD_ITEM', // 將物品加入 heroine.items（source, itemId, quantity?）
+
   // ── 調試工具 ──
   DEBUG_MODIFY_STATE: 'DEBUG_MODIFY_STATE', // 深度修改或覆蓋 state
 }
@@ -743,6 +746,18 @@ export function gameReducer(state, action) {
       }
 
       return { ...state, heroine, demons, skills: { ...state.skills, inventory: inv } }
+    }
+
+    // ── 新增物品至背包 ────────────────────────────────────────────
+    case ACTION.ADD_ITEM: {
+      const { itemId, source, quantity = 1 } = action
+      const existing = (state.heroine.items ?? []).find(i => i.id === itemId)
+      const newItems = existing
+        ? state.heroine.items.map(i =>
+            i.id === itemId ? { ...i, quantity: (i.quantity ?? 1) + quantity } : i
+          )
+        : [...(state.heroine.items ?? []), { id: itemId, source, quantity }]
+      return { ...state, heroine: { ...state.heroine, items: newItems } }
     }
 
     // ── 回主選單 ─────────────────────────────────────────────────

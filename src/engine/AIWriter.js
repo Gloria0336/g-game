@@ -450,6 +450,152 @@ ${awakeningType}（${AWAKENING_BONUS_DESC[awakeningType] ?? awakeningType}）
   }
 }
 
+// ─── 調查事件文本生成 ───────────────────────────────────────
+
+/**
+ * 生成調查事件各階段文本
+ *
+ * @param {'thorough'|'quick_success'|'quick_failure'|'deep_success'|'deep_failure'} mode
+ * @param {Object} locationData   - LocationDB 地點物件（含 name, description, aiPromptHint）
+ * @param {Object} gameState      - 完整 GameState
+ * @param {string} apiKey         - OpenRouter API Key
+ * @param {string} modelId        - 模型 ID
+ * @param {Object} [extra]        - 額外參數
+ * @param {string} [extra.objectName] - deep_success/deep_failure 時的子物件名稱
+ * @returns {Promise<
+ *   { intro: string, objects: string[] } |
+ *   { narrative: string } |
+ *   null
+ * >}
+ */
+export async function generateInvestigationText(mode, locationData, gameState, apiKey, modelId, extra = {}) {
+  const { heroine } = gameState
+  const locName = locationData?.name ?? '未知地點'
+  const locHint = locationData?.aiPromptHint ?? locationData?.description ?? ''
+  const desStr = getDESTone(heroine?.DES ?? 0)
+
+  let prompt
+
+  if (mode === 'thorough') {
+    prompt = `你是乙女視覺小說《心鎖》的日系劇本作家。
+
+## 任務
+女主角正在對「${locName}」進行仔細搜查。
+生成：
+1. 一段30–60字的場景導入旁白（intro）
+2. 該地點內3個可以進一步調查的具體子物件名稱（objects，每個5–12字的名詞短語）
+
+## 地點氛圍
+${locHint}
+
+## 寫作規則
+1. 旁白不加引號；物件名稱為具體名詞短語（如「牆角的鏽蝕箱子」、「地面的奇異紋路」）
+2. 語氣模式：${desStr}
+3. 只輸出 JSON，不加任何說明或 markdown
+
+## 輸出格式
+{"intro":"旁白文字","objects":["物件A","物件B","物件C"]}`
+  } else if (mode === 'quick_success') {
+    prompt = `你是乙女視覺小說《心鎖》的日系劇本作家。
+
+## 任務
+女主角對「${locName}」進行快速掃視，結果成功發現線索。
+生成一段30–50字的結果旁白。
+
+## 地點氛圍
+${locHint}
+
+## 寫作規則
+1. 純旁白，不加引號
+2. 語氣：輕巧迅速，帶一點收穫感
+3. 語氣模式：${desStr}
+4. 只輸出 JSON，不加說明
+
+## 輸出格式
+{"narrative":"旁白文字"}`
+  } else if (mode === 'quick_failure') {
+    prompt = `你是乙女視覺小說《心鎖》的日系劇本作家。
+
+## 任務
+女主角對「${locName}」進行快速掃視，結果什麼都沒發現。
+生成一段25–45字的結果旁白。
+
+## 地點氛圍
+${locHint}
+
+## 寫作規則
+1. 純旁白，不加引號
+2. 語氣：略帶落空感，但無懲罰
+3. 語氣模式：${desStr}
+4. 只輸出 JSON，不加說明
+
+## 輸出格式
+{"narrative":"旁白文字"}`
+  } else if (mode === 'deep_success') {
+    const objName = extra.objectName ?? '目標物件'
+    prompt = `你是乙女視覺小說《心鎖》的日系劇本作家。
+
+## 任務
+女主角仔細調查了「${locName}」中的「${objName}」，調查成功，有所發現。
+生成一段35–60字的調查結果旁白。
+
+## 地點氛圍
+${locHint}
+
+## 寫作規則
+1. 純旁白，不加引號
+2. 語氣：帶發現感與成就感
+3. 語氣模式：${desStr}
+4. 只輸出 JSON，不加說明
+
+## 輸出格式
+{"narrative":"旁白文字"}`
+  } else if (mode === 'deep_failure') {
+    const objName = extra.objectName ?? '目標物件'
+    prompt = `你是乙女視覺小說《心鎖》的日系劇本作家。
+
+## 任務
+女主角仔細調查了「${locName}」中的「${objName}」，但調查失敗，什麼都沒找到。
+生成一段30–50字的調查結果旁白。
+
+## 地點氛圍
+${locHint}
+
+## 寫作規則
+1. 純旁白，不加引號
+2. 語氣：無懲罰，帶輕微挫折感或謎團感
+3. 語氣模式：${desStr}
+4. 只輸出 JSON，不加說明
+
+## 輸出格式
+{"narrative":"旁白文字"}`
+  } else {
+    return null
+  }
+
+  try {
+    const raw = await callOpenRouter(apiKey, modelId, prompt)
+    const cleaned = raw
+      .replace(/^```(?:json)?\s*/m, '')
+      .replace(/\s*```$/m, '')
+      .trim()
+    const parsed = JSON.parse(cleaned)
+
+    if (mode === 'thorough') {
+      if (typeof parsed.intro !== 'string' || !Array.isArray(parsed.objects) || parsed.objects.length < 3) {
+        throw new Error('thorough 回傳格式錯誤')
+      }
+      return { intro: parsed.intro, objects: parsed.objects.slice(0, 3) }
+    } else {
+      if (typeof parsed.narrative !== 'string') throw new Error('narrative 格式錯誤')
+      return { narrative: parsed.narrative }
+    }
+  } catch (err) {
+    console.warn('[AIWriter] generateInvestigationText 失敗:', err?.message ?? err)
+    return null
+  }
+}
+
 // ─── API Key 驗證 ──────────────────────────────────────────
 
 /**
