@@ -9,14 +9,8 @@ import { getAccessoryData } from './engine/AccessoriesDB.js'
 import { getItemData } from './engine/ItemDB.js'
 import { gameReducer, INITIAL_STATE, ACTION } from './engine/GameEngine.js'
 import { generateSubLayerLocations } from './engine/MapEngine.js'
-import {
-  fillSceneText,
-  generateCombatNarrative,
-  generateDemonDialogue,
-  generateAwakeningScene,
-  generateEncounterNarrative,
-  generateMidCombatText,
-} from './engine/AIWriter.js'
+import { useAIR18Settings } from './hooks/useAIR18Settings.js'
+import { useActiveAIWriter } from './hooks/useActiveAIWriter.js'
 import { judgeAwakeningType } from './engine/StatsManager.js'
 import {
   executeBasicAttack,
@@ -299,6 +293,8 @@ export default function App() {
   const [state, dispatch] = useReducer(gameReducer, INITIAL_STATE)
   const { loadScene, loading: sceneLoading } = useSceneLoader()
   const { settings: aiSettings, update: updateAISettings } = useAISettings()
+  const { settings: r18Settings, update: updateR18Settings } = useAIR18Settings()
+  const { apiKey, modelId: activeModelId, writer, enabled: aiEnabled, r18Active } = useActiveAIWriter(aiSettings, r18Settings)
 
   const [aiStatus, setAIStatus] = useState('idle')
   const [aiErrorMsg, setAIErrorMsg] = useState('')
@@ -324,7 +320,7 @@ export default function App() {
 
   // stateRef（避免 stale closure）
   const stateRef = useRef(state)
-  const aiSettingsRef = useRef(aiSettings)
+  const aiSettingsRef = useRef({ apiKey, modelId: activeModelId, writer, enabled: aiEnabled })
 
   // 回合推進 ref（避免 goToScene TDZ 問題）
   const handleEnemyTurnRef = useRef(null)
@@ -391,9 +387,9 @@ export default function App() {
   // combat_end → AI 戰鬥敘事生成
   useEffect(() => {
     if (state.phase !== 'combat_end') return
-    if (!aiSettings.enabled || !aiSettings.apiKey) return
+    if (!aiEnabled) return
     if (state.combat.pendingNarrative != null) return  // 已生成過
-    generateCombatNarrative(state.combat.result, stateRef.current, aiSettings.apiKey, aiSettings.modelId)
+    writer.generateCombatNarrative(state.combat.result, stateRef.current, apiKey, activeModelId)
       .then(narrative => {
         if (narrative) dispatch({ type: ACTION.SET_COMBAT_NARRATIVE, narrative })
       })
@@ -403,7 +399,7 @@ export default function App() {
   // combat → 戰中動態文本（HP / DES 閾值監控）
   useEffect(() => {
     if (state.phase !== 'combat') return
-    if (!aiSettings.enabled || !aiSettings.apiKey) return
+    if (!aiEnabled) return
 
     const { heroine, combat } = state
     const enemyData = getMonsterData(combat.enemyId)
@@ -414,35 +410,35 @@ export default function App() {
 
     if (enemyHpPct <= 0.5 && !enemyHpThreshold50Triggered.current) {
       enemyHpThreshold50Triggered.current = true
-      generateMidCombatText('enemy_hp50', enemyData, stateRef.current, {}, aiSettings.apiKey, aiSettings.modelId)
+      writer.generateMidCombatText('enemy_hp50', enemyData, stateRef.current, {}, apiKey, activeModelId)
         .then(text => {
           if (text) dispatch({ type: ACTION.COMBAT_APPLY_LOG, combatUpdate: { log: [`【${text}】`] } })
         })
     }
     if (enemyHpPct <= 0.3 && !enemyHpThreshold30Triggered.current) {
       enemyHpThreshold30Triggered.current = true
-      generateMidCombatText('enemy_hp30', enemyData, stateRef.current, {}, aiSettings.apiKey, aiSettings.modelId)
+      writer.generateMidCombatText('enemy_hp30', enemyData, stateRef.current, {}, apiKey, activeModelId)
         .then(text => {
           if (text) dispatch({ type: ACTION.COMBAT_APPLY_LOG, combatUpdate: { log: [`【${text}】`] } })
         })
     }
     if (playerHpPct <= 0.5 && !playerHpThreshold50Triggered.current) {
       playerHpThreshold50Triggered.current = true
-      generateMidCombatText('player_hp50', enemyData, stateRef.current, {}, aiSettings.apiKey, aiSettings.modelId)
+      writer.generateMidCombatText('player_hp50', enemyData, stateRef.current, {}, apiKey, activeModelId)
         .then(text => {
           if (text) dispatch({ type: ACTION.COMBAT_APPLY_LOG, combatUpdate: { log: [`【${text}】`] } })
         })
     }
     if (playerHpPct <= 0.3 && !playerHpThreshold30Triggered.current) {
       playerHpThreshold30Triggered.current = true
-      generateMidCombatText('player_hp30', enemyData, stateRef.current, {}, aiSettings.apiKey, aiSettings.modelId)
+      writer.generateMidCombatText('player_hp30', enemyData, stateRef.current, {}, apiKey, activeModelId)
         .then(text => {
           if (text) dispatch({ type: ACTION.COMBAT_APPLY_LOG, combatUpdate: { log: [`【${text}】`] } })
         })
     }
     if (heroine.DES >= 80 && !desThreshold80Triggered.current) {
       desThreshold80Triggered.current = true
-      generateMidCombatText('des80', enemyData, stateRef.current, {}, aiSettings.apiKey, aiSettings.modelId)
+      writer.generateMidCombatText('des80', enemyData, stateRef.current, {}, apiKey, activeModelId)
         .then(text => {
           if (text) dispatch({ type: ACTION.COMBAT_APPLY_LOG, combatUpdate: { log: [`【${text}】`] } })
         })
@@ -453,11 +449,11 @@ export default function App() {
   // demon_dialogue → AI 惡魔對話生成
   useEffect(() => {
     if (state.phase !== 'demon_dialogue') return
-    if (!aiSettings.enabled || !aiSettings.apiKey) return
+    if (!aiEnabled) return
     if (state.combat.pendingDemonDialogue != null) return  // 已生成過
     const demonId = state.combat.activeDemonDialogueId
     if (!demonId) return
-    generateDemonDialogue(demonId, state.combat.result, stateRef.current, aiSettings.apiKey, aiSettings.modelId)
+    writer.generateDemonDialogue(demonId, state.combat.result, stateRef.current, apiKey, activeModelId)
       .then(dialogue => {
         if (dialogue) dispatch({ type: ACTION.SET_DEMON_DIALOGUE, dialogue, demonId })
       })
@@ -472,10 +468,10 @@ export default function App() {
 
     let sceneData = skeleton
 
-    if (aiSettings.enabled && aiSettings.apiKey && skeleton.type === 'narrative') {
+    if (aiEnabled && skeleton.type === 'narrative') {
       setAIStatus('generating')
       try {
-        sceneData = await fillSceneText(skeleton, stateRef.current, aiSettings.apiKey, aiSettings.modelId)
+        sceneData = await writer.fillSceneText(skeleton, stateRef.current, apiKey, activeModelId)
         setAIStatus('idle')
       } catch (err) {
         console.error('[App] AI 生成失敗，回退至靜態文本', err)
@@ -499,8 +495,8 @@ export default function App() {
         setIsProcessing(true)
 
         // 戰前遭遇描述（非阻塞，在 1200ms 視窗內生成）
-        if (aiSettings.enabled && aiSettings.apiKey) {
-          generateEncounterNarrative(enemyData, stateRef.current, aiSettings.apiKey, aiSettings.modelId)
+        if (aiEnabled) {
+          writer.generateEncounterNarrative(enemyData, stateRef.current, apiKey, activeModelId)
             .then(narrative => {
               if (narrative) {
                 dispatch({
@@ -523,11 +519,11 @@ export default function App() {
     }
 
     dispatch({ type: ACTION.LOAD_SCENE, sceneData })
-  }, [loadScene, aiSettings])
+  }, [loadScene, apiKey, activeModelId, writer, aiEnabled])
 
   useEffect(() => {
     stateRef.current = state
-    aiSettingsRef.current = aiSettings
+    aiSettingsRef.current = { apiKey, modelId: activeModelId, writer, enabled: aiEnabled }
     // [Debug] 曝露給 Console
     if (process.env.NODE_ENV === 'development') {
       window.game = {
@@ -800,7 +796,7 @@ export default function App() {
       if (ai.enabled && ai.apiKey) {
         const enemyData = getMonsterData(combat.enemyId)
         if (enemyData) {
-          generateMidCombatText(
+          ai.writer.generateMidCombatText(
             'special_skill', enemyData, stateRef.current,
             { skillName: result.specialSkillUsed },
             ai.apiKey, ai.modelId
@@ -1096,8 +1092,8 @@ export default function App() {
       setPendingAwakeningScene(null)
       setAwakeningSceneIdx(0)
       // 非同步生成覺醒台詞（不阻塞面板顯示）
-      if (aiSettings.enabled && aiSettings.apiKey) {
-        generateAwakeningScene(awakeningType, cur, aiSettings.apiKey, aiSettings.modelId)
+      if (aiEnabled) {
+        writer.generateAwakeningScene(awakeningType, cur, apiKey, activeModelId)
           .then(scene => { if (scene) setPendingAwakeningScene(scene) })
       }
       setShowAwakeningResult(true)
@@ -1138,7 +1134,7 @@ export default function App() {
         dispatch({ type: ACTION.ENTER_MAP })
       }
     }
-  }, [goToScene, aiSettings])
+  }, [goToScene, apiKey, activeModelId, writer, aiEnabled])
 
   // ── 死亡回朔：繼續 ──────────────────────────────────────
 
@@ -1232,7 +1228,7 @@ export default function App() {
           onStart={handleStart}
           onLoadSave={() => setShowSaveLoad(true)}
           onAISettings={() => setShowAISettings(true)}
-          aiEnabled={aiSettings.enabled}
+          aiEnabled={aiEnabled}
         />
       )}
 
@@ -1263,11 +1259,11 @@ export default function App() {
               ☰ 選單
             </button>
             <button
-              className={`px-3 py-1 game-panel text-xs rounded transition-colors ${aiSettings.enabled ? 'text-purple-400 hover:text-purple-300' : 'text-gray-600 hover:text-gray-400'
+              className={`px-3 py-1 game-panel text-xs rounded transition-colors ${aiEnabled ? 'text-purple-400 hover:text-purple-300' : 'text-gray-600 hover:text-gray-400'
                 }`}
               onClick={() => setShowAISettings(true)}
             >
-              ✦ AI{aiSettings.enabled ? ' ●' : ''}
+              ✦ AI{aiEnabled ? ' ●' : ''}
             </button>
             <button
               className="px-3 py-1 game-panel text-gray-400 hover:text-game-accent text-xs rounded transition-colors"
@@ -1382,7 +1378,7 @@ export default function App() {
           <CombatEndPanel
             result={state.combat.result}
             narrative={state.combat.pendingNarrative}
-            isGenerating={aiSettings.enabled && !!aiSettings.apiKey && state.combat.pendingNarrative === null}
+            isGenerating={aiEnabled && state.combat.pendingNarrative === null}
             onContinue={handleCombatEndContinue}
           />
         </>
@@ -1457,11 +1453,11 @@ export default function App() {
             </button>
             <button
               className={`px-3 py-1 game-panel text-xs rounded transition-colors ${
-                aiSettings.enabled ? 'text-purple-400 hover:text-purple-300' : 'text-gray-600 hover:text-gray-400'
+                aiEnabled ? 'text-purple-400 hover:text-purple-300' : 'text-gray-600 hover:text-gray-400'
               }`}
               onClick={() => setShowAISettings(true)}
             >
-              ✦ AI{aiSettings.enabled ? ' ●' : ''}
+              ✦ AI{aiEnabled ? ' ●' : ''}
             </button>
             <button
               className="px-3 py-1 game-panel text-gray-400 hover:text-game-accent text-xs rounded transition-colors"
@@ -1478,7 +1474,7 @@ export default function App() {
               🎒 背包
             </button>
           </div>
-          <WorldMapScreen state={state} dispatch={dispatch} revealedDemons={revealedDemons} aiSettings={aiSettings} />
+          <WorldMapScreen state={state} dispatch={dispatch} revealedDemons={revealedDemons} apiKey={apiKey} modelId={activeModelId} writer={writer} aiEnabled={aiEnabled} />
         </>
       )}
 
@@ -1530,6 +1526,8 @@ export default function App() {
         <AISettingsPanel
           settings={aiSettings}
           onUpdate={updateAISettings}
+          r18Settings={r18Settings}
+          onUpdateR18={updateR18Settings}
           onClose={() => setShowAISettings(false)}
         />
       )}

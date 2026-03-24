@@ -17,7 +17,7 @@ const SKILL_DB = {
       applyStatus: { type: 'mark', duration: 2, value: 25 },
       evadeReduction: 10,      // 移除迴避率 10%
     },
-    description: '在目標的存在層上刻下可見的裂縫，下兩回合傷害判定得以精確尋入；同時令目標的迴避本能短暫失去方向感',
+    description: '在目標身上刻下標記，下兩回合傷害+25%；同時令目標的迴避率-10%',
   },
 
   T1_02: {

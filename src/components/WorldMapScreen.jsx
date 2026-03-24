@@ -5,7 +5,6 @@ import { canAdvanceSubLayer, advanceToNextSubLayer, getLayerTierDesc, LOCATIONS_
 import { getLocationByTypeId } from '../engine/LocationDB.js'
 import { getRandomMonsterByTier } from '../engine/MonsterDB.js'
 import { RIFT_ANOMALY_SUBTYPES, CRISIS_RESCUE_SUBTYPES, INVESTIGATION, TRAP_SUBTYPES, drawItemFromPool } from '../engine/EventDB.js'
-import { generateInvestigationText } from '../engine/AIWriter.js'
 import StatsDisplay from './StatsDisplay.jsx'
 
 const LOCATION_ICON = {
@@ -107,7 +106,7 @@ function rollInvDice(insight, dc) {
   return { roll, bonus, success: roll + bonus <= dc }
 }
 
-export default function WorldMapScreen({ state, dispatch, revealedDemons, aiSettings }) {
+export default function WorldMapScreen({ state, dispatch, revealedDemons, apiKey, modelId, writer, aiEnabled }) {
   const { exploration, demons, heroine } = state
 
   const totalSubLayers = { 1: 1, 2: 5, 3: 5, 4: 5, 5: 3 }[exploration.currentLayer] || 1
@@ -163,8 +162,8 @@ export default function WorldMapScreen({ state, dispatch, revealedDemons, aiSett
       const { success } = rollInvDice(heroine.insight, INVESTIGATION.quick.dc)
       const mode = success ? 'quick_success' : 'quick_failure'
       let narrative = null
-      if (aiSettings?.enabled && aiSettings?.apiKey) {
-        const result = await generateInvestigationText(mode, locData, state, aiSettings.apiKey, aiSettings.modelId)
+      if (aiEnabled) {
+        const result = await writer.generateInvestigationText(mode, locData, state, apiKey, modelId)
         narrative = result?.narrative ?? null
       }
       if (!narrative) {
@@ -185,8 +184,8 @@ export default function WorldMapScreen({ state, dispatch, revealedDemons, aiSett
       let intro   = fallback.thorough_intro   ?? '妳開始仔細搜查這個地點。'
       let objects = fallback.thorough_objects ?? ['物件 A', '物件 B', '物件 C']
 
-      if (aiSettings?.enabled && aiSettings?.apiKey) {
-        const result = await generateInvestigationText('thorough', locData, state, aiSettings.apiKey, aiSettings.modelId)
+      if (aiEnabled) {
+        const result = await writer.generateInvestigationText('thorough', locData, state, apiKey, modelId)
         if (result?.intro) intro = result.intro
         if (result?.objects?.length >= 3) objects = result.objects.slice(0, 3)
       }
@@ -204,8 +203,8 @@ export default function WorldMapScreen({ state, dispatch, revealedDemons, aiSett
     const mode = success ? 'deep_success' : 'deep_failure'
 
     let narrative = null
-    if (aiSettings?.enabled && aiSettings?.apiKey) {
-      const result = await generateInvestigationText(mode, locData, state, aiSettings.apiKey, aiSettings.modelId, { objectName })
+    if (aiEnabled) {
+      const result = await writer.generateInvestigationText(mode, locData, state, apiKey, modelId, { objectName })
       narrative = result?.narrative ?? null
     }
     if (!narrative) {

@@ -6,14 +6,19 @@
  * - 輸入 OpenRouter API Key（存於 localStorage，不上傳）
  * - 選擇模型（Gemini 2.5 Flash / Grok 4.1 Fast）
  * - 驗證 API Key 連線
+ * - R-18 成人模式（獨立開關，共用 API Key，獨立模型選擇）
  */
 import { useState } from 'react'
 import { MODELS, verifyAPIKey } from '../engine/AIWriter.js'
+import { MODELS_R18 } from '../engine/AIWriterR18.js'
 
-export default function AISettingsPanel({ settings, onUpdate, onClose }) {
+export default function AISettingsPanel({ settings, onUpdate, r18Settings, onUpdateR18, onClose }) {
   const [showKey, setShowKey] = useState(false)
   const [verifying, setVerifying] = useState(false)
   const [verifyResult, setVerifyResult] = useState(null)
+
+  // R-18 狀態
+  const [r18AgeConfirmed, setR18AgeConfirmed] = useState(r18Settings?.enabled ?? false)
 
   const handleVerify = async () => {
     if (!settings.apiKey) return
@@ -29,9 +34,14 @@ export default function AISettingsPanel({ settings, onUpdate, onClose }) {
     setVerifyResult(null)
   }
 
+  const handleR18Toggle = () => {
+    if (!r18AgeConfirmed) return
+    onUpdateR18({ enabled: !r18Settings.enabled })
+  }
+
   return (
     <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
-      <div className="game-panel p-6 max-w-md w-full animate-fade-in">
+      <div className="game-panel p-6 max-w-md w-full animate-fade-in overflow-y-auto max-h-[90vh]">
 
         {/* 標題列 */}
         <div className="flex items-center justify-between mb-5">
@@ -132,6 +142,100 @@ export default function AISettingsPanel({ settings, onUpdate, onClose }) {
           <p className="text-xs text-yellow-500 mb-4">
             ⚠ 啟用 AI 模式需要填入有效的 API Key，否則將自動回退至靜態文本。
           </p>
+        )}
+
+        {/* ── R-18 分隔線 ─────────────────────────────────────── */}
+        <div className="border-t border-red-900/60 my-5" />
+
+        {/* R-18 標題 */}
+        <div className="flex items-center gap-2 mb-4">
+          <span className="text-red-400 font-medium text-sm">R-18 成人模式</span>
+          {r18Settings?.enabled && (
+            <span className="text-xs bg-red-900/60 text-red-300 px-2 py-0.5 rounded">啟用中</span>
+          )}
+        </div>
+
+        {/* 年齡確認 */}
+        {!r18AgeConfirmed && (
+          <div className="mb-4 p-3 rounded border border-red-900/60 bg-red-950/30">
+            <p className="text-xs text-red-300 mb-3 leading-relaxed">
+              本模式將生成含有露骨性描寫的成人內容，包括肢體描寫與性行為相關文本。
+              請確認您已年滿 18 歲，並自願接觸此類內容。
+            </p>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                className="accent-red-500"
+                checked={r18AgeConfirmed}
+                onChange={e => setR18AgeConfirmed(e.target.checked)}
+              />
+              <span className="text-xs text-red-200">我已年滿 18 歲，確認開啟 R-18 內容</span>
+            </label>
+          </div>
+        )}
+
+        {/* R-18 控制項（年齡確認後顯示） */}
+        {r18AgeConfirmed && (
+          <>
+            {/* R-18 開關 */}
+            <div
+              className="flex items-center justify-between p-3 rounded border border-red-900/60 bg-black/20 mb-4 cursor-pointer"
+              onClick={handleR18Toggle}
+            >
+              <div>
+                <div className="text-sm text-red-200">啟用 R-18 成人生成</div>
+                <div className="text-xs text-gray-500 mt-0.5">
+                  {r18Settings?.enabled
+                    ? '覆蓋一般 AI Writer・使用成人向提示詞'
+                    : '關閉中・使用一般 AI Writer'}
+                </div>
+              </div>
+              <div className={`w-11 h-6 rounded-full transition-colors relative shrink-0 ml-4 ${r18Settings?.enabled ? 'bg-red-700' : 'bg-gray-700'}`}>
+                <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${r18Settings?.enabled ? 'left-6' : 'left-1'}`} />
+              </div>
+            </div>
+
+            {/* API Key 共用說明 */}
+            <p className="text-xs text-gray-500 mb-4">
+              API Key 與一般 AI 設定共用（上方填入即可）。
+            </p>
+
+            {/* R-18 模型選擇 */}
+            <div className="mb-4">
+              <label className="block text-xs text-red-400/80 mb-2">R-18 模型選擇</label>
+              <div className="flex flex-col gap-2">
+                {MODELS_R18.map(m => {
+                  const active = r18Settings?.modelId === m.id
+                  return (
+                    <div
+                      key={m.id}
+                      className={`flex items-start gap-3 p-3 rounded border cursor-pointer transition-colors ${
+                        active
+                          ? 'border-red-600 bg-red-900/30'
+                          : 'border-red-900/40 bg-black/20 hover:border-red-700/60'
+                      }`}
+                      onClick={() => onUpdateR18({ modelId: m.id })}
+                    >
+                      <div className={`w-3.5 h-3.5 mt-0.5 rounded-full border-2 shrink-0 transition-colors ${
+                        active ? 'border-red-500 bg-red-500' : 'border-gray-600'
+                      }`} />
+                      <div>
+                        <div className="text-sm text-white">{m.label}</div>
+                        <div className="text-xs text-gray-500">{m.description}</div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* R-18 + 無 API Key 提示 */}
+            {r18Settings?.enabled && !settings.apiKey && (
+              <p className="text-xs text-yellow-500 mb-4">
+                ⚠ 啟用 R-18 模式同樣需要填入有效的 API Key。
+              </p>
+            )}
+          </>
         )}
 
         <button
